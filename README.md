@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # RUFA ELAN
 
 A scalable production-ready e-commerce storefront for RUFA ELAN — a ladies handbag and fashion accessories brand in Ghana.
@@ -91,3 +92,7 @@ npm run dev
 ## Notes
 
 This repository provides a strong skeleton for RUFA ELAN. For production readiness, connect the admin dashboard and checkout flow to Supabase functions, implement full auth with Supabase Auth, and wire email/WhatsApp notifications via Resend and messaging APIs.
+=======
+# rufa-elan
+Ladies Fashion e-commerce website
+>>>>>>> 26f08d0fc59858fff3204433277c538054887f7c
