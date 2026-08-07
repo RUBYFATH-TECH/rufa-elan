@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useCartStore, type CartItem } from "@/store/cart-store";
 import { useForm } from "react-hook-form";
@@ -23,8 +25,13 @@ type CheckoutFormValues = z.infer<typeof checkoutSchema>;
 
 export default function CheckoutPage() {
   const items = useCartStore((state: any) => state.items) as CartItem[];
+  const clearCart = useCartStore((state: any) => state.clearCart);
+  const router = useRouter();
   const [hasMounted, setHasMounted] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
+  const [paymentDetails, setPaymentDetails] = useState<{ authorization_url: string; reference: string; amount: number; email: string } | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<"idle" | "initialized" | "verifying" | "success" | "failed">("idle");
+  const [paystackScriptLoaded, setPaystackScriptLoaded] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [locationMessage, setLocationMessage] = useState<string | null>(null);
@@ -34,6 +41,22 @@ export default function CheckoutPage() {
   const selectedDeliveryOption = watch("deliveryOption") ?? "delivery";
 
   const checkoutStoreLocation = { lat: 5.6037, lng: -0.1870 }; // Accra store coordinates
+  const paystackPublicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY ?? "";
+  const isPaystackConfigured = paystackPublicKey.trim().length > 0;
+
+  useEffect(() => {
+    if (!paystackPublicKey || paystackScriptLoaded) return;
+
+    const script = document.createElement("script");
+    script.src = "https://js.paystack.co/v1/inline.js";
+    script.async = true;
+    script.onload = () => setPaystackScriptLoaded(true);
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, [paystackPublicKey, paystackScriptLoaded]);
 
   const calculateDistanceKm = (lat1: number, lng1: number, lat2: number, lng2: number) => {
     const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
@@ -75,6 +98,11 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (!isPaystackConfigured) {
+      setMessage("Paystack public key is not configured. Set NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY in your environment.");
+      return;
+    }
+
     const orderId = `RUFA-${Math.floor(Date.now() / 1000)}`;
     const deliveryCost = getDistanceBasedDeliveryRate(values.deliveryOption);
     const grandTotal = totalAmount + deliveryCost;
@@ -103,15 +131,104 @@ export default function CheckoutPage() {
 
     if (!response.ok) {
       setMessage(data.message || `Payment initialization failed (${response.status}).`);
+      setPaymentStatus("failed");
       return;
     }
 
-    setPaymentUrl(data.data?.authorization_url ?? "");
+    const authorizationUrl = data.data?.authorization_url ?? "";
+    const reference = data.data?.reference ?? orderId;
+    setPaymentUrl(authorizationUrl);
+    setPaymentDetails({ authorization_url: authorizationUrl, reference, amount: grandTotal, email: values.email });
+    setPaymentStatus("initialized");
+    setMessage("Payment initialized. Click the button below to complete payment on Paystack.");
   };
 
   if (!hasMounted) {
     return null;
   }
+
+  const verifyPayment = async (reference: string) => {
+    setPaymentStatus("verifying");
+    setMessage("Verifying payment with Paystack...");
+
+    const res = await fetch("/api/paystack/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reference })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      setPaymentStatus("failed");
+      setMessage(data.message || "Payment verification failed.");
+      return;
+    }
+
+    // Persist order server-side via /api/checkout
+    try {
+      const orderRes = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reference, orderId: reference, email: paymentDetails?.email ?? "", amount: paymentDetails?.amount ?? 0 })
+      });
+
+      const orderData = await orderRes.json();
+      if (!orderRes.ok) {
+        setPaymentStatus("failed");
+        setMessage(orderData.message || "Payment verified but saving order failed.");
+        return;
+      }
+
+      setPaymentStatus("success");
+      setMessage("Payment verified and order saved. Redirecting to homepage...");
+
+      // Clear cart and redirect home
+      try {
+        clearCart();
+      } catch {}
+      // small delay to show message
+      setTimeout(() => {
+        router.push("/");
+      }, 1200);
+    } catch (err) {
+      setPaymentStatus("failed");
+      setMessage("Payment verified but an error occurred saving the order.");
+    }
+  };
+
+  const openPaystackInline = () => {
+    if (!paymentDetails || !paystackPublicKey || typeof window === "undefined") {
+      return;
+    }
+
+    const paystack = (window as any).PaystackPop;
+    if (!paystack) {
+      window.open(paymentDetails.authorization_url, "_blank");
+      setMessage("Paystack checkout opened in a new tab. Verify payment once you return.");
+      return;
+    }
+
+    const handler = paystack.setup({
+      key: paystackPublicKey,
+      email: paymentDetails.email,
+      amount: Math.round(paymentDetails.amount * 100),
+      currency: "GHS",
+      ref: paymentDetails.reference,
+      onClose: () => {
+        setMessage("Payment window closed. You can return to the homepage anytime.");
+      },
+      callback: (response: any) => {
+        if (response?.reference) {
+          verifyPayment(response.reference);
+        } else {
+          setPaymentStatus("failed");
+          setMessage("Payment response did not return a reference. Please verify again.");
+        }
+      }
+    });
+
+    handler.openIframe();
+  };
 
   return (
     <section className="mx-auto max-w-6xl px-6 py-20 sm:px-8 lg:px-12">
@@ -198,12 +315,49 @@ export default function CheckoutPage() {
             <button type="submit" className="w-full rounded-full bg-slate-950 px-6 py-4 text-sm font-semibold text-white transition hover:bg-slate-800">Continue to payment</button>
           </form>
           {message ? <p className="mt-6 text-sm text-red-600">{message}</p> : null}
-          {paymentUrl ? (
+          {paymentDetails ? (
             <div className="mt-6 rounded-3xl border border-brand-200 bg-brand-50 p-6 text-brand-900">
               <p className="font-semibold">Payment ready</p>
-              <a href={paymentUrl} target="_blank" rel="noreferrer" className="mt-4 inline-flex rounded-full bg-brand-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-800">
-                Complete payment on Paystack
-              </a>
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <button
+                  type="button"
+                  onClick={openPaystackInline}
+                  className="inline-flex items-center justify-center rounded-full bg-brand-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-800"
+                >
+                  Complete payment on Paystack
+                </button>
+                <button
+                  type="button"
+                  onClick={() => paymentDetails?.reference && verifyPayment(paymentDetails.reference)}
+                  className="inline-flex items-center justify-center rounded-full border border-brand-900 bg-white px-5 py-3 text-sm font-semibold text-brand-900 transition hover:bg-brand-100"
+                >
+                  Verify payment
+                </button>
+                <Link href="/" className="inline-flex items-center justify-center rounded-full border border-brand-900 bg-white px-5 py-3 text-sm font-semibold text-brand-900 transition hover:bg-brand-100">
+                  Return to homepage
+                </Link>
+              </div>
+
+              <div className="mt-6 flex flex-col items-center gap-4">
+                <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-brand-900 shadow-sm">
+                  <span className="inline-flex h-2 w-2 rounded-full bg-brand-900" />
+                  Paystack
+                </div>
+                <div className="grid w-full max-w-sm grid-cols-3 gap-3 text-center">
+                  <div className="rounded-3xl border border-slate-200 bg-white px-3 py-4 shadow-sm">
+                    <span className="block text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">MTN</span>
+                    <span className="mt-2 block text-sm font-bold text-yellow-600">Mobile Money</span>
+                  </div>
+                  <div className="rounded-3xl border border-slate-200 bg-white px-3 py-4 shadow-sm">
+                    <span className="block text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Visa</span>
+                    <span className="mt-2 block text-sm font-bold text-slate-700">Card</span>
+                  </div>
+                  <div className="rounded-3xl border border-slate-200 bg-white px-3 py-4 shadow-sm">
+                    <span className="block text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Telecel</span>
+                    <span className="mt-2 block text-sm font-bold text-green-700">Mobile</span>
+                  </div>
+                </div>
+              </div>
             </div>
           ) : null}
         </div>

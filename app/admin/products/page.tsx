@@ -137,12 +137,12 @@ export default function AdminProductsPage() {
         return null;
       }
 
-      const { data: publicUrlData, error: urlError } = supabase.storage
+      const { data: publicUrlData } = supabase.storage
         .from(STORAGE_BUCKET)
         .getPublicUrl(uploadData.path);
 
-      if (urlError || !publicUrlData?.publicUrl) {
-        setMessage(urlError?.message ?? "Unable to generate image URL.");
+      if (!publicUrlData?.publicUrl) {
+        setMessage("Unable to generate image URL.");
         return null;
       }
 

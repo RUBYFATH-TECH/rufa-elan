@@ -8,6 +8,7 @@ const __dirname = path.dirname(__filename);
 const nextConfig = {
   reactStrictMode: true,
   outputFileTracingRoot: path.resolve(__dirname),
+  allowedDevOrigins: ["http://192.168.137.1:3000"],
   images: {
     remotePatterns: [
       {
