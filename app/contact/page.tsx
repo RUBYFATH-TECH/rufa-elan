@@ -11,8 +11,8 @@ export default function ContactPage() {
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-soft">
               <p className="text-sm uppercase tracking-[0.3em] text-brand-700">WhatsApp</p>
-              <p className="mt-4 text-slate-600">+09 0505 378 3510</p>
-              <Link href="https://wa.me/+0905053783510" className="mt-6 inline-flex rounded-full bg-brand-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-800">
+              <p className="mt-4 text-slate-600">+90 505 378 3510</p>
+              <Link href="https://wa.me/+905053783510" className="mt-6 inline-flex rounded-full bg-brand-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-800">
                 Chat now
               </Link>
             </div>

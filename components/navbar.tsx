@@ -121,7 +121,7 @@ export default function Navbar() {
             >
               <User className="h-4 w-4" /> Account
             </Link>
-            <Link href="https://wa.me/233000000000" className="inline-flex items-center gap-2 rounded-full bg-brand-900 px-4 py-2 text-sm font-semibold text-white">
+            <Link href="https://wa.me/+905053783510" className="inline-flex items-center gap-2 rounded-full bg-brand-900 px-4 py-2 text-sm font-semibold text-white">
               <Phone className="h-4 w-4" /> WhatsApp
             </Link>
           </div>

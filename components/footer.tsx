@@ -33,7 +33,7 @@ export default function Footer() {
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-400">Contact</p>
           <p className="mt-4 text-sm leading-7">WhatsApp support available Monday to Saturday.</p>
-          <p className="mt-3 text-sm">+09 0505 378 3510</p>
+          <p className="mt-3 text-sm">+90 505 378 3510</p>
           <p className="mt-3 text-sm">support@rufaelan.com</p>
         </div>
       </div>
