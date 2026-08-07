@@ -1,0 +1,43 @@
+{
+  "name": "rufa-elan-store",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^3.2.0",
+    "@supabase/auth-helpers-nextjs": "^0.8.2",
+    "@supabase/ssr": "^0.12.3",
+    "@supabase/supabase-js": "^2.40.0",
+    "axios": "^1.7.0",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.42.2",
+    "lucide-react": "^0.515.0",
+    "next": "^15.2.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.57.0",
+    "shadcn-ui": "^0.2.0",
+    "superjson": "^1.10.1",
+    "typescript": "^5.6.2",
+    "uuid": "^14.0.1",
+    "zod": "^3.25.0",
+    "zustand": "^4.5.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.2",
+    "@types/react": "^18.2.21",
+    "@types/react-dom": "^18.2.7",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "15.2.1",
+    "postcss": "^8.4.39",
+    "prettier": "^3.5.1",
+    "tailwindcss": "^3.4.4"
+  }
+}
