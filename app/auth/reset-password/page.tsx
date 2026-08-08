@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
 
 const resetPasswordSchema = z.object({
+  email: z.string().email("Enter a valid email"),
+  otp: z.string().min(6, "Enter the OTP code"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string().min(6, "Confirm your password")
 }).refine((data) => data.password === data.confirmPassword, {
@@ -19,27 +20,42 @@ type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
 export default function ResetPasswordPage() {
   const router = useRouter();
-  const supabase = createClientComponentSupabaseClient();
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const { register, handleSubmit, formState: { errors } } = useForm<ResetPasswordFormValues>({ resolver: zodResolver(resetPasswordSchema) });
+  const [initialEmail, setInitialEmail] = useState("");
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<ResetPasswordFormValues>({
+    resolver: zodResolver(resetPasswordSchema)
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    const emailFromQuery = url.searchParams.get("email") ?? "";
+    if (emailFromQuery) {
+      setInitialEmail(emailFromQuery);
+      reset({ email: emailFromQuery, otp: "", password: "", confirmPassword: "" });
+    }
+  }, [reset]);
 
   const onSubmit = async (values: ResetPasswordFormValues) => {
     setIsLoading(true);
     setMessage(null);
 
-    const { error } = await supabase.auth.updateUser({
-      password: values.password
+    const res = await fetch("/api/auth/verify-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: values.email, otp: values.otp, newPassword: values.password })
     });
 
+    const data = await res.json().catch(() => ({ message: "Unable to reset password." }));
     setIsLoading(false);
 
-    if (error) {
-      setMessage(`Error: ${error.message}`);
+    if (!res.ok) {
+      setMessage(data?.message ?? "Unable to reset password.");
       return;
     }
 
-    setMessage("Password updated successfully. Redirecting to login...");
+    setMessage(data?.message ?? "Password updated successfully. Redirecting to login...");
     setTimeout(() => router.push("/auth/login"), 2000);
   };
 
@@ -47,8 +63,18 @@ export default function ResetPasswordPage() {
     <section className="mx-auto max-w-md px-6 py-20 sm:px-8 lg:px-12">
       <div className="rounded-[2rem] border border-slate-200 bg-white p-10 shadow-soft">
         <h1 className="text-3xl font-semibold text-slate-950">Set new password</h1>
-        <p className="mt-4 text-slate-600">Enter your new password below.</p>
+        <p className="mt-4 text-slate-600">Enter your email, OTP, and new password.</p>
         <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
+          <label className="block text-sm text-slate-700">
+            Email
+            <input {...register("email")} className="mt-3 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-brand-300" />
+            {errors.email ? <p className="mt-2 text-xs text-red-600">{errors.email.message}</p> : null}
+          </label>
+          <label className="block text-sm text-slate-700">
+            OTP code
+            <input {...register("otp")} className="mt-3 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-brand-300" />
+            {errors.otp ? <p className="mt-2 text-xs text-red-600">{errors.otp.message}</p> : null}
+          </label>
           <label className="block text-sm text-slate-700">
             New password
             <input type="password" {...register("password")} className="mt-3 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-brand-300" />

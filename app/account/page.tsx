@@ -6,12 +6,26 @@ import { useEffect, useState, type ChangeEvent } from "react";
 import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
 import { isKnownAdminEmail } from "@/lib/admin-common";
 
+type OrderHistory = {
+  id: string;
+  order_number: string;
+  total_amount: number;
+  status: string;
+  payment_status: string;
+  created_at: string;
+  items: Array<{ name: string; quantity: number; price: number }>;
+  shipping_address: { full_name: string; city: string; deliveryOption: string };
+};
+
 export default function AccountPage() {
   const router = useRouter();
   const supabase = createClientComponentSupabaseClient();
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [user, setUser] = useState<{ id?: string; avatar_url?: string | null } | null>(null);
+  const [orders, setOrders] = useState<OrderHistory[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ordersMessage, setOrdersMessage] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -51,6 +65,28 @@ export default function AccountPage() {
 
     loadSession();
   }, [router, supabase]);
+
+  useEffect(() => {
+    const loadOrders = async () => {
+      if (!user?.id) return;
+      setOrdersLoading(true);
+      setOrdersMessage(null);
+
+      const res = await fetch(`/api/account/orders`);
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setOrdersMessage(data?.message ?? "Unable to load your orders.");
+        setOrdersLoading(false);
+        return;
+      }
+
+      const data = await res.json();
+      setOrders(data ?? []);
+      setOrdersLoading(false);
+    };
+
+    loadOrders();
+  }, [user?.id]);
 
   const handleSignOut = async () => {
     setIsLoading(true);
@@ -191,6 +227,65 @@ export default function AccountPage() {
             <p className="text-lg font-semibold">Cart</p>
             <p className="mt-2 text-sm text-slate-600">Review your saved items and proceed to checkout.</p>
           </Link>
+        </div>
+
+        <div className="mt-10 rounded-[2rem] border border-slate-200 bg-white p-8 shadow-soft">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm uppercase tracking-[0.3em] text-brand-700">Order history</p>
+              <h2 className="mt-3 text-2xl font-semibold text-slate-950">Your purchases</h2>
+            </div>
+            <p className="text-sm text-slate-600">Recent orders from your account</p>
+          </div>
+
+          {ordersLoading ? (
+            <div className="mt-8 space-y-3">
+              <div className="h-16 animate-pulse rounded-2xl bg-slate-100" />
+              <div className="h-16 animate-pulse rounded-2xl bg-slate-100" />
+            </div>
+          ) : ordersMessage ? (
+            <p className="mt-8 text-sm text-red-600">{ordersMessage}</p>
+          ) : orders.length === 0 ? (
+            <p className="mt-8 text-sm text-slate-600">You have no purchased orders yet.</p>
+          ) : (
+            <div className="mt-8 space-y-4">
+              {orders.map((order) => (
+                <div key={order.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm text-slate-500">Order #{order.order_number}</p>
+                      <p className="mt-1 text-xl font-semibold text-slate-950">GHS {order.total_amount.toFixed(2)}</p>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      <span className="rounded-3xl bg-white px-4 py-2 text-sm text-slate-700">{order.status}</span>
+                      <span className="rounded-3xl bg-white px-4 py-2 text-sm text-slate-700">{order.payment_status}</span>
+                      <span className="rounded-3xl bg-white px-4 py-2 text-sm text-slate-700">{new Date(order.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-3xl border border-slate-200 bg-white p-4">
+                      <p className="text-sm font-semibold text-slate-900">Shipping</p>
+                      <p className="mt-2 text-sm text-slate-600">{order.shipping_address.full_name}</p>
+                      <p className="text-sm text-slate-600">{order.shipping_address.city}</p>
+                      <p className="text-sm text-slate-600">{order.shipping_address.deliveryOption}</p>
+                    </div>
+                    <div className="rounded-3xl border border-slate-200 bg-white p-4">
+                      <p className="text-sm font-semibold text-slate-900">Items</p>
+                      <div className="mt-3 space-y-3">
+                        {order.items.slice(0, 3).map((item, index) => (
+                          <div key={index} className="flex items-center justify-between gap-3 text-sm text-slate-700">
+                            <span>{item.name} x{item.quantity}</span>
+                            <span>GHS {(item.price * item.quantity).toFixed(2)}</span>
+                          </div>
+                        ))}
+                        {order.items.length > 3 ? <p className="text-xs text-slate-500">+{order.items.length - 3} more items</p> : null}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>

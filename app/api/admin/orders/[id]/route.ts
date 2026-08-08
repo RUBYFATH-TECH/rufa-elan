@@ -9,6 +9,36 @@ const updateOrderSchema = z.object({
   message: "At least one field is required to update an order."
 });
 
+export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
+  const { id: orderId } = await context.params;
+  if (!orderId) {
+    return NextResponse.json({ message: "Order ID is required." }, { status: 400 });
+  }
+
+  const adminResult = await getAdminSupabase();
+  if ("error" in adminResult) {
+    const status = adminResult.error === "unauthorized" ? 401 : 403;
+    return NextResponse.json({ message: "Unauthorized" }, { status });
+  }
+
+  const { serviceSupabase } = adminResult;
+  const { data, error } = await serviceSupabase
+    .from("orders")
+    .select("id, order_number, status, payment_status, total_amount, subtotal, shipping_fee, discount_amount, shipping_address, items, payment_reference, created_at, user_id, profiles!inner(id, full_name, email)")
+    .eq("id", orderId)
+    .single();
+
+  if (error) {
+    return NextResponse.json({ message: error.message }, { status: 500 });
+  }
+
+  if (!data) {
+    return NextResponse.json({ message: "Order not found." }, { status: 404 });
+  }
+
+  return NextResponse.json(data);
+}
+
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   const { id: orderId } = await context.params;
   if (!orderId) {

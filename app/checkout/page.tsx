@@ -12,6 +12,24 @@ import { z } from "zod";
 
 const OrderTrackingMap = dynamic(() => import("@/components/order-tracking-map"), { ssr: false });
 
+type CheckoutPayload = {
+  orderId: string;
+  email: string;
+  amount: number;
+  subtotal: number;
+  shipping_fee: number;
+  discount_amount: number;
+  items: CartItem[];
+  shipping_address: {
+    full_name: string;
+    email: string;
+    phone: string;
+    address: string;
+    city: string;
+    deliveryOption: string;
+  };
+};
+
 const checkoutSchema = z.object({
   fullName: z.string().min(2, "Enter your full name"),
   email: z.string().email("Enter a valid email"),
@@ -30,6 +48,7 @@ export default function CheckoutPage() {
   const [hasMounted, setHasMounted] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [paymentDetails, setPaymentDetails] = useState<{ authorization_url: string; reference: string; amount: number; email: string } | null>(null);
+  const [pendingOrder, setPendingOrder] = useState<CheckoutPayload | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<"idle" | "initialized" | "verifying" | "success" | "failed">("idle");
   const [paystackScriptLoaded, setPaystackScriptLoaded] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -106,6 +125,25 @@ export default function CheckoutPage() {
     const orderId = `RUFA-${Math.floor(Date.now() / 1000)}`;
     const deliveryCost = getDistanceBasedDeliveryRate(values.deliveryOption);
     const grandTotal = totalAmount + deliveryCost;
+    const orderPayload: CheckoutPayload = {
+      orderId,
+      email: values.email,
+      amount: grandTotal,
+      subtotal: totalAmount,
+      shipping_fee: deliveryCost,
+      discount_amount: 0,
+      items,
+      shipping_address: {
+        full_name: values.fullName,
+        email: values.email,
+        phone: values.phone,
+        address: values.address,
+        city: values.city,
+        deliveryOption: values.deliveryOption
+      }
+    };
+
+    setPendingOrder(orderPayload);
 
     const response = await fetch("/api/paystack/init", {
       method: "POST",
@@ -166,10 +204,21 @@ export default function CheckoutPage() {
 
     // Persist order server-side via /api/checkout
     try {
+      if (!pendingOrder) {
+        setPaymentStatus("failed");
+        setMessage("Payment verified but order data is missing.");
+        return;
+      }
+
       const orderRes = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reference, orderId: reference, email: paymentDetails?.email ?? "", amount: paymentDetails?.amount ?? 0 })
+        body: JSON.stringify({
+          ...pendingOrder,
+          reference,
+          orderId: reference,
+          payment_reference: reference
+        })
       });
 
       const orderData = await orderRes.json();

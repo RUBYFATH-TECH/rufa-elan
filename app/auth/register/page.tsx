@@ -10,9 +10,14 @@ import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
 import { GoogleOAuthButton } from "@/components/google-oauth-button";
 
 const registerSchema = z.object({
+  name: z.string().min(2, "Enter your name"),
   email: z.string().email("Enter a valid email"),
+  phone: z.string().min(7, "Enter a valid phone number"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  name: z.string().min(2, "Enter your name")
+  confirmPassword: z.string().min(6, "Confirm your password")
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"]
 });
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
@@ -65,7 +70,8 @@ export default function RegisterPage() {
       password: values.password,
       options: {
         data: {
-          full_name: values.name
+          full_name: values.name,
+          phone: values.phone
         }
       }
     });
@@ -89,6 +95,9 @@ export default function RegisterPage() {
   return (
     <section className="mx-auto max-w-md px-6 py-20 sm:px-8 lg:px-12">
       <div className="rounded-[2rem] border border-slate-200 bg-white p-10 shadow-soft">
+        <div className="mb-6 flex items-center justify-center">
+          <img src="/images/logo.png" alt="RUFA ELAN" className="h-12 w-auto" />
+        </div>
         <h1 className="text-3xl font-semibold text-slate-950">Create account</h1>
         <p className="mt-2 text-sm text-slate-600">Create a secure account to save your address, track orders, and checkout faster.</p>
         <div className="mt-6">
@@ -110,9 +119,19 @@ export default function RegisterPage() {
             {errors.email ? <p className="mt-2 text-xs text-red-600">{errors.email.message}</p> : null}
           </label>
           <label className="block text-sm text-slate-700">
+            Phone
+            <input {...register("phone")} className="mt-3 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-brand-300" />
+            {errors.phone ? <p className="mt-2 text-xs text-red-600">{errors.phone.message}</p> : null}
+          </label>
+          <label className="block text-sm text-slate-700">
             Password
             <input type="password" {...register("password")} className="mt-3 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-brand-300" />
             {errors.password ? <p className="mt-2 text-xs text-red-600">{errors.password.message}</p> : null}
+          </label>
+          <label className="block text-sm text-slate-700">
+            Confirm password
+            <input type="password" {...register("confirmPassword")} className="mt-3 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-brand-300" />
+            {errors.confirmPassword ? <p className="mt-2 text-xs text-red-600">{errors.confirmPassword.message}</p> : null}
           </label>
           <button type="submit" disabled={isLoading} className="w-full rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50">
             {isLoading ? "Creating account..." : "Create account"}

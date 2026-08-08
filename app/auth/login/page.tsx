@@ -126,6 +126,9 @@ export default function LoginPage() {
   return (
     <section className="mx-auto max-w-md px-6 py-20 sm:px-8 lg:px-12">
       <div className="rounded-[2rem] border border-slate-200 bg-white p-10 shadow-soft">
+        <div className="mb-6 flex items-center justify-center">
+          <img src="/images/logo.png" alt="RUFA ELAN" className="h-12 w-auto" />
+        </div>
         <h1 className="text-3xl font-semibold text-slate-950">Login</h1>
         <p className="mt-2 text-sm text-slate-600">Sign in to access your orders, wishlist, and delivery tracking.</p>
         <div className="mt-6">

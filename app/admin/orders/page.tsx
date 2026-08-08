@@ -10,6 +10,8 @@ type Order = {
   total_amount: number;
   created_at: string;
   shipping_address: Record<string, any>;
+  user_id?: string;
+  profiles?: { id: string; full_name: string; email: string };
 };
 
 const orderStatuses = ["pending_payment", "processing", "shipped", "delivered", "cancelled"];
@@ -141,6 +143,8 @@ export default function AdminOrdersPage() {
                 <th className="px-4 py-4 font-semibold text-slate-500">Amount</th>
                 <th className="px-4 py-4 font-semibold text-slate-500">Status</th>
                 <th className="px-4 py-4 font-semibold text-slate-500">Payment</th>
+                <th className="px-4 py-4 font-semibold text-slate-500">Customer</th>
+                <th className="px-4 py-4 font-semibold text-slate-500">Email</th>
                 <th className="px-4 py-4 font-semibold text-slate-500">Created</th>
                 <th className="px-4 py-4 font-semibold text-slate-500">Action</th>
               </tr>
@@ -165,6 +169,8 @@ export default function AdminOrdersPage() {
                     <td className="px-4 py-4 text-slate-900">GHS {order.total_amount.toFixed(2)}</td>
                     <td className="px-4 py-4 text-slate-600 capitalize">{order.status}</td>
                     <td className="px-4 py-4 text-slate-600 capitalize">{order.payment_status}</td>
+                    <td className="px-4 py-4 text-slate-600">{order.profiles?.full_name ?? "Guest"}</td>
+                    <td className="px-4 py-4 text-slate-600">{order.profiles?.email ?? "-"}</td>
                     <td className="px-4 py-4 text-slate-600">{new Date(order.created_at).toLocaleDateString()}</td>
                     <td className="px-4 py-4">
                       <button

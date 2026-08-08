@@ -11,7 +11,7 @@ export async function GET() {
   const { serviceSupabase } = adminResult;
   const { data, error } = await serviceSupabase
     .from("orders")
-    .select("id, order_number, status, payment_status, total_amount, created_at, shipping_address")
+    .select("id, order_number, status, payment_status, total_amount, created_at, shipping_address, user_id, profiles!inner(id, full_name, email)")
     .order("created_at", { ascending: false });
 
   if (error) {

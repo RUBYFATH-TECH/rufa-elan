@@ -116,6 +116,7 @@ create table if not exists orders (
   total_amount numeric(10,2) not null,
   shipping_address jsonb not null,
   billing_address jsonb,
+  items jsonb not null default '[]'::jsonb,
   payment_status text default 'unpaid' not null,
   payment_reference text,
   created_at timestamptz default now() not null,

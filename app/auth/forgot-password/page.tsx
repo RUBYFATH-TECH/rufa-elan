@@ -23,18 +23,16 @@ export default function ForgotPasswordPage() {
     setIsLoading(true);
     setMessage(null);
 
-    const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`
+    // Call server endpoint to send OTP if account exists
+    const res = await fetch("/api/auth/send-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: values.email })
     });
 
     setIsLoading(false);
-
-    if (error) {
-      setMessage(`Error: ${error.message}`);
-      return;
-    }
-
-    setMessage("Check your email for a password reset link.");
+    const data = await res.json().catch(() => null);
+    setMessage(data?.message ?? "If an account exists, an email will be sent.");
   };
 
   return (
@@ -49,7 +47,7 @@ export default function ForgotPasswordPage() {
             {errors.email ? <p className="mt-2 text-xs text-red-600">{errors.email.message}</p> : null}
           </label>
           <button type="submit" disabled={isLoading} className="w-full rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50">
-            {isLoading ? "Sending..." : "Send reset link"}
+            {isLoading ? "Sending..." : "Send OTP"}
           </button>
         </form>
         {message ? <p className="mt-5 text-sm text-slate-700">{message}</p> : null}
