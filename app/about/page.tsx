@@ -25,7 +25,7 @@ export default function AboutPage() {
           <p className="mt-5 text-base leading-7 text-slate-300">We source stylish materials, support local craftsmanship, and optimize our operations so you can shop with confidence.</p>
           <div className="mt-8 space-y-4 text-sm text-slate-300">
             <p>• Nationwide delivery across Ghana</p>
-            <p>• Secure payments through Paystack</p>
+            <p>• Secure payments through Paystack Card/MoMo</p>
             <p>• 24/7 WhatsApp support</p>
             <p>• Easy returns and tracking</p>
           </div>

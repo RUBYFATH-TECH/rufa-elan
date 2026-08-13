@@ -25,7 +25,7 @@ export default function ContactPage() {
         </div>
         <div className="rounded-[2rem] border border-slate-200 bg-brand-50 p-10 shadow-soft">
           <p className="text-sm uppercase tracking-[0.3em] text-brand-700">Address</p>
-          <p className="mt-4 text-lg font-semibold text-slate-950">Kumasi, Ghana</p>
+          <p className="mt-4 text-lg font-semibold text-slate-950">Ampabame, Offinso, Ghana</p>
           <p className="mt-4 text-slate-600">Shop with confidence and request a callback or delivery estimate for your city.</p>
           <div className="mt-8 space-y-4 text-sm text-slate-700">
             <p>• Nationwide delivery across Ghana</p>

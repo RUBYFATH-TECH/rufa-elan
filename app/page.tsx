@@ -20,12 +20,12 @@ const highlights = [
   },
   {
     title: "Nationwide reach",
-    description: "From Greater Accra to the regions, our delivery service is built for reach.",
+    description: "From Ashanti to the regions, our delivery service is built for reach.",
     icon: MapPin
   },
   {
     title: "Premium quality",
-    description: "Handbags crafted for style, comfort and everyday confidence.",
+    description: "Fashion accessories and Handbags crafted for style, comfort and everyday confidence.",
     icon: Sparkles
   }
 ];
@@ -51,17 +51,27 @@ export default function HomePage() {
             </div>
 
             <div className="max-w-2xl space-y-6">
-              <h1 className="text-5xl font-semibold tracking-tight text-slate-950 sm:text-6xl lg:text-7xl">
+              <h1 className="relative inline-block
+                font-serif text-5xl md:text-7xl
+                font-semibold italic uppercase
+                tracking-[0.18em]
+
+                bg-[linear-gradient(110deg,#111827_10%,#d4af37_25%,#fff7cc_38%,#e8b4b8_50%,#f8fafc_62%,#d4af37_75%,#111827_90%)]
+                bg-[length:300%_100%]
+                bg-clip-text text-transparent
+
+                drop-shadow-[0_0_12px_rgba(212,175,55,0.25)]
+                animate-[fashionShine_4s_linear_infinite]">
                 RUFA ELAN
               </h1>
               <p className="text-lg leading-8 text-slate-700">
-                Curated handbags and accessories for modern elegance, crafted to feel effortless from checkout to doorstep.
+                Curated handbags and fashion accessories for modern elegance, crafted to feel effortless from checkout to doorstep.
               </p>
             </div>
 
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               <Link href="/shop" className="inline-flex items-center justify-center rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-slate-700">
-                Shop handbags
+                Shop our products 
               </Link>
               <Link href="/about" className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white/80 px-6 py-3 text-sm font-semibold text-slate-900 transition duration-300 hover:-translate-y-0.5 hover:border-slate-400">
                 Explore our story
@@ -134,7 +144,7 @@ export default function HomePage() {
           <div className="mb-10 flex flex-col gap-4 border-b border-slate-200/80 pb-6 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.3em] text-brand-600">New arrivals</p>
-              <h2 className="mt-3 text-3xl font-semibold text-slate-950">Shop the latest handbag edit</h2>
+              <h2 className="mt-3 text-3xl font-semibold text-slate-950">Shop the latest product</h2>
             </div>
             <Link href="/shop" className="inline-flex items-center gap-2 text-sm font-semibold text-brand-700 transition hover:text-brand-900">
               View the full shop <ArrowRight className="h-4 w-4" />

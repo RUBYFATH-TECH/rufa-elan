@@ -26,7 +26,7 @@ export default function CategoryPage({ params }: { params: Promise<{ category: s
       <div className="mt-12 rounded-[2rem] border border-slate-200 bg-brand-50 p-8 text-slate-900 shadow-soft">
         <h2 className="text-xl font-semibold">Need help choosing a bag?</h2>
         <p className="mt-3 text-sm text-slate-700">Message our team on WhatsApp for personalized recommendations and express delivery support.</p>
-        <Link href="https://wa.me/233000000000" className="mt-6 inline-flex rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
+        <Link href="https://wa.me/+905053783510" className="mt-6 inline-flex rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
           Chat on WhatsApp
         </Link>
       </div>

@@ -32,7 +32,7 @@ export default function WishlistPage() {
       <div className="mb-10">
         <p className="text-sm uppercase tracking-[0.3em] text-brand-700">Wishlist</p>
         <h1 className="mt-4 text-3xl font-semibold text-slate-950">Saved items ({items.length})</h1>
-        <p className="mt-3 text-slate-600">Review your saved handbags and add them to your cart.</p>
+        <p className="mt-3 text-slate-600">Review your saved products and add them to your cart.</p>
       </div>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

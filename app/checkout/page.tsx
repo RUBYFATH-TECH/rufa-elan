@@ -317,7 +317,7 @@ export default function CheckoutPage() {
             </label>
             <div className="mb-4 rounded-3xl border border-slate-200 bg-slate-50 px-4 py-4">
               <p className="text-sm font-semibold text-slate-900">Use your location for delivery pricing</p>
-              <p className="mt-2 text-sm text-slate-600">Allow location to calculate an accurate delivery fee based on distance from our Accra fulfillment center.</p>
+              <p className="mt-2 text-sm text-slate-600">Allow location to calculate an accurate delivery fee based on distance from our Offinso fulfillment center.</p>
               <button
                 type="button"
                 onClick={async () => {

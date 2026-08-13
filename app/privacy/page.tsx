@@ -16,7 +16,7 @@ export default function PrivacyPage() {
           </div>
           <div>
             <h2 className="text-xl font-semibold text-slate-950">Security</h2>
-            <p className="mt-3">Your data is secured and encrypted connections. Secrets are never exposed on the frontend.</p>
+            <p className="mt-3">Your data is secured and encrypted. Secrets are never exposed on the frontend.</p>
           </div>
         </div>
       </div>

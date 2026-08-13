@@ -53,3 +53,27 @@ select {
 .soft-glow {
   box-shadow: 0 24px 70px rgba(15, 23, 42, 0.08);
 }
+@keyframes fashionShine {
+  0% {
+    background-position: 300% 50%;
+    filter: brightness(1);
+  }
+
+  25% {
+    filter: brightness(1.15);
+  }
+
+  50% {
+    background-position: 0% 50%;
+    filter: brightness(1.35);
+  }
+
+  75% {
+    filter: brightness(1.1);
+  }
+
+  100% {
+    background-position: -300% 50%;
+    filter: brightness(1);
+  }
+}
