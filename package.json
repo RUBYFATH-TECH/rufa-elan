@@ -1,43 +1,49 @@
 {
-  "name": "rufa-elan-store",
+  "name": "rufa-elan",
   "version": "1.0.0",
-  "private": true,
+  "description": "RUFA ELAN E-commerce Platform - MERN Stack",
+  "main": "index.js",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "format": "prettier --write ."
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:frontend": "cd frontend && npm run start",
+    "start:backend": "cd backend && npm run start",
+    "lint": "cd frontend && npm run lint && cd ../backend && npm run lint",
+    "format": "cd frontend && npm run format && cd ../backend && npm run format",
+    "test": "cd frontend && npm run test && cd ../backend && npm run test",
+    "clean": "rimraf frontend/.next frontend/node_modules backend/dist backend/node_modules node_modules",
+    "reset": "npm run clean && npm run install:all"
   },
-  "dependencies": {
-    "@hookform/resolvers": "^3.2.0",
-    "@supabase/auth-helpers-nextjs": "^0.8.2",
-    "@supabase/ssr": "^0.12.4",
-    "@supabase/supabase-js": "^2.112.2",
-    "axios": "^1.7.0",
-    "clsx": "^2.1.1",
-    "framer-motion": "^12.42.2",
-    "lucide-react": "^0.515.0",
-    "next": "^15.2.1",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-hook-form": "^7.57.0",
-    "shadcn-ui": "^0.2.0",
-    "superjson": "^1.10.1",
-    "typescript": "^5.6.2",
-    "uuid": "^14.0.1",
-    "zod": "^3.25.0",
-    "zustand": "^4.5.7"
-  },
+  "keywords": [
+    "ecommerce",
+    "mern",
+    "nextjs",
+    "express",
+    "mongodb",
+    "fashion",
+    "accessories"
+  ],
+  "author": "RUFA ELAN Development Team",
+  "license": "MIT",
   "devDependencies": {
-    "@types/node": "^20.14.2",
-    "@types/react": "^18.2.21",
-    "@types/react-dom": "^18.2.7",
-    "autoprefixer": "^10.4.20",
-    "eslint": "^8.57.0",
-    "eslint-config-next": "15.2.1",
-    "postcss": "^8.4.39",
-    "prettier": "^3.5.1",
-    "tailwindcss": "^3.4.4"
-  }
+    "concurrently": "^8.2.2",
+    "rimraf": "^5.0.5"
+  },
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-username/rufa-elan.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/rufa-elan/issues"
+  },
+  "homepage": "https://github.com/your-username/rufa-elan#readme"
 }

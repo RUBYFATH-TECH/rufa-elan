@@ -1,5 +1,0 @@
-User-agent: *
-Allow: /
-Sitemap: https://www.rufaelan.com/sitemap.xml
-Disallow: /api/
-Disallow: /admin/

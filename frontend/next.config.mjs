@@ -8,26 +8,22 @@ const __dirname = path.dirname(__filename);
 const nextConfig = {
   reactStrictMode: true,
   outputFileTracingRoot: path.resolve(__dirname),
-  
-  // API routes proxying to backend during migration
-  async rewrites() {
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
-    return [
-      {
-        source: '/api/:path*',
-        destination: `${backendUrl}/api/:path*`,
-      }
-    ];
+  allowedDevOrigins: ["http://192.168.137.1:3000"],
+  transpilePackages: [],
+  outputFileTracingExcludes: {
+    '*': ['./backend/**/*']
   },
-  
-  // Environment variables
-  env: {
-    NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000',
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+    };
+    // Exclude backend from compilation
+    config.watchOptions = {
+      ...config.watchOptions,
+      ignored: ['**/backend/**', '**/node_modules/**']
+    };
+    return config;
   },
-  
-  // Build configuration for separated architecture
-  output: 'standalone',
-  
   images: {
     remotePatterns: [
       {

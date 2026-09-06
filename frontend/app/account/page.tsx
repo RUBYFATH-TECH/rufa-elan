@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ChangeEvent } from "react";
+import { ArrowRight, PackageCheck, ShieldCheck, ShoppingBag } from "lucide-react";
 import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
 import { isKnownAdminEmail } from "@/lib/admin-common";
 
@@ -159,22 +160,36 @@ export default function AccountPage() {
 
   if (!user?.id) {
     return (
-      <section className="mx-auto max-w-5xl px-6 py-20 sm:px-8 lg:px-12">
-        <div className="rounded-[2rem] border border-slate-200 bg-white p-12 shadow-soft">
-          <div className="mb-8">
-            <p className="text-sm uppercase tracking-[0.3em] text-brand-700">Account</p>
-            <h1 className="mt-4 text-4xl font-semibold text-slate-950">Welcome back</h1>
-            <p className="mt-4 text-slate-600">Please sign in or create an account to view your dashboard.</p>
+      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+        <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-soft lg:grid lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="bg-[#e65100] p-8 text-white sm:p-12">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15">
+              <ShoppingBag className="h-5 w-5" />
+            </div>
+            <p className="mt-12 text-xs font-semibold uppercase tracking-[0.26em] text-white/75">RUFA ELAN account</p>
+            <h1 className="mt-4 max-w-sm text-4xl font-bold leading-tight">Everything you love, in one place.</h1>
+            <p className="mt-5 max-w-sm text-sm leading-6 text-white/85">Sign in to follow your deliveries, revisit your favourites, and check out faster.</p>
+            <div className="mt-10 space-y-4 text-sm">
+              <p className="flex items-center gap-3"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15"><PackageCheck className="h-4 w-4" /></span>Simple order tracking</p>
+              <p className="flex items-center gap-3"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15"><ShieldCheck className="h-4 w-4" /></span>Secure, faster checkout</p>
+            </div>
           </div>
-          <div className="grid gap-6 md:grid-cols-2">
-            <Link href="/auth/login" className="rounded-[2rem] border border-slate-200 bg-slate-50 p-8 text-center text-slate-900 transition hover:border-brand-300">
-              <p className="text-xl font-semibold">Login</p>
-              <p className="mt-3 text-slate-600">Access existing account and order history.</p>
-            </Link>
-            <Link href="/auth/register" className="rounded-[2rem] border border-slate-200 bg-slate-50 p-8 text-center text-slate-900 transition hover:border-brand-300">
-              <p className="text-xl font-semibold">Register</p>
-              <p className="mt-3 text-slate-600">Create a new account for fast checkout and tracking.</p>
-            </Link>
+          <div className="p-8 sm:p-12">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#e65100]">Welcome</p>
+            <h2 className="mt-3 text-3xl font-bold text-slate-950">Shop your way</h2>
+            <p className="mt-3 max-w-md text-sm leading-6 text-slate-600">Choose an option below to access your account or create a new one in moments.</p>
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              <Link href="/auth/login" className="group rounded-2xl border border-slate-200 p-6 transition hover:border-[#e65100] hover:shadow-md">
+                <p className="text-lg font-bold text-slate-950">Sign in</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">View orders, saved items, and your account details.</p>
+                <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#e65100]">Continue <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></span>
+              </Link>
+              <Link href="/auth/register" className="group rounded-2xl border border-[#e65100] bg-[#fff7f3] p-6 transition hover:bg-[#ffefe7]">
+                <p className="text-lg font-bold text-slate-950">Create account</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Save your details for a smooth next checkout.</p>
+                <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#e65100]">Get started <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></span>
+              </Link>
+            </div>
           </div>
         </div>
       </section>

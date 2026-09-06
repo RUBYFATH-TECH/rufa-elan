@@ -1,98 +1,197 @@
-<<<<<<< HEAD
-# RUFA ELAN
+# RUFA ELAN - E-commerce Platform
 
-A scalable production-ready e-commerce storefront for RUFA ELAN — a ladies handbag and fashion accessories brand in Ghana.
+A modern MERN stack e-commerce platform for fashion accessories and handbags with a Temu-inspired UI/UX design.
 
-## Stack
+## 📁 Project Structure
 
-- Next.js 15 App Router
-- TypeScript
-- Tailwind CSS + shadcn/ui
-- Supabase PostgreSQL + Auth
-- Paystack payment integration
-- Zustand cart state
-- Zod validation
-- React Hook Form
-- Cloudinary or Supabase Storage support
-
-## Features
-
-- Home, shop, category, product, about, contact, delivery, returns, privacy, terms, FAQ, order tracking
-- Product catalog with categories, variants, prices, ratings, SKU and related items
-- Persistent cart, guest checkout, user checkout
-- Paystack initialization and server-side verification
-- Delivery tracking and order status timeline
-- Customer account pages and auth flows
-- Admin dashboard skeleton with product and order management
-- Supabase Row Level Security policies
-- Sitemap and robots.txt for SEO
-
-## Setup
-
-1. Install dependencies
-
-```bash
-npm install
+```
+rufa-elan/
+├── backend/           # Express.js API server
+│   ├── src/          # Source code
+│   ├── .env          # Backend environment variables
+│   └── package.json  # Backend dependencies
+├── frontend/         # Next.js client application  
+│   ├── app/         # Next.js app directory
+│   ├── components/  # React components
+│   ├── lib/         # Utility libraries
+│   ├── store/       # State management
+│   ├── .env.local   # Frontend environment variables
+│   └── package.json # Frontend dependencies
+├── docs/            # Project documentation
+├── .env             # Shared environment variables
+└── README.md        # This file
 ```
 
-2. Copy environment variables
+## 🚀 Quick Start
 
+### Prerequisites
+- Node.js (v18 or higher)
+- MongoDB (local or Atlas)
+- npm or yarn
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd rufa-elan
+   ```
+
+2. **Install dependencies**
+   ```bash
+   # Install backend dependencies
+   cd backend
+   npm install
+   
+   # Install frontend dependencies
+   cd ../frontend
+   npm install
+   ```
+
+3. **Environment Setup**
+   ```bash
+   # Copy environment files and update with your values
+   cp .env.example .env
+   cp backend/.env.example backend/.env
+   cp frontend/.env.local.example frontend/.env.local
+   ```
+
+4. **Start the application**
+   ```bash
+   # Start backend (from backend directory)
+   cd backend
+   npm run dev
+   
+   # Start frontend (from frontend directory) - in new terminal
+   cd frontend
+   npm run dev
+   ```
+
+### Development URLs
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:8000
+- **API Documentation**: http://localhost:8000/api-docs (if implemented)
+
+## 🛠 Technology Stack
+
+### Frontend
+- **Framework**: Next.js 15 with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **State Management**: Zustand
+- **Forms**: React Hook Form with Zod validation
+- **Icons**: Lucide React
+- **Animations**: Framer Motion
+
+### Backend
+- **Framework**: Express.js
+- **Language**: TypeScript/JavaScript
+- **Database**: MongoDB with Mongoose ODM
+- **Authentication**: JWT tokens
+- **File Upload**: Cloudinary
+- **Payment**: Paystack integration
+- **Email**: Nodemailer
+- **Security**: Helmet, CORS, Rate limiting
+
+### Development Tools
+- **Package Manager**: npm
+- **Code Formatting**: Prettier
+- **Linting**: ESLint
+- **Build Tool**: Next.js build system
+
+## 🎨 UI/UX Features
+
+- **Temu-inspired Design**: High-density product layouts with social proof
+- **Lightning Deals**: Countdown timers and stock progress indicators
+- **Advanced Filtering**: Sort by price, rating, shipping options
+- **Mobile-First**: Responsive design optimized for all devices
+- **Trust Indicators**: Purchase protection, free shipping, ratings
+- **Interactive Elements**: Wishlist, cart, quick view, hover effects
+
+## 🔧 Available Scripts
+
+### Frontend (from `/frontend`)
 ```bash
-cp .env.example .env.local
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run start        # Start production server
+npm run lint         # Run ESLint
+npm run format       # Format code with Prettier
 ```
 
-3. Set your Supabase, Paystack, Cloudinary, and email credentials.
-
-4. Run database migrations in Supabase using `supabase/schema.sql` and `supabase/policies.sql`.
-
-5. Start the dev server
-
+### Backend (from `/backend`)
 ```bash
-npm run dev
+npm run dev          # Start development server with nodemon
+npm run build        # Build TypeScript to JavaScript
+npm run start        # Start production server
+npm run test         # Run tests
+npm run lint         # Run ESLint
 ```
 
-## Supabase deployment
+## 📝 Environment Variables
 
-- Create a Supabase project
-- Enable Auth providers for email/password
-- Apply `supabase/schema.sql` to create the normalized database schema
-- Apply `supabase/policies.sql` to enable RLS and secure access
-- Add Row Level Security policies to protect user data and admin resources
+### Root `.env` (Shared)
+- Database connections
+- JWT secrets
+- Email configuration
+- File upload settings
 
-## Environment Variables
+### Frontend `.env.local`
+- Next.js specific variables
+- Public API keys
+- Client-side configuration
 
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `PAYSTACK_SECRET_KEY`
-- `CLOUDINARY_*` (optional)
-- `RESEND_API_KEY`
-- `NEXTAUTH_URL`
+### Backend `.env`
+- Server configuration
+- Private API keys
+- Database credentials
 
-## Deployment to Vercel
+## 🚀 Deployment
 
-1. Push the repository to GitHub.
-2. Create a new Vercel project connected to the repo.
-3. Add environment variables in Vercel using `.env.example` values.
-4. Set the build command to `npm run build`.
-5. Use the output directory default for Next.js.
-6. Deploy.
+### Frontend Deployment (Vercel/Netlify)
+1. Connect your repository
+2. Set build command: `npm run build`
+3. Set output directory: `.next`
+4. Configure environment variables
 
-## Security checklist
+### Backend Deployment (Railway/Heroku)
+1. Connect your repository
+2. Set build command: `npm run build`
+3. Set start command: `npm start`
+4. Configure environment variables
+5. Set up MongoDB Atlas connection
 
-- Secrets are stored in environment variables
-- Paystack secret key is never exposed in frontend code
-- Payment initialization and verification happen in API routes
-- Supabase Row Level Security enabled for user-owned tables
-- Input validations use Zod schemas
-- Admin pages are gated via middleware
-- HTTPS required in production
+## 📊 Features
 
-## Notes
+- **Product Management**: CRUD operations for products
+- **User Authentication**: Register, login, password reset
+- **Shopping Cart**: Add, remove, update quantities
+- **Wishlist**: Save favorite products
+- **Order Management**: Place and track orders
+- **Payment Integration**: Secure payment processing
+- **Admin Dashboard**: Manage products, orders, customers
+- **Real-time Order Tracking**: Live delivery status
+- **Responsive Design**: Mobile and desktop optimized
 
-This repository provides a strong skeleton for RUFA ELAN. For production readiness, connect the admin dashboard and checkout flow to Supabase functions, implement full auth with Supabase Auth, and wire email/WhatsApp notifications via Resend and messaging APIs.
-=======
-# rufa-elan
-Ladies Fashion e-commerce website
->>>>>>> 26f08d0fc59858fff3204433277c538054887f7c
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit changes: `git commit -am 'Add some feature'`
+4. Push to branch: `git push origin feature/your-feature`
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🆘 Support
+
+For support and questions:
+- Create an issue in the repository
+- Contact the development team
+- Check the documentation in `/docs`
+
+---
+
+Built with ❤️ for RUFA ELAN by the development team.

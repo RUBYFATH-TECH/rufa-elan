@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Navbar from "@/components/navbar";
+import TemuHeader from "@/components/temu-header";
 import Footer from "@/components/footer";
 import WhatsappButton from "@/components/whatsapp-button";
 
@@ -27,8 +27,8 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-slate-50 text-slate-900 antialiased">
-        <Navbar />
+      <body className="min-h-screen bg-gray-50 text-slate-900 antialiased">
+        <TemuHeader />
         <main className="relative">
           {children}
         </main>

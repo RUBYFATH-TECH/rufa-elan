@@ -1,188 +1,224 @@
 # RUFA ELAN Frontend
 
-Next.js frontend application for the RUFA ELAN e-commerce platform.
+Next.js frontend application for the RUFA ELAN e-commerce platform with Temu-inspired UI/UX design.
 
 ## 🚀 Quick Start
 
-### Development
 ```bash
+# Install dependencies
 npm install
-npm run dev
-```
 
-### Production Build
-```bash
+# Start development server
+npm run dev
+
+# Build for production
 npm run build
+
+# Start production server
 npm start
 ```
 
-## 🏗️ Architecture
+## 🛠 Technology Stack
 
-### Directory Structure
-```
-frontend/
-├── app/                    # Next.js App Router pages
-│   ├── (customer)/         # Customer-facing routes
-│   └── (admin)/           # Admin dashboard routes
-├── components/            # React components
-├── lib/                   # Utilities and configurations
-├── store/                 # Zustand state stores
-├── public/               # Static assets
-└── package.json          # Dependencies and scripts
-```
-
-### Key Features
 - **Next.js 15** with App Router
 - **TypeScript** for type safety
 - **Tailwind CSS** for styling
 - **Zustand** for state management
-- **API Client** for backend communication
+- **React Hook Form** with Zod validation
+- **Lucide React** for icons
+- **Framer Motion** for animations
 
-## 🔧 Configuration
+## 📁 Project Structure
 
-### Environment Variables (.env.local)
+```
+frontend/
+├── app/                 # Next.js app directory
+│   ├── (pages)/        # Page components
+│   ├── api/           # API routes
+│   ├── globals.css    # Global styles
+│   └── layout.tsx     # Root layout
+├── components/         # Reusable React components
+│   ├── temu-header.tsx       # Main navigation header
+│   ├── temu-product-card.tsx # Product display card
+│   ├── temu-deals-section.tsx # Promotional sections
+│   ├── category-pills.tsx    # Category navigation
+│   ├── filter-bar.tsx       # Search and filter controls
+│   └── temu-layout.tsx      # Layout wrapper
+├── lib/               # Utility functions and configurations
+│   ├── utils.ts       # Helper functions
+│   ├── sample-data.ts # Mock data for development
+│   └── supabase-*.ts  # Database configurations
+├── store/             # Zustand state management
+│   ├── cart-store.ts   # Shopping cart state
+│   └── wishlist-store.ts # Wishlist state
+├── public/            # Static assets
+└── .env.local         # Environment variables
+```
+
+## 🎨 Design System
+
+### Color Palette
+```typescript
+rufaelan: {
+  primary: "#E65100",       // Main brand color
+  "primary-dark": "#D84315", // Dark variant
+  secondary: "#FF8F65",     // Light orange
+  accent: "#FFF3E0",        // Very light orange
+  dark: "#2E2E2E",          // Dark neutral
+  "dark-light": "#424242",  // Light dark
+  gray: "#FAFAFA",          // Background
+  "gray-light": "#F5F5F5"   // Light background
+}
+```
+
+### Component Architecture
+- **Atomic Design**: Components organized by complexity
+- **Responsive First**: Mobile-optimized with desktop scaling
+- **Accessibility**: WCAG compliant with keyboard navigation
+- **Performance**: Optimized images and lazy loading
+
+## 🔧 Available Scripts
+
 ```bash
-# Backend API URL
+npm run dev          # Start development server (http://localhost:3000)
+npm run build        # Build for production
+npm run start        # Start production server
+npm run lint         # Run ESLint
+npm run format       # Format code with Prettier
+npm run type-check   # Run TypeScript compiler check
+```
+
+## 🌍 Environment Variables
+
+Create a `.env.local` file with:
+
+```env
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+
+# API Configuration
+NEXT_PUBLIC_API_URL=http://localhost:8000/api
 NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
 
-# Supabase (for authentication)
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+# Payment Gateway
+NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=your-paystack-public-key
 
-# Paystack (public key only)
-NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY=pk_test_xxx
+# Application Settings
+NEXT_PUBLIC_APP_NAME=RUFA ELAN
+NEXT_PUBLIC_APP_VERSION=2.0.0
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-### API Communication
-The frontend communicates with the backend via the API client in `lib/api-client.ts`. All API calls are automatically routed to the backend service.
+## 🎯 Key Features
 
-## 🎨 Components
+### Temu-Inspired Design
+- **High-Density Layouts**: Maximum product visibility
+- **Trust Indicators**: Purchase protection, free shipping badges
+- **Social Proof**: Ratings, reviews, "X+ sold" counters
+- **Lightning Deals**: Countdown timers and stock progress
+- **Interactive Elements**: Hover effects, quick actions
 
-### UI Components
-- **Reusable components** in `components/ui/`
-- **Customer components** in `components/customer/`
-- **Admin components** in `components/admin/`
+### E-commerce Functionality
+- **Product Catalog**: Grid/list views with filtering
+- **Shopping Cart**: Add/remove items with persistence
+- **Wishlist**: Save favorite products
+- **User Authentication**: Login, register, profile management
+- **Order Tracking**: Real-time delivery status
+- **Payment Integration**: Secure checkout flow
 
-### Pages Structure
-- **Customer routes**: `/`, `/products`, `/cart`, `/checkout`, etc.
-- **Admin routes**: `/admin/*` (dashboard, products, orders, etc.)
-- **Auth routes**: `/auth/*` (login, register, etc.)
-
-## 📦 Dependencies
-
-### Core Dependencies
-- `next` - React framework
-- `react` & `react-dom` - UI library
-- `typescript` - Type safety
-- `tailwindcss` - Styling
-- `zustand` - State management
-
-### Supabase Integration
-- `@supabase/supabase-js` - Supabase client
-- `@supabase/ssr` - Server-side rendering support
-
-## 🛠️ Development
-
-### Available Scripts
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
-
-### Hot Reload
-The development server supports hot reload for all React components and pages.
-
-## 🚀 Deployment
-
-### Vercel (Recommended)
-```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel --prod
-```
-
-### Manual Deployment
-```bash
-npm run build
-# Deploy the .next folder and package.json
-```
-
-## 🔐 Security
-
-### Authentication
-- Uses Supabase Auth for user authentication
-- JWT tokens handled automatically
-- Admin routes protected by authentication checks
-
-### API Security
-- All sensitive operations routed to backend
-- Client-side validation for UX only
-- No sensitive data stored in frontend
+### Performance Optimizations
+- **Image Optimization**: Next.js Image component with lazy loading
+- **Code Splitting**: Automatic route-based splitting
+- **State Management**: Efficient Zustand stores
+- **Caching**: Browser and server-side caching
 
 ## 📱 Responsive Design
 
-The frontend is fully responsive and works across:
-- **Desktop** - Full functionality
-- **Tablet** - Optimized layout
-- **Mobile** - Touch-friendly interface
+### Breakpoints
+- **Mobile**: 0px - 768px (2-3 columns)
+- **Tablet**: 768px - 1024px (3-4 columns)  
+- **Desktop**: 1024px+ (4-6 columns)
+
+### Mobile Features
+- Touch-optimized interactions
+- Collapsible navigation menu
+- Swipe gestures for categories
+- Optimized button sizes
 
 ## 🧪 Testing
 
 ```bash
 # Run tests
-npm test
+npm run test
+
+# Run tests with coverage
+npm run test:coverage
 
 # Run tests in watch mode
 npm run test:watch
 ```
 
-## 📊 Performance
+## 🚀 Deployment
 
-### Optimization Features
-- **Next.js optimization** - Built-in performance features
-- **Image optimization** - Automatic WebP conversion
-- **Code splitting** - Automatic route-based splitting
-- **Static generation** - Pre-rendered pages where possible
+### Vercel (Recommended)
+1. Connect your GitHub repository
+2. Configure environment variables
+3. Deploy automatically on push
 
-### Bundle Analysis
+### Manual Deployment
 ```bash
-npm run analyze
+# Build the application
+npm run build
+
+# Start production server
+npm start
 ```
 
-## 🔄 State Management
+## 🔍 Development Guidelines
 
-### Zustand Stores
-- **Product store** - Product catalog state
-- **Cart store** - Shopping cart state  
-- **Auth store** - Authentication state
-- **Admin store** - Admin dashboard state
-
-### Server State
-Server data is fetched via the API client and cached appropriately.
-
-## 🎯 Best Practices
-
-### Code Organization
-- **Separation of concerns** - Clear component boundaries
-- **Reusable components** - DRY principle
-- **TypeScript** - Full type coverage
-- **Error boundaries** - Graceful error handling
+### Code Style
+- Use TypeScript for all components
+- Follow React best practices
+- Implement proper error boundaries
+- Use semantic HTML elements
 
 ### Performance
-- **Lazy loading** - Components loaded on demand
-- **Memoization** - Prevent unnecessary re-renders
-- **Efficient re-renders** - Optimized state updates
+- Optimize images before adding to public folder
+- Use dynamic imports for large components
+- Implement proper loading states
+- Monitor Core Web Vitals
 
-## 🤝 Contributing
+### Accessibility
+- Include proper alt text for images
+- Maintain keyboard navigation support
+- Use proper heading hierarchy
+- Test with screen readers
 
-1. Follow the existing component structure
-2. Use TypeScript for all new code
-3. Add tests for new components
-4. Follow the established naming conventions
-5. Update documentation for new features
+## 🐛 Troubleshooting
+
+### Common Issues
+1. **Build Errors**: Check TypeScript types and imports
+2. **Environment Variables**: Ensure NEXT_PUBLIC_ prefix for client-side
+3. **API Connections**: Verify backend server is running
+4. **Styling Issues**: Check Tailwind CSS compilation
+
+### Debug Mode
+```bash
+# Enable detailed logging
+NODE_OPTIONS='--inspect' npm run dev
+
+# Run with debug information
+DEBUG=* npm run dev
+```
+
+## 📚 Documentation
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Tailwind CSS](https://tailwindcss.com/docs)
+- [Zustand State Management](https://github.com/pmndrs/zustand)
+- [React Hook Form](https://react-hook-form.com/)
 
 ---
 
-**Part of the RUFA ELAN separated architecture.**
+For more information, see the main project README or contact the development team.

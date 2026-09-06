@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { LockKeyhole, PackageCheck, ShieldCheck } from "lucide-react";
 import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
 import { isKnownAdminEmail } from "@/lib/admin-common";
 import { GoogleOAuthButton } from "@/components/google-oauth-button";
@@ -16,7 +17,6 @@ const loginSchema = z.object({
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
-
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export default function LoginPage() {
@@ -30,134 +30,75 @@ export default function LoginPage() {
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
       const email = data.session?.user?.email?.trim().toLowerCase();
-      if (!data.session || !email) {
-        return;
-      }
-
-      if (isKnownAdminEmail(email)) {
+      if (!data.session || !email) return;
+      if (isKnownAdminEmail(email) || (await fetch("/api/admin/check")).ok) {
         router.replace("/admin/dashboard");
         return;
       }
-
-      const res = await fetch("/api/admin/check");
-      if (res.ok) {
-        router.replace("/admin/dashboard");
-        return;
-      }
-
       router.replace("/account");
     };
-
     checkSession();
   }, [router, supabase]);
 
   const signInWithGoogle = async () => {
     setServerMessage(null);
     setIsLoading(true);
-
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}/account` }
     });
-
     setIsLoading(false);
-
-    if (error) {
-      setServerMessage(error.message);
-      return;
-    }
-
-    if (data?.url) {
-      window.location.assign(data.url);
-    }
-  };
-
-  const checkAdminSession = async () => {
-    try {
-      const res = await fetch("/api/admin/check");
-      return res.ok;
-    } catch {
-      return false;
-    }
-  };
-
-  const checkAdminEmail = async (email: string) => {
-    try {
-      const { data: adminUser, error: adminError } = await supabase
-        .from("admin_users")
-        .select("id")
-        .ilike("email", email)
-        .maybeSingle();
-
-      return !!adminUser && !adminError;
-    } catch {
-      return false;
-    }
+    if (error) return setServerMessage(error.message);
+    if (data?.url) window.location.assign(data.url);
   };
 
   const onSubmit = async (values: LoginFormValues) => {
     setServerMessage(null);
     setIsLoading(true);
-
     const email = values.email.trim().toLowerCase();
-    const password = values.password;
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-
+    const { error } = await supabase.auth.signInWithPassword({ email, password: values.password });
     if (error) {
       setIsLoading(false);
-      setServerMessage(error.message);
-      return;
+      return setServerMessage(error.message);
     }
-
-    const sessionResponse = await supabase.auth.getSession();
+    const session = await supabase.auth.getSession();
     setIsLoading(false);
-
-    const currentEmail = sessionResponse.data.session?.user?.email?.trim().toLowerCase() ?? email;
-    const isAdmin = await checkAdminSession() || isKnownAdminEmail(currentEmail) || await checkAdminEmail(currentEmail);
-
+    const currentEmail = session.data.session?.user?.email?.trim().toLowerCase() ?? email;
+    const isAdmin = isKnownAdminEmail(currentEmail) || (await fetch("/api/admin/check")).ok;
     await sleep(150);
     router.push(isAdmin ? "/admin/dashboard" : "/account");
-    return;
   };
 
   return (
-    <section className="mx-auto max-w-md px-6 py-20 sm:px-8 lg:px-12">
-      <div className="rounded-[2rem] border border-slate-200 bg-white p-10 shadow-soft">
-        <div className="mb-6 flex items-center justify-center">
-          <img src="/images/logo.png" alt="RUFA ELAN" className="h-12 w-auto" />
-        </div>
-        <h1 className="text-3xl font-semibold text-slate-950">Login</h1>
-        <p className="mt-2 text-sm text-slate-600">Sign in to access your orders, wishlist, and delivery tracking.</p>
-        <div className="mt-6">
-          <GoogleOAuthButton onClick={signInWithGoogle} disabled={isLoading} />
-          <div className="relative my-6 text-center text-xs uppercase text-slate-400">
-            <span className="absolute left-0 top-1/2 h-px w-full bg-slate-200"></span>
-            <span className="relative inline-block bg-white px-3">or continue with email</span>
+    <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+      <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-soft lg:grid lg:grid-cols-[0.85fr_1.15fr]">
+        <aside className="hidden bg-[#e65100] p-12 text-white lg:block">
+          <img src="/images/logo.png" alt="RUFA ELAN" className="h-12 w-12 rounded-full" />
+          <p className="mt-16 text-xs font-semibold uppercase tracking-[0.28em] text-white/75">Welcome back</p>
+          <h1 className="mt-4 text-4xl font-bold leading-tight">Your favourites are waiting.</h1>
+          <p className="mt-5 max-w-sm text-sm leading-6 text-white/85">Sign in to manage your orders and enjoy a faster checkout.</p>
+          <div className="mt-12 space-y-4 text-sm text-white/90">
+            <p className="flex items-center gap-3"><PackageCheck className="h-5 w-5" /> Track every delivery</p>
+            <p className="flex items-center gap-3"><ShieldCheck className="h-5 w-5" /> Secure account access</p>
           </div>
+        </aside>
+        <div className="mx-auto w-full max-w-xl p-7 sm:p-10 lg:p-12">
+          <div className="flex items-center gap-3 lg:hidden"><img src="/images/logo.png" alt="RUFA ELAN" className="h-10 w-10 rounded-full" /><span className="text-sm font-bold tracking-[0.14em] text-slate-950">RUFA ELAN</span></div>
+          <p className="mt-8 text-xs font-semibold uppercase tracking-[0.22em] text-[#e65100] lg:mt-0">Sign in</p>
+          <h1 className="mt-3 text-3xl font-bold text-slate-950">Welcome back</h1>
+          <p className="mt-2 text-sm leading-6 text-slate-600">Enter your details to view your orders, saved items, and delivery updates.</p>
+          <div className="mt-7">
+            <GoogleOAuthButton onClick={signInWithGoogle} disabled={isLoading} />
+            <div className="relative my-7 text-center text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400"><span className="absolute left-0 top-1/2 h-px w-full bg-slate-200" /><span className="relative inline-block bg-white px-3">or continue with email</span></div>
+          </div>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <label className="block text-sm font-medium text-slate-800">Email<input type="email" autoComplete="email" placeholder="you@example.com" {...register("email")} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-[#e65100] focus:bg-white focus:ring-2 focus:ring-[#e65100]/10" />{errors.email ? <p className="mt-2 text-xs text-red-600">{errors.email.message}</p> : null}</label>
+            <label className="block text-sm font-medium text-slate-800"><span className="flex items-center justify-between">Password <Link href="/auth/forgot-password" className="font-semibold text-[#e65100] hover:text-[#d84315]">Forgot password?</Link></span><input type="password" autoComplete="current-password" placeholder="Enter your password" {...register("password")} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-[#e65100] focus:bg-white focus:ring-2 focus:ring-[#e65100]/10" />{errors.password ? <p className="mt-2 text-xs text-red-600">{errors.password.message}</p> : null}</label>
+            <button type="submit" disabled={isLoading} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-[#e65100] px-6 py-3.5 text-sm font-bold text-white transition hover:bg-[#d84315] disabled:cursor-not-allowed disabled:opacity-50"><LockKeyhole className="h-4 w-4" />{isLoading ? "Signing in..." : "Sign in"}</button>
+          </form>
+          {serverMessage ? <p className="mt-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{serverMessage}</p> : null}
+          <p className="mt-7 border-t border-slate-100 pt-6 text-center text-sm text-slate-600">Don&apos;t have an account? <Link href="/auth/register" className="font-bold text-[#e65100] hover:text-[#d84315]">Create one</Link></p>
         </div>
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
-          <label className="block text-sm text-slate-700">
-            Email
-            <input {...register("email")} className="mt-3 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-brand-300" />
-            {errors.email ? <p className="mt-2 text-xs text-red-600">{errors.email.message}</p> : null}
-          </label>
-          <label className="block text-sm text-slate-700">
-            Password
-            <input type="password" {...register("password")} className="mt-3 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-brand-300" />
-            {errors.password ? <p className="mt-2 text-xs text-red-600">{errors.password.message}</p> : null}
-          </label>
-          <button type="submit" disabled={isLoading} className="w-full rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50">
-            {isLoading ? "Signing in..." : "Sign in"}
-          </button>
-        </form>
-
-        {serverMessage ? <p className="mt-5 text-sm text-slate-700">{serverMessage}</p> : null}
-
-        <p className="mt-6 text-sm text-slate-600">Don’t have an account? <Link href="/auth/register" className="font-semibold text-brand-700">Create one</Link></p>
-        <p className="mt-3 text-sm text-slate-600"><Link href="/auth/forgot-password" className="font-semibold text-brand-700">Forgot password?</Link></p>
       </div>
     </section>
   );

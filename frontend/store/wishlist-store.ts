@@ -12,6 +12,7 @@ type WishlistState = {
   items: WishlistItem[];
   addItem: (item: WishlistItem) => void;
   removeItem: (id: string) => void;
+  toggleItem: (item: WishlistItem) => void;
   hasItem: (id: string) => boolean;
   hydrate: () => void;
 };
@@ -31,7 +32,18 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
     set({ items });
   },
-  hasItem: (id) => get().items.some((wishlistItem) => wishlistItem.id === id),
+  toggleItem: (item) => {
+    const existing = get().items.find((wishlistItem) => wishlistItem.id === item.id);
+    let items;
+    if (existing) {
+      items = get().items.filter((wishlistItem) => wishlistItem.id !== item.id);
+    } else {
+      items = [...get().items, item];
+    }
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    set({ items });
+  },
+  hasItem: (id) => get().items.some((wishlistItem) => wishlistItem.id !== id),
   hydrate: () => {
     try {
       const stored = window.localStorage.getItem(STORAGE_KEY);
