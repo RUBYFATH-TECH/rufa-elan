@@ -3,7 +3,19 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Zap, Clock, ShoppingCart, Star } from "lucide-react";
+import {
+  ArrowRight,
+  Crown,
+  Footprints,
+  Gem,
+  Heart,
+  ShoppingBag,
+  ShoppingCart,
+  Sparkles,
+  Star,
+  Shirt,
+  Zap,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Deal {
@@ -72,61 +84,72 @@ const lightningDeals: Deal[] = [
     rating: 4.5,
     reviewCount: 321,
     slug: "hello-kitty-decorative-set"
-  }
-];
-
-const clearanceDeals: Deal[] = [
-  {
-    id: "clearance-1",
-    title: "Wireless Charging Pad with LED Indicator",
-    originalPrice: 89.99,
-    currentPrice: 34.99,
-    image: "/images/2026-07-21 at 16.58.28.jpeg",
-    timeLeft: 0, // No countdown for clearance
-    stockLeft: 3,
-    maxStock: 25,
-    rating: 4.4,
-    reviewCount: 765,
-    slug: "wireless-charging-pad"
   },
   {
-    id: "clearance-2",
-    title: "Stainless Steel Water Bottle 500ml",
-    originalPrice: 29.99,
-    currentPrice: 12.99,
-    image: "/images/Image 2026-07-21 at 16.58.27.jpeg",
-    timeLeft: 0,
+    id: "deal-5",
+    title: "Structured Ladies' Shoulder Bag with Gold Detail",
+    originalPrice: 180.0,
+    currentPrice: 112.0,
+    image: "/images/WhatsApp Image 2026-07-21 at 16.58.28.jpeg",
+    timeLeft: 15454,
+    stockLeft: 10,
+    maxStock: 30,
+    rating: 4.8,
+    reviewCount: 694,
+    slug: "structured-ladies-shoulder-bag"
+  },
+  {
+    id: "deal-6",
+    title: "Elegant Everyday Tote Bag",
+    originalPrice: 210.0,
+    currentPrice: 136.0,
+    image: "/images/2026-07-21 at 16.58.28.jpeg",
+    timeLeft: 11454,
     stockLeft: 7,
-    maxStock: 35,
-    rating: 4.3,
-    reviewCount: 432,
-    slug: "stainless-steel-water-bottle"
+    maxStock: 25,
+    rating: 4.7,
+    reviewCount: 518,
+    slug: "elegant-everyday-tote-bag"
   }
 ];
 
-function CountdownTimer({ seconds }: { seconds: number }) {
+const ladiesCategories = [
+  { name: "Dresses", count: "Explore styles", href: "/shop/dresses", icon: Crown, color: "bg-[#7c3aed]", iconColor: "bg-white/20" },
+  { name: "Tops & Blouses", count: "New arrivals", href: "/shop/tops-blouses", icon: Shirt, color: "bg-[#db2777]", iconColor: "bg-white/20" },
+  { name: "Shoes", count: "Step in style", href: "/shop/womens-shoes", icon: Footprints, color: "bg-[#0f766e]", iconColor: "bg-white/20" },
+  { name: "Handbags", count: "Everyday favourites", href: "/shop/handbags", icon: ShoppingBag, color: "bg-[#c2410c]", iconColor: "bg-white/20" },
+  { name: "Jewellery", count: "Finishing touches", href: "/shop/jewellery", icon: Gem, color: "bg-[#a16207]", iconColor: "bg-white/20" },
+  { name: "Beauty", count: "Glow essentials", href: "/shop/beauty", icon: Sparkles, color: "bg-[#be185d]", iconColor: "bg-white/20" },
+  { name: "Lingerie & Sleepwear", count: "Feel your best", href: "/shop/lingerie-sleepwear", icon: Heart, color: "bg-[#e11d48]", iconColor: "bg-white/20" },
+  { name: "Accessories", count: "Complete the look", href: "/shop/accessories", icon: Sparkles, color: "bg-[#4338ca]", iconColor: "bg-white/20" },
+];
+
+function FlashSaleCountdown({ seconds }: { seconds: number }) {
   const [timeLeft, setTimeLeft] = useState(seconds);
 
   useEffect(() => {
     if (timeLeft <= 0) return;
-
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => prev - 1);
-    }, 1000);
-
+    const timer = setInterval(() => setTimeLeft((previous) => previous - 1), 1000);
     return () => clearInterval(timer);
   }, [timeLeft]);
 
-  const hours = Math.floor(timeLeft / 3600);
-  const minutes = Math.floor((timeLeft % 3600) / 60);
-  const secs = timeLeft % 60;
+  const units = [
+    { value: Math.floor(timeLeft / 3600), label: "HR" },
+    { value: Math.floor((timeLeft % 3600) / 60), label: "MIN" },
+    { value: timeLeft % 60, label: "SEC" },
+  ];
 
   return (
-    <div className="flex items-center gap-1 text-xs font-bold text-white">
-      <Clock className="h-3 w-3" />
-      {String(hours).padStart(2, '0')}:
-      {String(minutes).padStart(2, '0')}:
-      {String(secs).padStart(2, '0')}
+    <div className="flex items-center gap-1.5">
+      {units.map((unit, index) => (
+        <div key={unit.label} className="flex items-center gap-1.5">
+          <span className="flex h-9 min-w-9 flex-col items-center justify-center rounded-md bg-slate-900 px-1 text-white">
+            <strong className="text-sm leading-4">{String(unit.value).padStart(2, "0")}</strong>
+            <span className="text-[8px] font-semibold leading-3 text-slate-300">{unit.label}</span>
+          </span>
+          {index < units.length - 1 && <span className="text-sm font-bold text-slate-700">:</span>}
+        </div>
+      ))}
     </div>
   );
 }
@@ -153,13 +176,6 @@ function DealCard({ deal, isLightning = false }: { deal: Deal; isLightning?: boo
               -{discountPercentage}%
             </div>
           </div>
-
-          {/* Timer for Lightning Deals */}
-          {isLightning && deal.timeLeft > 0 && (
-            <div className="absolute right-2 top-2 rounded bg-black/70 px-2 py-1">
-              <CountdownTimer seconds={deal.timeLeft} />
-            </div>
-          )}
 
           {/* Quick Add to Cart */}
           <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
@@ -226,56 +242,75 @@ export default function TemuDealsSection() {
   return (
     <div className="bg-gray-50 py-8">
       <div className="mx-auto max-w-7xl px-4">
-        {/* Lightning Deals */}
+        {/* Flash Sales */}
         <div className="mb-12">
-          <div className="mb-6 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 px-4 py-2 text-white">
-                <Zap className="h-5 w-5 fill-current" />
-                <span className="text-xl font-bold">LIGHTNING DEALS</span>
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2 text-rose-500">
+                <span className="flex h-6 w-6 items-center justify-center rounded-md bg-rose-500 text-white">
+                  <Zap className="h-3.5 w-3.5 fill-current" />
+                </span>
+                <span className="text-xl font-extrabold">FLASH SALES</span>
               </div>
-              <span className="text-sm text-slate-600">Limited-time offers</span>
+              <span className="text-sm font-medium text-slate-600">Ends in</span>
+              <FlashSaleCountdown seconds={lightningDeals[0].timeLeft} />
             </div>
-            <Link 
-              href="/deals/lightning" 
-              className="text-sm font-medium text-rufaelan-primary hover:text-rufaelan-primary-dark"
+            <Link
+              href="/deals/lightning"
+              className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-rufaelan-primary hover:text-rufaelan-primary-dark"
             >
-              View all →
+              View all <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {lightningDeals.map((deal) => (
-              <DealCard key={deal.id} deal={deal} isLightning={true} />
+              <div key={deal.id} className="w-44 shrink-0 snap-start sm:w-52">
+                <DealCard deal={deal} isLightning={true} />
+              </div>
             ))}
           </div>
         </div>
 
-        {/* Clearance Deals */}
-        <div>
-          <div className="mb-6 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 rounded-full bg-gradient-to-r from-red-500 to-pink-500 px-4 py-2 text-white">
-                <span className="text-xl font-bold">🔥 CLEARANCE DEALS</span>
-              </div>
-              <span className="text-sm text-slate-600">Limited stock</span>
+        {/* Shop Ladies' Fashion */}
+        <section className="mb-12" aria-labelledby="ladies-fashion-heading">
+          <div className="mb-6 flex items-end justify-between gap-4">
+            <div>
+              <h2 id="ladies-fashion-heading" className="text-2xl font-bold tracking-tight text-slate-900">
+                Shop Ladies&apos; Fashion
+              </h2>
+              <p className="mt-1 text-sm text-slate-600">Find a look made for you</p>
             </div>
-            <Link 
-              href="/deals/clearance" 
-              className="text-sm font-medium text-rufaelan-primary hover:text-rufaelan-primary-dark"
+            <Link
+              href="/shop"
+              className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-rufaelan-primary transition hover:text-rufaelan-primary-dark"
             >
-              View all →
+              All fashion <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">
-            {clearanceDeals.map((deal) => (
-              <DealCard key={deal.id} deal={deal} />
-            ))}
-          </div>
-        </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {ladiesCategories.map((category) => {
+              const Icon = category.icon;
 
-        <div className="mt-12 overflow-hidden rounded-3xl bg-[#2b1b17] text-white shadow-lg">
+              return (
+                <Link
+                  key={category.name}
+                  href={category.href}
+                  className={`group flex min-h-36 flex-col items-center justify-center rounded-2xl px-3 py-5 text-center text-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg ${category.color}`}
+                >
+                  <span className={`mb-3 flex h-12 w-12 items-center justify-center rounded-xl ${category.iconColor}`}>
+                    <Icon className="h-6 w-6" strokeWidth={2.2} />
+                  </span>
+                  <span className="text-sm font-bold">{category.name}</span>
+                  <span className="mt-1 text-xs text-white/80">{category.count}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
+        <div className="overflow-hidden rounded-3xl bg-[#2b1b17] text-white shadow-lg">
           <div className="grid min-h-[360px] lg:grid-cols-[1fr_1.05fr]">
             <div className="flex flex-col justify-center px-7 py-12 sm:px-12 lg:px-14">
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#f3c2a7]">Curated for you</p>

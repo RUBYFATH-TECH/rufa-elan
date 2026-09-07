@@ -48,9 +48,7 @@ export default function OrderTrackingPage() {
   const pollRef = useRef<NodeJS.Timeout | null>(null);
   const lastOrderRef = useRef<string | null>(null);
 
-  const { register, handleSubmit, formState } = useForm<OrderFormValues>({
-    resolver: zodResolver(orderTrackingSchema)
-  });
+  const { register, handleSubmit, formState, reset } = useForm<OrderFormValues>({ resolver: zodResolver(orderTrackingSchema) });
 
   const fetchOrder = useCallback(async (orderNumber: string) => {
     const response = await fetch("/api/order-tracking", {
@@ -70,15 +68,15 @@ export default function OrderTrackingPage() {
     setError(null);
   }, []);
 
-  const onSubmit = async (values: OrderFormValues) => {
+  const trackOrder = useCallback(async (orderNumber: string) => {
     setError(null);
     setResult(null);
     setIsLoading(true);
     setIsPolling(false);
     if (pollRef.current) clearInterval(pollRef.current);
 
-    await fetchOrder(values.orderNumber);
-    lastOrderRef.current = values.orderNumber;
+    await fetchOrder(orderNumber);
+    lastOrderRef.current = orderNumber;
     setIsLoading(false);
 
     // Start real-time polling every 5 seconds
@@ -88,7 +86,17 @@ export default function OrderTrackingPage() {
         fetchOrder(lastOrderRef.current);
       }
     }, 5000);
-  };
+  }, [fetchOrder]);
+
+  const onSubmit = async (values: OrderFormValues) => trackOrder(values.orderNumber);
+
+  useEffect(() => {
+    const orderNumberFromUrl = new URLSearchParams(window.location.search).get("orderNumber")?.trim();
+    if (orderNumberFromUrl) {
+      reset({ orderNumber: orderNumberFromUrl });
+      trackOrder(orderNumberFromUrl);
+    }
+  }, [reset, trackOrder]);
 
   // Cleanup polling on unmount
   useEffect(() => {
