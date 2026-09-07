@@ -189,7 +189,7 @@ npm run dev
 
 - **Supabase Project**: https://rxvpxsoadadbodfskhky.supabase.co
 - **Supabase Dashboard**: https://supabase.com/dashboard/project/rxvpxsoadadbodfskhky
-- **Production URL**: https://rufaelan.vercel.app
+- **Production URL**: Set with `NEXT_PUBLIC_APP_URL` for the current frontend deployment
 - **Local Frontend**: http://localhost:3000
 - **Local Backend**: http://localhost:8000
 

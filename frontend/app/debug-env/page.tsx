@@ -93,8 +93,7 @@ export default function DebugEnvPage() {
                 <p className="text-sm font-semibold mb-2">Generated OAuth URL:</p>
                 <p className="text-xs font-mono break-all text-blue-600">{oauthUrl}</p>
                 <div className="mt-2 text-xs">
-                  <p><strong>Contains localhost?</strong> {oauthUrl.includes('localhost') ? '✅ Yes' : '❌ No'}</p>
-                  <p><strong>Contains production URL?</strong> {oauthUrl.includes('rufaelan.vercel.app') || oauthUrl.includes('rufa-elan.vercel.app') ? '❌ Yes' : '✅ No'}</p>
+                  <p><strong>Contains the expected callback?</strong> {oauthUrl.includes(encodeURIComponent(`${window.location.origin}/auth/callback`)) ? '✅ Yes' : '❌ No'}</p>
                 </div>
               </div>
             )}
@@ -108,7 +107,7 @@ export default function DebugEnvPage() {
               <li>Restart the server: <code>npm run dev</code></li>
               <li>Clear browser cache or try incognito mode</li>
               <li>Test the OAuth URL generation above</li>
-              <li>If URL still contains production domain, check Supabase dashboard</li>
+              <li>If the generated URL does not contain the expected callback, check Supabase URL Configuration</li>
             </ol>
           </div>
 

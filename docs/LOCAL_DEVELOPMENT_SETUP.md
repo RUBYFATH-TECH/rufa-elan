@@ -40,15 +40,11 @@ NEXTAUTH_URL=http://localhost:3000
 
 ### **Production Flow (Deployed):**
 1. User clicks "Login with Google"
-2. Google OAuth redirects to: `https://rufaelan.vercel.app/auth/callback`
+2. Google OAuth redirects to: `<your-current-app-url>/auth/callback`
 3. Same callback processing logic
 4. Redirects to appropriate dashboard
 
 ## 📱 **Testing the Fix**
-
-### **Before the Fix:**
-- ❌ OAuth redirected to `https://rufa-elan.vercel.app/?code=...`
-- ❌ Users landed on production site instead of local development
 
 ### **After the Fix:**
 - ✅ OAuth redirects to `http://localhost:3000/auth/callback`
@@ -94,11 +90,11 @@ If you need to add `http://localhost:3000/auth/callback` to your Google OAuth co
 4. Edit your OAuth 2.0 Client ID
 5. Add to "Authorized redirect URIs":
    - `http://localhost:3000/auth/callback`
-   - Keep existing: `https://rufaelan.vercel.app/auth/callback`
+   - `<your-current-app-url>/auth/callback`
 
 ### **Current Redirect URIs Should Include:**
 - `http://localhost:3000/auth/callback` (Development)
-- `https://rufaelan.vercel.app/auth/callback` (Production)
+- `<your-current-app-url>/auth/callback` (Production)
 
 ## 🔍 **Debugging Tools**
 
