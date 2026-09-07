@@ -275,16 +275,28 @@ export default function TemuDealsSection() {
           </div>
         </div>
 
-        {/* Stay cool, stay fresh banner */}
-        <div className="mt-12 rounded-2xl bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 p-8 text-center text-white">
-          <h2 className="text-3xl font-bold mb-4">🏖️ Stay cool, stay fresh 🏖️</h2>
-          <p className="text-lg mb-6">Summer essentials at unbeatable prices</p>
-          <Link 
-            href="/summer-deals"
-            className="inline-block rounded-full bg-white px-8 py-3 text-lg font-bold text-purple-600 hover:bg-slate-100 transition-colors"
-          >
-            Shop Summer Collection
-          </Link>
+        <div className="mt-12 overflow-hidden rounded-3xl bg-[#2b1b17] text-white shadow-lg">
+          <div className="grid min-h-[360px] lg:grid-cols-[1fr_1.05fr]">
+            <div className="flex flex-col justify-center px-7 py-12 sm:px-12 lg:px-14">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#f3c2a7]">Curated for you</p>
+              <h2 className="mt-4 max-w-md text-3xl font-semibold leading-tight sm:text-4xl">Elevate the everyday.</h2>
+              <p className="mt-4 max-w-md text-sm leading-6 text-white/75 sm:text-base">Beautiful finishing pieces, selected to bring a refined touch to every look.</p>
+              <Link href="/shop" className="mt-8 inline-flex w-fit items-center rounded-full bg-[#e65100] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#d84315]">
+                Shop new arrivals
+              </Link>
+            </div>
+            <div className="grid grid-cols-3 gap-2 bg-[#f5e9e3] p-3 sm:gap-3 sm:p-5">
+              {[
+                { src: "/images/Image 2026-07-21 at 16.58.27.jpeg", alt: "RUFA ELAN jewellery collection", className: "mt-8" },
+                { src: "/images/WhatsApp Image 2026-07-21 at 16.58.28.jpeg", alt: "RUFA ELAN fashion accessory", className: "mb-8" },
+                { src: "/images/WhatsApp Image 2026-07-21 at 16.58.31.jpeg", alt: "RUFA ELAN beauty accessory", className: "my-4" }
+              ].map((image) => (
+                <div key={image.src} className={`relative overflow-hidden rounded-2xl shadow-md ${image.className}`}>
+                  <Image src={image.src} alt={image.alt} fill sizes="(min-width: 1024px) 18vw, 30vw" className="object-cover transition duration-500 hover:scale-105" />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

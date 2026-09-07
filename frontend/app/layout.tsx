@@ -4,14 +4,16 @@ import TemuHeader from "@/components/temu-header";
 import Footer from "@/components/footer";
 import WhatsappButton from "@/components/whatsapp-button";
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
 export const metadata: Metadata = {
   title: "RUFA ELAN | Quality and Affordable Women's Fashion Accessories in Ghana",
   description: "RUFA ELAN is a premium ladies Fashion Accessories store in Ghana offering nationwide delivery, trusted checkout, and a luxury shopping experience.",
-  metadataBase: new URL("https://rufaelan.vercel.app"),
+  metadataBase: new URL(appUrl),
   openGraph: {
     title: "RUFA ELAN | Quality and Affordable Women's Fashion Accessories",
     description: "Shop premium ladies fashion accessories with nationwide delivery across Ghana.",
-    url: "https://rufaelan.vercel.app",
+    url: appUrl,
     siteName: "RUFA ELAN",
     locale: "en_GH",
     type: "website"

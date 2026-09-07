@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/cart-store";
-import { ShoppingBag, Trash2 } from "lucide-react";
+import { CircleUserRound, ShoppingBag, Trash2, X } from "lucide-react";
+import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
 
 export default function CartPage() {
   const router = useRouter();
@@ -11,6 +13,17 @@ export default function CartPage() {
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
   const total = useMemo(() => items.reduce((sum, item) => sum + item.price * item.quantity, 0), [items]);
+  const [showAccountPrompt, setShowAccountPrompt] = useState(false);
+
+  const startCheckout = async () => {
+    const supabase = createClientComponentSupabaseClient();
+    const { data } = await supabase.auth.getSession();
+    if (data.session) {
+      router.push("/checkout");
+      return;
+    }
+    setShowAccountPrompt(true);
+  };
 
   if (items.length === 0) {
     return (
@@ -59,13 +72,37 @@ export default function CartPage() {
             <p className="mt-3 text-sm">Delivery fees calculated at checkout based on city and service.</p>
           </div>
           <button
-            onClick={() => router.push("/checkout")}
+            onClick={startCheckout}
             className="w-full rounded-full bg-slate-950 px-6 py-4 text-sm font-semibold text-white transition hover:bg-slate-800"
           >
             Proceed to checkout
           </button>
         </aside>
       </div>
+
+      {showAccountPrompt ? (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="account-prompt-title">
+          <div className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white p-7 shadow-2xl sm:p-9">
+            <button onClick={() => setShowAccountPrompt(false)} aria-label="Close" className="absolute right-5 top-5 rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-950">
+              <X className="h-5 w-5" />
+            </button>
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff1e9] text-[#e65100]">
+              <CircleUserRound className="h-6 w-6" />
+            </div>
+            <p className="mt-6 text-xs font-semibold uppercase tracking-[0.24em] text-[#e65100]">Almost there</p>
+            <h2 id="account-prompt-title" className="mt-3 text-2xl font-semibold text-slate-950">Sign in to continue</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-600">Sign in or create a free account to securely continue to checkout and keep track of your order.</p>
+            <div className="mt-7 grid gap-3 sm:grid-cols-2">
+              <Link href="/auth/login?redirect=/checkout" className="inline-flex items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
+                Sign in
+              </Link>
+              <Link href="/auth/register?redirect=/checkout" className="inline-flex items-center justify-center rounded-full border border-[#e65100] px-5 py-3 text-sm font-semibold text-[#e65100] transition hover:bg-[#fff7f3]">
+                Create account
+              </Link>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

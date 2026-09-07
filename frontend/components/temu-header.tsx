@@ -63,7 +63,7 @@ export default function TemuHeader() {
           {/* Right side - Actions */}
           <div className="flex shrink-0 items-center justify-self-end gap-3 sm:gap-5">
             {/* Orders & Account */}
-            <Link href="/account" className="hidden items-center gap-2 text-sm text-gray-700 hover:text-gray-900 md:flex">
+            <Link href="/auth/login" className="hidden items-center gap-2 text-sm text-gray-700 hover:text-gray-900 md:flex">
               <User className="h-5 w-5" />
               <div className="text-left">
                 <div className="text-xs text-gray-500">Orders &</div>
@@ -106,7 +106,7 @@ export default function TemuHeader() {
           <div className="mx-auto max-w-7xl px-4 py-4">
             <div className="space-y-4">
               <Link 
-                href="/account" 
+                href="/auth/login" 
                 className="flex items-center gap-3 text-sm font-medium text-gray-700"
                 onClick={() => setMobileMenuOpen(false)}
               >

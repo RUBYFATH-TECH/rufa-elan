@@ -47,7 +47,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Request timeout
 app.use((req, res, next) => {
-  res.timeout(30000); // 30 seconds timeout
+  req.setTimeout(30000); // 30 seconds timeout
   next();
 });
 

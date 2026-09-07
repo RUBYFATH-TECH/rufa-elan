@@ -2,307 +2,565 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, type ChangeEvent } from "react";
-import { ArrowRight, PackageCheck, ShieldCheck, ShoppingBag } from "lucide-react";
+import { useEffect, useState } from "react";
+import { 
+  User, 
+  ShoppingBag, 
+  Heart, 
+  MapPin, 
+  CreditCard, 
+  Bell, 
+  Settings,
+  Package,
+  Truck,
+  CheckCircle,
+  Clock,
+  Star,
+  TrendingUp,
+  ArrowRight,
+  Edit,
+  LogOut
+} from "lucide-react";
 import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
 import { isKnownAdminEmail } from "@/lib/admin-common";
 
-type OrderHistory = {
+type UserProfile = {
+  id: string;
+  email: string;
+  full_name?: string;
+  phone?: string;
+  avatar_url?: string;
+  created_at: string;
+};
+
+type OrderSummary = {
+  total_orders: number;
+  total_spent: number;
+  pending_orders: number;
+  completed_orders: number;
+};
+
+type RecentOrder = {
   id: string;
   order_number: string;
   total_amount: number;
   status: string;
-  payment_status: string;
   created_at: string;
-  items: Array<{ name: string; quantity: number; price: number }>;
-  shipping_address: { full_name: string; city: string; deliveryOption: string };
+  items_count: number;
 };
+
+const navigation = [
+  { name: 'Overview', href: '/account', icon: User, current: true },
+  { name: 'Orders', href: '/account/orders', icon: ShoppingBag, current: false },
+  { name: 'Wishlist', href: '/wishlist', icon: Heart, current: false },
+  { name: 'Addresses', href: '/account/addresses', icon: MapPin, current: false },
+  { name: 'Payment Methods', href: '/account/payments', icon: CreditCard, current: false },
+  { name: 'Notifications', href: '/account/notifications', icon: Bell, current: false },
+  { name: 'Settings', href: '/account/settings', icon: Settings, current: false },
+];
 
 export default function AccountPage() {
   const router = useRouter();
   const supabase = createClientComponentSupabaseClient();
   const [isLoading, setIsLoading] = useState(true);
-  const [isUploading, setIsUploading] = useState(false);
-  const [user, setUser] = useState<{ id?: string; avatar_url?: string | null } | null>(null);
-  const [orders, setOrders] = useState<OrderHistory[]>([]);
-  const [ordersLoading, setOrdersLoading] = useState(false);
-  const [ordersMessage, setOrdersMessage] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [orderSummary, setOrderSummary] = useState<OrderSummary | null>(null);
+  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
 
   useEffect(() => {
-    const loadSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      const sessionUser = data.session?.user;
-      if (!sessionUser) {
+    const loadUserData = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        const sessionUser = data.session?.user;
+        
+        if (!sessionUser) {
+          setIsLoading(false);
+          return;
+        }
+
+        const email = sessionUser.email?.trim().toLowerCase();
+        if (email) {
+          // Check if user is admin and redirect
+          if (isKnownAdminEmail(email)) {
+            router.replace("/admin/dashboard");
+            return;
+          }
+
+          const { data: adminUser } = await supabase
+            .from("admin_users")
+            .select("id")
+            .ilike("email", email)
+            .maybeSingle();
+
+          if (adminUser) {
+            router.replace("/admin/dashboard");
+            return;
+          }
+        }
+
+        // Set user profile
+        const profile: UserProfile = {
+          id: sessionUser.id,
+          email: sessionUser.email || '',
+          full_name: sessionUser.user_metadata?.full_name || sessionUser.user_metadata?.name || '',
+          phone: sessionUser.user_metadata?.phone || '',
+          avatar_url: sessionUser.user_metadata?.avatar_url || null,
+          created_at: sessionUser.created_at || new Date().toISOString()
+        };
+
+        setUserProfile(profile);
+
+        // Load mock data for now - replace with actual API calls
+        await loadMockData();
+        
         setIsLoading(false);
-        return;
+      } catch (error) {
+        console.error('Error loading user data:', error);
+        setIsLoading(false);
       }
-
-      const email = sessionUser.email?.trim().toLowerCase();
-      if (email) {
-        if (isKnownAdminEmail(email)) {
-          router.replace("/admin/dashboard");
-          return;
-        }
-
-        const { data: adminUser } = await supabase
-          .from("admin_users")
-          .select("id")
-          .ilike("email", email)
-          .maybeSingle();
-
-        if (adminUser) {
-          router.replace("/admin/dashboard");
-          return;
-        }
-      }
-
-      setUser({
-        id: sessionUser.id,
-        avatar_url: sessionUser.user_metadata?.avatar_url ?? null
-      });
-      setIsLoading(false);
     };
 
-    loadSession();
+    const loadMockData = async () => {
+      // Mock order summary
+      const mockOrderSummary: OrderSummary = {
+        total_orders: 12,
+        total_spent: 2847.50,
+        pending_orders: 2,
+        completed_orders: 10
+      };
+
+      // Mock recent orders
+      const mockRecentOrders: RecentOrder[] = [
+        { id: '1', order_number: 'ORD-001', total_amount: 299.99, status: 'delivered', created_at: '2024-01-10', items_count: 2 },
+        { id: '2', order_number: 'ORD-002', total_amount: 459.50, status: 'shipped', created_at: '2024-01-08', items_count: 3 },
+        { id: '3', order_number: 'ORD-003', total_amount: 199.00, status: 'processing', created_at: '2024-01-05', items_count: 1 },
+      ];
+
+      // Simulate loading delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      setOrderSummary(mockOrderSummary);
+      setRecentOrders(mockRecentOrders);
+    };
+
+    loadUserData();
   }, [router, supabase]);
-
-  useEffect(() => {
-    const loadOrders = async () => {
-      if (!user?.id) return;
-      setOrdersLoading(true);
-      setOrdersMessage(null);
-
-      const res = await fetch(`/api/account/orders`);
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        setOrdersMessage(data?.message ?? "Unable to load your orders.");
-        setOrdersLoading(false);
-        return;
-      }
-
-      const data = await res.json();
-      setOrders(data ?? []);
-      setOrdersLoading(false);
-    };
-
-    loadOrders();
-  }, [user?.id]);
 
   const handleSignOut = async () => {
     setIsLoading(true);
     const { error } = await supabase.auth.signOut();
     setIsLoading(false);
     if (error) {
-      setMessage(error.message);
+      console.error('Sign out error:', error);
       return;
     }
-    router.push("/auth/login");
+    router.push("/");
   };
 
-  const STORAGE_BUCKET = "avatars";
-
-  const handleAvatarChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !user?.id) return;
-
-    setMessage(null);
-    setIsUploading(true);
-
-    const filePath = `${STORAGE_BUCKET}/${user.id}/${Date.now()}-${file.name}`;
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from(STORAGE_BUCKET)
-      .upload(filePath, file, { cacheControl: "3600", upsert: true });
-
-    if (uploadError) {
-      const bucketError = uploadError.message.includes("Bucket not found")
-        ? `Bucket not found. Create a Storage bucket named "${STORAGE_BUCKET}" in your Supabase project.`
-        : uploadError.message;
-      setMessage(bucketError);
-      setIsUploading(false);
-      return;
-    }
-
-    const { data: publicUrlData } = supabase.storage
-      .from("avatars")
-      .getPublicUrl(uploadData.path);
-
-    if (!publicUrlData?.publicUrl) {
-      setMessage("Unable to generate avatar URL.");
-      setIsUploading(false);
-      return;
-    }
-
-    const avatarUrl = publicUrlData.publicUrl;
-    const { error: updateError } = await supabase.auth.updateUser({
-      data: { avatar_url: avatarUrl }
-    });
-
-    setIsUploading(false);
-    if (updateError) {
-      setMessage(updateError.message);
-      return;
-    }
-
-    setUser((current) => current ? { ...current, avatar_url: avatarUrl } : current);
-    setMessage("Profile photo updated successfully.");
+  const getStatusColor = (status: string) => {
+    const colors = {
+      pending: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+      processing: 'bg-blue-50 text-blue-700 border-blue-200',
+      shipped: 'bg-purple-50 text-purple-700 border-purple-200',
+      delivered: 'bg-green-50 text-green-700 border-green-200',
+      cancelled: 'bg-red-50 text-red-700 border-red-200'
+    };
+    return colors[status as keyof typeof colors] || 'bg-gray-50 text-gray-700 border-gray-200';
   };
-
   if (isLoading) {
     return (
-      <section className="mx-auto max-w-5xl px-6 py-20 sm:px-8 lg:px-12">
-        <div className="rounded-[2rem] border border-slate-200 bg-white p-12 shadow-soft">
-          <p className="text-sm text-slate-600">Loading your account...</p>
-        </div>
-      </section>
-    );
-  }
-
-  if (!user?.id) {
-    return (
-      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
-        <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-soft lg:grid lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="bg-[#e65100] p-8 text-white sm:p-12">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15">
-              <ShoppingBag className="h-5 w-5" />
-            </div>
-            <p className="mt-12 text-xs font-semibold uppercase tracking-[0.26em] text-white/75">RUFA ELAN account</p>
-            <h1 className="mt-4 max-w-sm text-4xl font-bold leading-tight">Everything you love, in one place.</h1>
-            <p className="mt-5 max-w-sm text-sm leading-6 text-white/85">Sign in to follow your deliveries, revisit your favourites, and check out faster.</p>
-            <div className="mt-10 space-y-4 text-sm">
-              <p className="flex items-center gap-3"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15"><PackageCheck className="h-4 w-4" /></span>Simple order tracking</p>
-              <p className="flex items-center gap-3"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/15"><ShieldCheck className="h-4 w-4" /></span>Secure, faster checkout</p>
-            </div>
-          </div>
-          <div className="p-8 sm:p-12">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#e65100]">Welcome</p>
-            <h2 className="mt-3 text-3xl font-bold text-slate-950">Shop your way</h2>
-            <p className="mt-3 max-w-md text-sm leading-6 text-slate-600">Choose an option below to access your account or create a new one in moments.</p>
-            <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              <Link href="/auth/login" className="group rounded-2xl border border-slate-200 p-6 transition hover:border-[#e65100] hover:shadow-md">
-                <p className="text-lg font-bold text-slate-950">Sign in</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">View orders, saved items, and your account details.</p>
-                <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#e65100]">Continue <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></span>
-              </Link>
-              <Link href="/auth/register" className="group rounded-2xl border border-[#e65100] bg-[#fff7f3] p-6 transition hover:bg-[#ffefe7]">
-                <p className="text-lg font-bold text-slate-950">Create account</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">Save your details for a smooth next checkout.</p>
-                <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#e65100]">Get started <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  return (
-    <section className="mx-auto max-w-5xl px-6 py-20 sm:px-8 lg:px-12">
-      <div className="rounded-[2rem] border border-slate-200 bg-white p-12 shadow-soft">
-        <div className="mb-8 flex flex-col items-center gap-5 text-center">
-          <div className="relative h-32 w-32 overflow-hidden rounded-full border-4 border-brand-100 bg-slate-100 shadow-sm">
-            <img
-              src={user?.avatar_url ?? "/images/avatar.svg"}
-              alt="User avatar"
-              className="h-full w-full object-cover"
-            />
-          </div>
-          <p className="text-sm uppercase tracking-[0.3em] text-brand-700">Account dashboard</p>
-          <h1 className="text-4xl font-semibold text-slate-950">Welcome back</h1>
-          <p className="max-w-xl text-slate-600">Manage your account, orders, wishlist, and saved information.</p>
-        </div>
-
-        {message ? <p className="mb-6 rounded-3xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{message}</p> : null}
-
-        <div className="grid gap-6 md:grid-cols-2">
-          <button onClick={handleSignOut} className="rounded-[2rem] border border-slate-200 bg-slate-950 px-6 py-6 text-sm font-semibold text-white transition hover:bg-slate-800">
-            Sign out
-          </button>
-          <div className="rounded-[2rem] border border-slate-200 bg-slate-50 p-6 text-center">
-            <p className="text-sm uppercase tracking-[0.2em] text-slate-500">Account</p>
-            <p className="mt-3 text-lg font-semibold text-slate-950">Profile is secured</p>
-          </div>
-        </div>
-
-        <div className="mt-8 flex flex-col items-center gap-4 rounded-[2rem] border border-slate-200 bg-slate-50 p-6 text-center">
-          <p className="text-sm uppercase tracking-[0.2em] text-slate-500">Upload profile photo</p>
-          <label className="inline-flex cursor-pointer items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:border-slate-300 hover:bg-slate-100">
-            <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
-            {isUploading ? "Uploading photo..." : "Choose photo"}
-          </label>
-          <p className="text-sm text-slate-600">Supported formats: JPG, PNG, GIF. Your photo will be saved to your account profile.</p>
-        </div>
-
-          <div className="mt-10 grid gap-6 md:grid-cols-2">
-          <Link href="/wishlist" className="rounded-[2rem] border border-slate-200 bg-white p-6 text-slate-900 transition hover:border-brand-300">
-            <p className="text-lg font-semibold">Wishlist</p>
-            <p className="mt-2 text-sm text-slate-600">View saved products and favorites.</p>
-          </Link>
-          <Link href="/cart" className="rounded-[2rem] border border-slate-200 bg-white p-6 text-slate-900 transition hover:border-brand-300">
-            <p className="text-lg font-semibold">Cart</p>
-            <p className="mt-2 text-sm text-slate-600">Review your saved items and proceed to checkout.</p>
-          </Link>
-        </div>
-
-        <div className="mt-10 rounded-[2rem] border border-slate-200 bg-white p-8 shadow-soft">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-brand-700">Order history</p>
-              <h2 className="mt-3 text-2xl font-semibold text-slate-950">Your purchases</h2>
-            </div>
-            <p className="text-sm text-slate-600">Recent orders from your account</p>
-          </div>
-
-          {ordersLoading ? (
-            <div className="mt-8 space-y-3">
-              <div className="h-16 animate-pulse rounded-2xl bg-slate-100" />
-              <div className="h-16 animate-pulse rounded-2xl bg-slate-100" />
-            </div>
-          ) : ordersMessage ? (
-            <p className="mt-8 text-sm text-red-600">{ordersMessage}</p>
-          ) : orders.length === 0 ? (
-            <p className="mt-8 text-sm text-slate-600">You have no purchased orders yet.</p>
-          ) : (
-            <div className="mt-8 space-y-4">
-              {orders.map((order) => (
-                <div key={order.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm text-slate-500">Order #{order.order_number}</p>
-                      <p className="mt-1 text-xl font-semibold text-slate-950">GHS {order.total_amount.toFixed(2)}</p>
-                    </div>
-                    <div className="grid gap-2 sm:grid-cols-3">
-                      <span className="rounded-3xl bg-white px-4 py-2 text-sm text-slate-700">{order.status}</span>
-                      <span className="rounded-3xl bg-white px-4 py-2 text-sm text-slate-700">{order.payment_status}</span>
-                      <span className="rounded-3xl bg-white px-4 py-2 text-sm text-slate-700">{new Date(order.created_at).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-3xl border border-slate-200 bg-white p-4">
-                      <p className="text-sm font-semibold text-slate-900">Shipping</p>
-                      <p className="mt-2 text-sm text-slate-600">{order.shipping_address.full_name}</p>
-                      <p className="text-sm text-slate-600">{order.shipping_address.city}</p>
-                      <p className="text-sm text-slate-600">{order.shipping_address.deliveryOption}</p>
-                    </div>
-                    <div className="rounded-3xl border border-slate-200 bg-white p-4">
-                      <p className="text-sm font-semibold text-slate-900">Items</p>
-                      <div className="mt-3 space-y-3">
-                        {order.items.slice(0, 3).map((item, index) => (
-                          <div key={index} className="flex items-center justify-between gap-3 text-sm text-slate-700">
-                            <span>{item.name} x{item.quantity}</span>
-                            <span>GHS {(item.price * item.quantity).toFixed(2)}</span>
-                          </div>
-                        ))}
-                        {order.items.length > 3 ? <p className="text-xs text-slate-500">+{order.items.length - 3} more items</p> : null}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
+          <p className="text-sm text-gray-600 mt-4">Loading your account...</p>
         </div>
       </div>
-    </section>
+    );
+  }
+
+  if (!userProfile) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="lg:grid lg:grid-cols-2">
+              {/* Left Side - Branding */}
+              <div className="bg-orange-600 p-12 text-white">
+                <div className="flex items-center mb-8">
+                  <img src="/images/logo.png" alt="RUFA ELAN" className="h-10 w-10 rounded-full mr-3" />
+                  <span className="text-xl font-bold">RUFA ELAN</span>
+                </div>
+                <h1 className="text-3xl font-bold mb-4">Welcome to Your Account</h1>
+                <p className="text-orange-100 mb-8">Sign in to manage your orders, track deliveries, and enjoy a personalized shopping experience.</p>
+                <div className="space-y-4 text-sm">
+                  <div className="flex items-center">
+                    <Package className="h-5 w-5 mr-3" />
+                    <span>Track your orders in real-time</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Heart className="h-5 w-5 mr-3" />
+                    <span>Save items to your wishlist</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Truck className="h-5 w-5 mr-3" />
+                    <span>Manage delivery addresses</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Side - Actions */}
+              <div className="p-12">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Get Started</h2>
+                <p className="text-gray-600 mb-8">Choose an option below to access your account or create a new one.</p>
+                
+                <div className="space-y-4">
+                  <Link 
+                    href="/auth/login"
+                    className="w-full bg-orange-600 text-white py-3 px-6 rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center font-medium"
+                  >
+                    Sign In to Your Account
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                  
+                  <Link 
+                    href="/auth/register"
+                    className="w-full bg-white text-orange-600 py-3 px-6 rounded-lg border border-orange-600 hover:bg-orange-50 transition-colors flex items-center justify-center font-medium"
+                  >
+                    Create New Account
+                  </Link>
+                </div>
+
+                <div className="mt-8 pt-8 border-t border-gray-200">
+                  <p className="text-sm text-gray-500 text-center">
+                    Continue shopping as a guest or sign in for the full experience
+                  </p>
+                  <Link 
+                    href="/"
+                    className="mt-4 w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center text-sm"
+                  >
+                    Continue Shopping
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center">
+              <Link href="/" className="flex items-center">
+                <img src="/images/logo.png" alt="RUFA ELAN" className="h-8 w-8 rounded-full mr-3" />
+                <span className="text-lg font-semibold text-gray-900">RUFA ELAN</span>
+              </Link>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Link href="/" className="text-sm text-gray-600 hover:text-gray-900">
+                Continue Shopping
+              </Link>
+              <button
+                onClick={handleSignOut}
+                className="flex items-center text-sm text-gray-600 hover:text-gray-900"
+              >
+                <LogOut className="h-4 w-4 mr-1" />
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="lg:grid lg:grid-cols-4 lg:gap-8">
+          {/* Sidebar Navigation */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              {/* User Profile Section */}
+              <div className="flex items-center mb-6">
+                <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden">
+                  {userProfile.avatar_url ? (
+                    <img src={userProfile.avatar_url} alt="Profile" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-orange-600 font-semibold">
+                      {userProfile.full_name?.charAt(0) || userProfile.email.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-900">
+                    {userProfile.full_name || 'User'}
+                  </p>
+                  <p className="text-xs text-gray-500">{userProfile.email}</p>
+                </div>
+              </div>
+
+              {/* Navigation Menu */}
+              <nav className="space-y-2">
+                {navigation.map((item) => (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      item.current
+                        ? 'bg-orange-100 text-orange-900'
+                        : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                    }`}
+                  >
+                    <item.icon className={`mr-3 h-4 w-4 ${item.current ? 'text-orange-500' : 'text-gray-400'}`} />
+                    {item.name}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="lg:col-span-3 mt-8 lg:mt-0">
+            {/* Welcome Section */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    Welcome back, {userProfile.full_name?.split(' ')[0] || 'there'}!
+                  </h1>
+                  <p className="text-gray-600 mt-1">
+                    Here's what's happening with your account today.
+                  </p>
+                </div>
+                <div className="hidden sm:block">
+                  <Link
+                    href="/account/settings"
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit Profile
+                  </Link>
+                </div>
+              </div>
+            </div>
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <ShoppingBag className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">Total Orders</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {orderSummary?.total_orders || 0}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <Link href="/account/orders" className="text-sm font-medium text-blue-600 hover:text-blue-700">
+                    View all orders →
+                  </Link>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <TrendingUp className="h-8 w-8 text-green-600" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">Total Spent</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      ${orderSummary?.total_spent.toFixed(2) || '0.00'}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <span className="text-sm text-gray-500">Lifetime value</span>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <Clock className="h-8 w-8 text-yellow-600" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">Pending</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {orderSummary?.pending_orders || 0}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <span className="text-sm text-gray-500">Orders processing</span>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <CheckCircle className="h-8 w-8 text-green-600" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">Completed</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {orderSummary?.completed_orders || 0}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <span className="text-sm text-gray-500">Successful deliveries</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Link
+                  href="/account/orders"
+                  className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-colors"
+                >
+                  <Package className="h-8 w-8 text-gray-400 mb-2" />
+                  <span className="text-sm font-medium text-gray-700">Track Orders</span>
+                </Link>
+                
+                <Link
+                  href="/wishlist"
+                  className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:border-red-300 hover:bg-red-50 transition-colors"
+                >
+                  <Heart className="h-8 w-8 text-gray-400 mb-2" />
+                  <span className="text-sm font-medium text-gray-700">Wishlist</span>
+                </Link>
+                
+                <Link
+                  href="/account/addresses"
+                  className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors"
+                >
+                  <MapPin className="h-8 w-8 text-gray-400 mb-2" />
+                  <span className="text-sm font-medium text-gray-700">Addresses</span>
+                </Link>
+                
+                <Link
+                  href="/account/payments"
+                  className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors"
+                >
+                  <CreditCard className="h-8 w-8 text-gray-400 mb-2" />
+                  <span className="text-sm font-medium text-gray-700">Payment Methods</span>
+                </Link>
+              </div>
+            </div>
+            {/* Recent Orders */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">Recent Orders</h3>
+                <Link 
+                  href="/account/orders"
+                  className="text-sm font-medium text-orange-600 hover:text-orange-700"
+                >
+                  View all orders
+                </Link>
+              </div>
+              
+              {recentOrders.length === 0 ? (
+                <div className="text-center py-8">
+                  <Package className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500">No orders yet</p>
+                  <p className="text-sm text-gray-400 mt-1">Your order history will appear here</p>
+                  <Link 
+                    href="/"
+                    className="mt-4 inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 text-sm font-medium"
+                  >
+                    Start Shopping
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {recentOrders.map((order) => (
+                    <div key={order.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex-shrink-0">
+                          <div className="h-10 w-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <Package className="h-5 w-5 text-orange-600" />
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">Order #{order.order_number}</p>
+                          <p className="text-sm text-gray-500">
+                            {order.items_count} item{order.items_count !== 1 ? 's' : ''} • {new Date(order.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <span className={`px-3 py-1 text-xs font-medium rounded-full border ${getStatusColor(order.status)}`}>
+                          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                        </span>
+                        <span className="text-sm font-medium text-gray-900">${order.total_amount}</span>
+                        <Link 
+                          href={`/account/orders/${order.id}`}
+                          className="text-orange-600 hover:text-orange-700"
+                        >
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Account Health */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Account Security</h3>
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Email verified</span>
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Profile completed</span>
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Two-factor auth</span>
+                    <span className="text-xs text-gray-400">Not enabled</span>
+                  </div>
+                </div>
+                <Link 
+                  href="/account/settings"
+                  className="mt-4 inline-flex items-center text-sm font-medium text-orange-600 hover:text-orange-700"
+                >
+                  Manage security settings
+                  <ArrowRight className="ml-1 h-4 w-4" />
+                </Link>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Loyalty Status</h3>
+                <div className="flex items-center mb-3">
+                  <Star className="h-5 w-5 text-yellow-500 mr-2" />
+                  <span className="text-sm font-medium text-gray-900">Regular Customer</span>
+                </div>
+                <p className="text-sm text-gray-600 mb-4">
+                  You've spent ${orderSummary?.total_spent.toFixed(2) || '0.00'} with us. Keep shopping to unlock exclusive benefits!
+                </p>
+                <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
+                  <div className="bg-orange-600 h-2 rounded-full" style={{ width: '45%' }}></div>
+                </div>
+                <p className="text-xs text-gray-500">$500 more to VIP status</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

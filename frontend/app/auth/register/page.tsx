@@ -28,11 +28,32 @@ export default function RegisterPage() {
   const hasSupabaseConfig = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
   const supabase = hasSupabaseConfig ? createClientComponentSupabaseClient() : null;
   const missingConfig = () => setServerMessage("Missing Supabase configuration. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to .env.local.");
+  const getDestination = () => {
+    const redirect = new URLSearchParams(window.location.search).get("redirect");
+    return redirect?.startsWith("/") && !redirect.startsWith("//") ? redirect : "/account";
+  };
 
   const signUpWithGoogle = async () => {
     if (!supabase) return missingConfig();
-    setServerMessage(null); setIsLoading(true);
-    const { data, error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: `${window.location.origin}/account` } });
+    setServerMessage(null); 
+    setIsLoading(true);
+    
+    // Use the new callback URL for OAuth
+    const callbackUrl = `${window.location.origin}/auth/callback`;
+    const currentRedirect = getDestination();
+    
+    // Add redirect parameter to callback URL if it's not the default
+    const finalCallbackUrl = currentRedirect !== '/account' 
+      ? `${callbackUrl}?redirect=${encodeURIComponent(currentRedirect)}`
+      : callbackUrl;
+    
+    const { data, error } = await supabase.auth.signInWithOAuth({ 
+      provider: "google", 
+      options: { 
+        redirectTo: finalCallbackUrl
+      } 
+    });
+    
     setIsLoading(false);
     if (error) return setServerMessage(error.message);
     if (data?.url) window.location.assign(data.url);
@@ -44,7 +65,7 @@ export default function RegisterPage() {
     const { data, error } = await supabase.auth.signUp({ email: values.email, password: values.password, options: { data: { full_name: values.name, phone: values.phone } } });
     setIsLoading(false);
     if (error) return setServerMessage(error.message);
-    if (data?.user) { setServerMessage("Account created successfully. Please verify your email before signing in."); router.push("/auth/login"); return; }
+    if (data?.user) { setServerMessage("Account created successfully. Please verify your email before signing in."); router.push(`/auth/login?redirect=${encodeURIComponent(getDestination())}`); return; }
     setServerMessage("Check your email for confirmation and complete account setup.");
   };
 

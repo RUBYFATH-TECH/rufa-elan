@@ -25,6 +25,10 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [serverMessage, setServerMessage] = useState<string | null>(null);
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({ resolver: zodResolver(loginSchema) });
+  const getDestination = () => {
+    const redirect = new URLSearchParams(window.location.search).get("redirect");
+    return redirect?.startsWith("/") && !redirect.startsWith("//") ? redirect : "/account";
+  };
 
   useEffect(() => {
     const checkSession = async () => {
@@ -35,7 +39,7 @@ export default function LoginPage() {
         router.replace("/admin/dashboard");
         return;
       }
-      router.replace("/account");
+      router.replace(getDestination());
     };
     checkSession();
   }, [router, supabase]);
@@ -43,10 +47,23 @@ export default function LoginPage() {
   const signInWithGoogle = async () => {
     setServerMessage(null);
     setIsLoading(true);
+    
+    // Determine the redirect URL after OAuth success
+    const callbackUrl = `${window.location.origin}/auth/callback`;
+    const currentRedirect = getDestination();
+    
+    // Add redirect parameter to callback URL if it's not the default
+    const finalCallbackUrl = currentRedirect !== '/account' 
+      ? `${callbackUrl}?redirect=${encodeURIComponent(currentRedirect)}`
+      : callbackUrl;
+    
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/account` }
+      options: { 
+        redirectTo: finalCallbackUrl
+      }
     });
+    
     setIsLoading(false);
     if (error) return setServerMessage(error.message);
     if (data?.url) window.location.assign(data.url);
@@ -66,7 +83,7 @@ export default function LoginPage() {
     const currentEmail = session.data.session?.user?.email?.trim().toLowerCase() ?? email;
     const isAdmin = isKnownAdminEmail(currentEmail) || (await fetch("/api/admin/check")).ok;
     await sleep(150);
-    router.push(isAdmin ? "/admin/dashboard" : "/account");
+    router.push(isAdmin ? "/admin/dashboard" : getDestination());
   };
 
   return (
