@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import FilterBar from "@/components/filter-bar";
 import TemuDealsSection from "@/components/temu-deals-section";
 import TemuProductCard from "@/components/temu-product-card";
@@ -23,6 +24,49 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <section className="relative isolate flex min-h-[480px] overflow-hidden bg-slate-950 sm:min-h-[560px] lg:min-h-[640px]">
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          aria-hidden="true"
+          className="absolute inset-0 -z-20 h-full w-full object-cover"
+        >
+          <source src="/images/RUFA%20ELAN.mp4" type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-black/75 via-black/45 to-black/15" />
+        <div className="absolute inset-x-0 bottom-0 -z-10 h-1/2 bg-gradient-to-t from-black/45 to-transparent" />
+
+        <div className="mx-auto flex w-full max-w-7xl items-end px-6 py-14 sm:px-8 sm:py-16 lg:px-12 lg:py-20">
+          <div className="max-w-2xl text-white">
+            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.3em] text-white/80 sm:text-sm">
+              The RUFA ELAN collection
+            </p>
+            <h1 className="text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-7xl">
+              Style made to be seen.
+            </h1>
+            <p className="mt-5 max-w-lg text-base leading-7 text-white/85 sm:text-lg">
+              The number one destination for premium, luxurious, modest, elegant, and affordable women&apos;s fashion accessories in Ghana.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                href="/shop"
+                className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-white/85"
+              >
+                Shop the collection
+              </Link>
+              <a
+                href="#recommended"
+                className="rounded-full border border-white/60 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
+              >
+                Explore favourites
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <div className="mx-auto max-w-7xl px-4 py-6">
         <FilterBar
           totalItems={formattedProducts.length}
@@ -32,7 +76,7 @@ export default function HomePage() {
         <div className="mt-6 space-y-8">
           <TemuDealsSection />
           
-          <div className="bg-white rounded-lg p-6">
+          <div id="recommended" className="bg-white rounded-lg p-6">
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-slate-900">Recommended for you</h2>
               <span className="text-sm text-slate-600">{formattedProducts.length} items</span>
