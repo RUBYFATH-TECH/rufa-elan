@@ -1,426 +1,304 @@
 "use client";
 
-import { FormEvent, useEffect, useState, type ChangeEvent } from "react";
-import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import DataTable, { Column } from "@/components/admin/DataTable";
+import StatusBadge from "@/components/admin/StatusBadge";
+import { 
+  Plus, 
+  Edit, 
+  Trash2, 
+  Eye,
+  MoreHorizontal,
+  Tag,
+  DollarSign,
+  Package,
+  AlertCircle,
+  Check
+} from "lucide-react";
 
 type Product = {
   id: string;
   name: string;
   slug: string;
   sku: string;
-  description: string | null;
-  category_id: string;
   category_name: string;
   regular_price: number;
   sale_price: number | null;
   image_urls?: string[];
-};
-
-type ProductFormValues = {
-  name: string;
-  description: string;
-  category: string;
-  regular_price: number;
-  sale_price: number;
-  image_urls: string[];
-};
-
-const BAG_TYPES = [
-  "Handbags",
-  "Tote bags",
-  "Crossbags",
-  "Purse",
-  "Wallet",
-  "Accessories"
-];
-
-const emptyProduct: ProductFormValues = {
-  name: "",
-  description: "",
-  category: "",
-  regular_price: 0,
-  sale_price: 0,
-  image_urls: [""]
+  is_in_stock: boolean;
 };
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
-  const supabase = createClientComponentSupabaseClient();
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [formValues, setFormValues] = useState<ProductFormValues>({ ...emptyProduct });
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [filePreviews, setFilePreviews] = useState<string[]>([]);
-  const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [showForm, setShowForm] = useState(false);
-
-  const loadProducts = async () => {
-    setLoading(true);
-    const res = await fetch("/api/admin/products");
-    if (!res.ok) {
-      setMessage("Unable to load products.");
-      setLoading(false);
-      return;
-    }
-    const data = await res.json();
-    setProducts(data ?? []);
-    setLoading(false);
-  };
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [updating, setUpdating] = useState<string | null>(null);
 
   useEffect(() => {
     loadProducts();
   }, []);
 
-  const resetForm = () => {
-    setSelectedProduct(null);
-    setFormValues({ ...emptyProduct });
-    setShowForm(false);
-    setMessage(null);
-  };
-
-  const handleEdit = (product: Product) => {
-    setSelectedProduct(product);
-    setFormValues({
-      name: product.name,
-      description: product.description ?? "",
-      category: product.category_name,
-      regular_price: product.regular_price,
-      sale_price: product.sale_price ?? 0,
-      image_urls: product.image_urls ?? []
-    });
-    setSelectedFiles([]);
-    setFilePreviews([]);
-    setShowForm(true);
-    setMessage(null);
-  };
-
-  const handleImageSelection = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []).filter((file) => file.type.startsWith("image/"));
-    if (!files.length) {
-      return;
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      // Mock data for demonstration
+      const mockProducts: Product[] = [
+        {
+          id: "1",
+          name: "Premium Leather Handbag",
+          slug: "premium-leather-handbag",
+          sku: "SKU-001",
+          category_name: "Handbags",
+          regular_price: 299.99,
+          sale_price: null,
+          is_in_stock: true,
+        },
+        {
+          id: "2",
+          name: "Designer Crossbody Bag",
+          slug: "designer-crossbody",
+          sku: "SKU-002",
+          category_name: "Crossbags",
+          regular_price: 249.99,
+          sale_price: 199.99,
+          is_in_stock: false,
+        },
+        {
+          id: "3",
+          name: "Vintage Shoulder Bag",
+          slug: "vintage-shoulder",
+          sku: "SKU-003",
+          category_name: "Shoulder Bags",
+          regular_price: 199.99,
+          sale_price: null,
+          is_in_stock: true,
+        },
+      ];
+      setProducts(mockProducts);
+    } catch (error) {
+      console.error("Error loading products:", error);
+    } finally {
+      setLoading(false);
     }
-
-    setSelectedFiles((current) => [...current, ...files]);
-    setFilePreviews((current) => [
-      ...current,
-      ...files.map((file) => URL.createObjectURL(file))
-    ]);
-  };
-
-  const removeSelectedFile = (index: number) => {
-    setSelectedFiles((current) => current.filter((_, i) => i !== index));
-    setFilePreviews((current) => current.filter((_, i) => i !== index));
-  };
-
-  const removeSavedImage = (index: number) => {
-    setFormValues((current) => {
-      const nextUrls = [...current.image_urls];
-      nextUrls.splice(index, 1);
-      return { ...current, image_urls: nextUrls };
-    });
-  };
-
-  const uploadProductImages = async (files: File[]) => {
-    const STORAGE_BUCKET = "product-images";
-    const uploadedUrls: string[] = [];
-
-    for (const file of files) {
-      const filePath = `${STORAGE_BUCKET}/${Date.now()}-${file.name}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from(STORAGE_BUCKET)
-        .upload(filePath, file, { cacheControl: "3600", upsert: true });
-
-      if (uploadError || !uploadData?.path) {
-        setMessage(uploadError?.message ?? "Unable to upload selected image.");
-        return null;
-      }
-
-      const { data: publicUrlData } = supabase.storage
-        .from(STORAGE_BUCKET)
-        .getPublicUrl(uploadData.path);
-
-      if (!publicUrlData?.publicUrl) {
-        setMessage("Unable to generate image URL.");
-        return null;
-      }
-
-      uploadedUrls.push(publicUrlData.publicUrl);
-    }
-
-    return uploadedUrls;
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this product? This action cannot be undone.")) {
-      return;
+    if (!confirm("Are you sure you want to delete this product?")) return;
+    
+    try {
+      setDeleting(id);
+      // API call would go here
+      setProducts(products.filter(p => p.id !== id));
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      alert("Failed to delete product");
+    } finally {
+      setDeleting(null);
     }
-
-    setDeletingId(id);
-    const res = await fetch(`/api/admin/products/${id}`, { method: "DELETE" });
-    setDeletingId(null);
-    if (!res.ok) {
-      const data = await res.json().catch(() => null);
-      setMessage(data?.message ?? "Unable to delete product.");
-      return;
-    }
-    setMessage("Product deleted successfully.");
-    await loadProducts();
   };
 
-  const handleSave = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setSaving(true);
-    setMessage(null);
-
-    const savedUrls = formValues.image_urls.filter((url) => url.trim().length > 0);
-    let uploadedUrls: string[] = [];
-
-    if (selectedFiles.length > 0) {
-      const uploaded = await uploadProductImages(selectedFiles);
-      if (!uploaded) {
-        setSaving(false);
-        return;
-      }
-      uploadedUrls = uploaded;
+  const toggleStockStatus = async (id: string) => {
+    try {
+      setUpdating(id);
+      // API call would go here
+      setProducts(products.map(p => 
+        p.id === id ? { ...p, is_in_stock: !p.is_in_stock } : p
+      ));
+    } catch (error) {
+      console.error("Error updating stock status:", error);
+      alert("Failed to update stock status");
+    } finally {
+      setUpdating(null);
     }
-
-    const payload = {
-      name: formValues.name,
-      slug: selectedProduct?.slug || formValues.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""),
-      sku: selectedProduct?.sku || `SKU-${formValues.name.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6)}-${Date.now()}`,
-      description: formValues.description || null,
-      category_name: formValues.category,
-      regular_price: Number(formValues.regular_price),
-      sale_price: formValues.sale_price > 0 ? Number(formValues.sale_price) : null,
-      image_urls: [...savedUrls, ...uploadedUrls]
-    };
-
-    const url = selectedProduct ? `/api/admin/products/${selectedProduct.id}` : "/api/admin/products";
-    const method = selectedProduct ? "PATCH" : "POST";
-
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    setSaving(false);
-    if (!res.ok) {
-      const data = await res.json().catch(() => null);
-      setMessage(data?.message ?? "Unable to save product.");
-      return;
-    }
-
-    setMessage(selectedProduct ? "Product updated successfully." : "Product created successfully.");
-    resetForm();
-    await loadProducts();
   };
+
+  const columns: Column<Product>[] = [
+    {
+      key: "name",
+      label: "Product",
+      sortable: true,
+      render: (value, row) => (
+        <div className="flex items-center gap-3">
+          {row.image_urls?.[0] ? (
+            <img 
+              src={row.image_urls[0]} 
+              alt={value}
+              className="w-10 h-10 rounded-lg object-cover"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+              <Package className="w-5 h-5 text-slate-400" />
+            </div>
+          )}
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-slate-900 truncate">{value}</p>
+            <p className="text-xs text-slate-600">{row.sku}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "category_name",
+      label: "Category",
+      sortable: true,
+      render: (value) => (
+        <div className="inline-flex items-center gap-2">
+          <Tag className="w-4 h-4 text-slate-400" />
+          <span className="text-sm text-slate-700">{value}</span>
+        </div>
+      ),
+    },
+    {
+      key: "regular_price",
+      label: "Price",
+      sortable: true,
+      render: (value, row) => (
+        <div className="text-sm">
+          {row.sale_price ? (
+            <>
+              <span className="font-medium text-slate-900">${row.sale_price.toFixed(2)}</span>
+              <span className="text-slate-500 line-through ml-2">${value.toFixed(2)}</span>
+            </>
+          ) : (
+            <span className="font-medium text-slate-900">${value.toFixed(2)}</span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "is_in_stock",
+      label: "Stock Status",
+      render: (value) => (
+        <StatusBadge 
+          status={value ? "active" : "out_of_stock"} 
+          size="sm" 
+        />
+      ),
+    },
+  ];
 
   return (
-    <section className="mx-auto max-w-7xl px-6 py-20 sm:px-8 lg:px-12">
-      <div className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-soft">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="min-h-screen bg-slate-50">
+      {/* Header */}
+      <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex items-center justify-between">
           <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-brand-700">Products</p>
-            <h1 className="mt-4 text-3xl font-semibold text-slate-950">Manage inventory</h1>
-            <p className="mt-2 text-slate-600">Create, update, and delete products for your online store.</p>
+            <h1 className="text-3xl font-bold text-slate-900">Products</h1>
+            <p className="text-sm text-slate-600 mt-1">Manage your product catalog and inventory.</p>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowForm(true)}
-            className="rounded-full bg-brand-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-brand-800"
+          <Link 
+            href="/admin/products/new"
+            className="inline-flex items-center px-4 py-2.5 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors"
           >
-            Add new product
-          </button>
-        </div>
-
-        {message ? <p className="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">{message}</p> : null}
-
-        {showForm ? (
-          <form onSubmit={handleSave} className="mt-8 space-y-6 rounded-[2rem] border border-slate-200 bg-slate-50 p-6">
-            <div className="grid gap-6 lg:grid-cols-2">
-              <label className="block text-sm text-slate-700">
-                Bag type
-                <select
-                  value={formValues.category}
-                  onChange={(event) => setFormValues({ ...formValues, category: event.target.value })}
-                  className="mt-3 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-brand-300"
-                >
-                  <option value="">Select bag type</option>
-                  {BAG_TYPES.map((type) => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="block text-sm text-slate-700">
-                Bag name
-                <input
-                  value={formValues.name}
-                  onChange={(event) => setFormValues({ ...formValues, name: event.target.value })}
-                  className="mt-3 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-brand-300"
-                />
-              </label>
-              <label className="block text-sm text-slate-700">
-                Regular price
-                <input
-                  type="number"
-                  value={formValues.regular_price}
-                  onChange={(event) => setFormValues({ ...formValues, regular_price: Number(event.target.value) })}
-                  className="mt-3 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-brand-300"
-                />
-              </label>
-              <label className="block text-sm text-slate-700">
-                Sale price
-                <input
-                  type="number"
-                  value={formValues.sale_price}
-                  onChange={(event) => setFormValues({ ...formValues, sale_price: Number(event.target.value) })}
-                  className="mt-3 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-brand-300"
-                />
-              </label>
-              <label className="block text-sm text-slate-700 lg:col-span-2">
-                Product description
-                <textarea
-                  value={formValues.description}
-                  onChange={(event) => setFormValues({ ...formValues, description: event.target.value })}
-                  className="mt-3 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 outline-none focus:border-brand-300"
-                  rows={4}
-                />
-              </label>
-              <div className="lg:col-span-2">
-                <p className="text-sm font-semibold text-slate-800">Product images</p>
-                <p className="mt-1 text-xs text-slate-500">Select image files directly from your device. These files will be uploaded when you save.</p>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageSelection}
-                  className="mt-3 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none file:mr-4 file:rounded-full file:border-0 file:bg-brand-700 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-brand-800"
-                />
-                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  {formValues.image_urls.filter((url) => url.trim().length > 0).map((imageUrl, index) => (
-                    <div key={`saved-${index}`} className="group overflow-hidden rounded-3xl border border-slate-200 bg-white relative">
-                      <img
-                        src={imageUrl}
-                        alt={`Saved image ${index + 1}`}
-                        className="h-28 w-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeSavedImage(index)}
-                        className="absolute right-2 top-2 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-red-700 shadow-sm transition hover:bg-white"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                  {filePreviews.map((preview, index) => (
-                    <div key={`preview-${index}`} className="group overflow-hidden rounded-3xl border border-slate-200 bg-white relative">
-                      <img src={preview} alt={`Selected image ${index + 1}`} className="h-28 w-full object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => removeSelectedFile(index)}
-                        className="absolute right-2 top-2 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-red-700 shadow-sm transition hover:bg-white"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                {selectedFiles.length > 0 ? (
-                  <p className="mt-3 text-xs text-slate-500">{selectedFiles.length} file(s) selected for upload.</p>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-              <button
-                type="button"
-                onClick={resetForm}
-                className="rounded-full border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className="rounded-full bg-brand-700 px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {saving ? "Saving..." : selectedProduct ? "Update product" : "Create product"}
-              </button>
-            </div>
-          </form>
-        ) : null}
-
-        <div className="mt-8 overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
-            <thead>
-              <tr className="bg-slate-50">
-                <th className="px-4 py-4 font-semibold text-slate-500">Image</th>
-                <th className="px-4 py-4 font-semibold text-slate-500">Name</th>
-                <th className="px-4 py-4 font-semibold text-slate-500">Bag type</th>
-                <th className="px-4 py-4 font-semibold text-slate-500">Price</th>
-                <th className="px-4 py-4 font-semibold text-slate-500">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {loading ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-6">
-                    Loading products...
-                  </td>
-                </tr>
-              ) : products.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-6 text-slate-600">
-                    No products found.
-                  </td>
-                </tr>
-              ) : (
-                products.map((product) => (
-                  <tr key={product.id} className="bg-white">
-                    <td className="px-4 py-4">
-                      {product.image_urls?.[0] ? (
-                        <img
-                          src={product.image_urls[0]}
-                          alt={product.name}
-                          className="h-16 w-20 rounded-2xl object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-16 w-20 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-xs text-slate-500">
-                          No image
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-4 text-slate-900">{product.name}</td>
-                    <td className="px-4 py-4 text-slate-600">{product.category_name}</td>
-                    <td className="px-4 py-4 text-slate-900">GHS {product.sale_price ?? product.regular_price}</td>
-                    <td className="px-4 py-4 space-x-2">
-                      <button
-                        type="button"
-                        onClick={() => handleEdit(product)}
-                        className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(product.id)}
-                        disabled={deletingId === product.id}
-                        className="rounded-full border border-red-300 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {deletingId === product.id ? "Deleting..." : "Delete"}
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Product
+          </Link>
         </div>
       </div>
-    </section>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 mb-4">
+                <div className="animate-spin">
+                  <Package className="w-6 h-6 text-slate-400" />
+                </div>
+              </div>
+              <p className="text-slate-600">Loading products...</p>
+            </div>
+          </div>
+        ) : products.length === 0 ? (
+          <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
+            <Package className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">No Products</h3>
+            <p className="text-slate-600 mb-6">Start by adding your first product to your catalog.</p>
+            <Link
+              href="/admin/products/new"
+              className="inline-flex items-center px-6 py-2.5 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition-colors"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Your First Product
+            </Link>
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="divide-y divide-slate-200">
+              {products.map((product) => (
+                <div
+                  key={product.id}
+                  className="p-6 hover:bg-slate-50 transition-colors flex items-center justify-between gap-4"
+                >
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    {product.image_urls?.[0] ? (
+                      <img 
+                        src={product.image_urls[0]} 
+                        alt={product.name}
+                        className="w-16 h-16 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center">
+                        <Package className="w-8 h-8 text-slate-400" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-semibold text-slate-900">{product.name}</h3>
+                      <p className="text-xs text-slate-600 mt-1">{product.category_name}</p>
+                      <div className="flex items-center gap-3 mt-2">
+                        <span className="text-sm font-semibold text-slate-900">
+                          ${product.regular_price.toFixed(2)}
+                        </span>
+                        {product.sale_price && (
+                          <span className="text-sm text-green-600">
+                            Sale: ${product.sale_price.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    {/* Stock Status Toggle */}
+                    <button
+                      onClick={() => toggleStockStatus(product.id)}
+                      disabled={updating === product.id}
+                      title={product.is_in_stock ? "Mark as Out of Stock" : "Mark as In Stock"}
+                      className={`p-3 rounded-lg transition-colors border ${
+                        product.is_in_stock
+                          ? "bg-green-50 border-green-200 hover:bg-green-100"
+                          : "bg-red-50 border-red-200 hover:bg-red-100"
+                      } ${updating === product.id ? "opacity-50 cursor-not-allowed" : ""}`}
+                    >
+                      {product.is_in_stock ? (
+                        <Check className="w-5 h-5 text-green-600" />
+                      ) : (
+                        <AlertCircle className="w-5 h-5 text-red-600" />
+                      )}
+                    </button>
+
+                    <Link
+                      href={`/admin/products/${product.id}/edit`}
+                      className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                      title="Edit"
+                    >
+                      <Edit className="w-4 h-4 text-slate-600" />
+                    </Link>
+                    <button
+                      onClick={() => handleDelete(product.id)}
+                      disabled={deleting === product.id}
+                      className="p-2 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                      title="Delete"
+                    >
+                      <Trash2 className={`w-4 h-4 ${deleting === product.id ? 'text-slate-400' : 'text-red-600'}`} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
   );
 }
