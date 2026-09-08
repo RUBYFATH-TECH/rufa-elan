@@ -70,6 +70,89 @@ export const featuredProducts: Product[] = [
     image: "/images/WhatsApp Image 2026-07-21 at 16.58.32.jpeg",
     slug: "noelle-classic-purse",
     badge: "Trending"
+  },
+  // Additional handbags
+  {
+    id: "bag-luxury-01",
+    name: "Luxury Leather Handbag",
+    category: "Handbags",
+    price: 450,
+    salePrice: 399,
+    rating: 4.9,
+    image: "/images/WhatsApp Image 2026-07-21 at 16.58.26.jpeg",
+    slug: "luxury-leather-handbag",
+    badge: "Premium"
+  },
+  {
+    id: "bag-classic-02",
+    name: "Classic Business Handbag",
+    category: "Handbags",
+    price: 320,
+    rating: 4.8,
+    image: "/images/WhatsApp Image 2026-07-21 at 16.58.27.jpeg",
+    slug: "classic-business-handbag"
+  },
+  {
+    id: "bag-tote-02",
+    name: "Canvas Tote Bag Set",
+    category: "Tote Bags",
+    price: 180,
+    salePrice: 159,
+    rating: 4.7,
+    image: "/images/WhatsApp Image 2026-07-21 at 16.58.28.jpeg",
+    slug: "canvas-tote-bag-set",
+    badge: "Set"
+  },
+  {
+    id: "bag-shoulder-02",
+    name: "Vintage Shoulder Bag",
+    category: "Shoulder Bags",
+    price: 240,
+    rating: 4.6,
+    image: "/images/WhatsApp Image 2026-07-18 at 16.09.27.jpeg",
+    slug: "vintage-shoulder-bag"
+  },
+  {
+    id: "wallet-01",
+    name: "Premium Leather Wallet",
+    category: "Wallets",
+    price: 80,
+    salePrice: 69,
+    rating: 4.8,
+    image: "/images/WhatsApp Image 2026-07-18 at 16.14.21.jpeg",
+    slug: "premium-leather-wallet",
+    badge: "Compact"
+  },
+  {
+    id: "bag-crossbody-02",
+    name: "Mini Crossbody Chain Bag",
+    category: "Crossbody Bags",
+    price: 190,
+    rating: 4.5,
+    image: "/images/WhatsApp Image 2026-07-18 at 16.14.59.jpeg",
+    slug: "mini-crossbody-chain-bag"
+  },
+  {
+    id: "purse-02",
+    name: "Evening Clutch Purse",
+    category: "Purses",
+    price: 120,
+    salePrice: 99,
+    rating: 4.4,
+    image: "/images/WhatsApp Image 2026-07-18 at 16.15.43.jpeg",
+    slug: "evening-clutch-purse",
+    badge: "Elegant"
+  },
+  {
+    id: "bag-handbag-03",
+    name: "Designer Satchel Handbag",
+    category: "Handbags",
+    price: 380,
+    salePrice: 329,
+    rating: 4.9,
+    image: "/images/WhatsApp Image 2026-07-18 at 16.15.58.jpeg",
+    slug: "designer-satchel-handbag",
+    badge: "Designer"
   }
 ];
 

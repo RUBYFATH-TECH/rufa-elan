@@ -8,6 +8,11 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
+  // Skip middleware for debug page
+  if (request.nextUrl.pathname === '/debug-auth') {
+    return response;
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -54,8 +59,22 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Refresh the session if expired
-  const { data: { user } } = await supabase.auth.getUser();
+  // Handle auth callback routes - let them process without middleware interference
+  if (request.nextUrl.pathname === '/auth/callback') {
+    return response;
+  }
+
+  // Refresh the session to ensure it's up to date
+  let user = null;
+  try {
+    const { data: { user: sessionUser }, error } = await supabase.auth.getUser();
+    if (!error) {
+      user = sessionUser;
+    }
+  } catch (error) {
+    console.error('Auth middleware error:', error);
+    // Continue without user
+  }
 
   // Handle admin routes protection
   if (request.nextUrl.pathname.startsWith('/admin') && request.nextUrl.pathname !== '/admin/login') {
@@ -65,19 +84,20 @@ export async function updateSession(request: NextRequest) {
       redirectUrl.searchParams.set('redirect', request.nextUrl.pathname);
       return NextResponse.redirect(redirectUrl);
     }
-    
-    // Additional admin check can be added here if needed
-    // For now, we'll rely on the client-side check
   }
 
-  // Redirect logged-in users away from auth pages
-  if (user && request.nextUrl.pathname.startsWith('/auth/')) {
-    // Skip the callback page as it handles its own redirects
-    if (request.nextUrl.pathname === '/auth/callback') {
-      return response;
+  // Handle account routes protection
+  if (request.nextUrl.pathname.startsWith('/account')) {
+    if (!user) {
+      // Not authenticated, redirect to login
+      const redirectUrl = new URL('/auth/login', request.url);
+      redirectUrl.searchParams.set('redirect', request.nextUrl.pathname);
+      return NextResponse.redirect(redirectUrl);
     }
-    
-    // For other auth pages, redirect to account
+  }
+
+  // Redirect logged-in users away from auth pages (except callback)
+  if (user && request.nextUrl.pathname.startsWith('/auth/') && !request.nextUrl.pathname.includes('callback')) {
     return NextResponse.redirect(new URL('/account', request.url));
   }
 

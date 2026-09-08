@@ -61,12 +61,52 @@ export default function RegisterPage() {
 
   const onSubmit = async (values: RegisterFormValues) => {
     if (!supabase) return missingConfig();
-    setServerMessage(null); setIsLoading(true);
-    const { data, error } = await supabase.auth.signUp({ email: values.email, password: values.password, options: { data: { full_name: values.name, phone: values.phone } } });
-    setIsLoading(false);
-    if (error) return setServerMessage(error.message);
-    if (data?.user) { setServerMessage("Account created successfully. Please verify your email before signing in."); router.push(`/auth/login?redirect=${encodeURIComponent(getDestination())}`); return; }
-    setServerMessage("Check your email for confirmation and complete account setup.");
+    setServerMessage(null); 
+    setIsLoading(true);
+    
+    try {
+      const { data, error } = await supabase.auth.signUp({ 
+        email: values.email, 
+        password: values.password, 
+        options: { 
+          data: { 
+            full_name: values.name, 
+            phone: values.phone 
+          },
+          emailRedirectTo: undefined // Disable email confirmation redirect
+        } 
+      });
+      
+      setIsLoading(false);
+      
+      if (error) {
+        console.error('Signup error:', error);
+        return setServerMessage(error.message);
+      }
+      
+      if (data?.user) {
+        // Check if user is immediately confirmed (no email verification required)
+        if (data.user.email_confirmed_at || !data.user.confirmation_sent_at) {
+          setServerMessage("Account created successfully! You can now sign in.");
+          // Auto-redirect to login after 2 seconds
+          setTimeout(() => {
+            router.push(`/auth/login?redirect=${encodeURIComponent(getDestination())}`);
+          }, 2000);
+        } else {
+          setServerMessage("Account created! Please check your email to verify your account before signing in.");
+          setTimeout(() => {
+            router.push(`/auth/login?redirect=${encodeURIComponent(getDestination())}`);
+          }, 3000);
+        }
+        return;
+      }
+      
+      setServerMessage("Account created successfully! You can now sign in.");
+    } catch (err) {
+      setIsLoading(false);
+      console.error('Registration error:', err);
+      setServerMessage("Registration failed. Please try again.");
+    }
   };
 
   const inputClass = "mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-[#e65100] focus:bg-white focus:ring-2 focus:ring-[#e65100]/10";

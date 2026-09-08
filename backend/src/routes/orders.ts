@@ -1,0 +1,785 @@
+/**
+ * Orders API routes for RUFA ELAN e-commerce application
+ * Handles CRUD operations for orders, order items, payments, and delivery tracking
+ */
+
+import express from 'express';
+import { Request, Response } from 'express';
+import { db, dbUtils } from '../utils/database';
+import { requireAuth, requireAdmin, rateLimitMiddleware } from '../middleware/database';
+import { logger } from '../utils/logger';
+import {
+  Order,
+  OrderDetails,
+  OrderItem,
+  Payment,
+  DeliveryTracking,
+  PaginatedResponse,
+  ApiResponse,
+  CreateOrderRequest,
+  UpdateOrderRequest,
+  OrderFilters
+} from '../types/database';
+
+const router = express.Router();
+
+// Rate limiting for orders API
+const ordersRateLimit = rateLimitMiddleware({
+  maxRequests: 30,
+  windowMs: 15 * 60 * 1000 // 15 minutes
+});
+
+router.use(ordersRateLimit);
+
+/**
+ * GET /api/orders
+ * Get paginated list of orders (users see their own, admins see all)
+ */
+router.get('/', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      status,
+      payment_status,
+      start_date,
+      end_date,
+      min_amount,
+      max_amount,
+      sort_by = 'created_at',
+      sort_order = 'desc'
+    } = req.query as any;
+
+    // Build filters based on user role
+    const filters: Record<string, any> = {};
+
+    if (!req.isAdmin) {
+      // Non-admin users can only see their own orders
+      filters.user_id = req.userId;
+    }
+
+    if (status) filters.status = status;
+    if (payment_status) filters.payment_status = payment_status;
+
+    // Build query options
+    const queryOptions = {
+      select: `
+        *,
+        order_items(id, product_variant_id, quantity, unit_price, total_price),
+        payments(id, provider, reference, status, amount),
+        delivery_tracking(id, courier_name, tracking_number, current_status, estimated_delivery_date)
+      `,
+      filters,
+      orderBy: [{ column: sort_by, ascending: sort_order === 'asc' }],
+      limit: Math.min(parseInt(limit), 100),
+      offset: dbUtils.calculateOffset(parseInt(page), parseInt(limit))
+    };
+
+    const result = await db.orders.find(queryOptions);
+
+    if (result.error) {
+      logger.error('Failed to fetch orders:', result.error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to fetch orders',
+        message: result.error
+      } as ApiResponse);
+    }
+
+    // Apply date and amount filters (client-side since Supabase doesn't support complex ranges easily)
+    let orders = result.data || [];
+
+    if (start_date) {
+      const startDateTime = new Date(start_date).getTime();
+      orders = orders.filter(o => new Date(o.created_at).getTime() >= startDateTime);
+    }
+
+    if (end_date) {
+      const endDateTime = new Date(end_date).getTime();
+      orders = orders.filter(o => new Date(o.created_at).getTime() <= endDateTime);
+    }
+
+    if (min_amount) {
+      orders = orders.filter(o => o.total_amount >= parseFloat(min_amount));
+    }
+
+    if (max_amount) {
+      orders = orders.filter(o => o.total_amount <= parseFloat(max_amount));
+    }
+
+    const pagination = dbUtils.calculatePagination(
+      orders.length,
+      parseInt(page),
+      parseInt(limit)
+    );
+
+    logger.info(`Fetched ${orders.length} orders`, {
+      userId: req.userId,
+      isAdmin: req.isAdmin,
+      page,
+      limit
+    });
+
+    res.json({
+      success: true,
+      data: orders,
+      pagination
+    } as ApiResponse<PaginatedResponse<OrderDetails>>);
+
+  } catch (error) {
+    logger.error('Error fetching orders:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: 'Failed to fetch orders'
+    } as ApiResponse);
+  }
+});
+
+/**
+ * GET /api/orders/:id
+ * Get single order by ID with full details
+ */
+router.get('/:id', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    if (!dbUtils.isValidUUID(id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid order ID',
+        message: 'Order ID must be a valid UUID'
+      } as ApiResponse);
+    }
+
+    // Fetch order with all related data using the order_details view
+    const { data, error } = await req.db!
+      .from('order_details')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !data) {
+      logger.error('Failed to fetch order:', error);
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found',
+        message: 'The requested order does not exist'
+      } as ApiResponse);
+    }
+
+    // Check authorization - users can only see their own orders
+    if (!req.isAdmin && data.user_id !== req.userId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'You do not have access to this order'
+      } as ApiResponse);
+    }
+
+    logger.info(`Fetched order: ${id}`, { userId: req.userId });
+
+    res.json({
+      success: true,
+      data
+    } as ApiResponse<OrderDetails>);
+
+  } catch (error) {
+    logger.error('Error fetching order:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: 'Failed to fetch order'
+    } as ApiResponse);
+  }
+});
+
+/**
+ * POST /api/orders
+ * Create new order (requires authentication)
+ */
+router.post('/', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const orderData: CreateOrderRequest = req.body;
+
+    // Validate required fields
+    if (!orderData.items || orderData.items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields',
+        message: 'At least one order item is required'
+      } as ApiResponse);
+    }
+
+    if (!orderData.shipping_address) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields',
+        message: 'Shipping address is required'
+      } as ApiResponse);
+    }
+
+    // Generate order number
+    const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+    // Calculate totals
+    let subtotal = 0;
+    const orderItems: OrderItem[] = [];
+
+    // Fetch product variants and calculate pricing
+    for (const item of orderData.items) {
+      if (!dbUtils.isValidUUID(item.product_variant_id)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid product variant ID',
+          message: `Invalid variant ID: ${item.product_variant_id}`
+        } as ApiResponse);
+      }
+
+      const variant = await db.productVariants.findById(item.product_variant_id);
+      if (variant.error || !variant.data) {
+        return res.status(400).json({
+          success: false,
+          error: 'Product variant not found',
+          message: `Variant ${item.product_variant_id} does not exist`
+        } as ApiResponse);
+      }
+
+      // Check stock availability
+      if (variant.data.stock_quantity < item.quantity) {
+        return res.status(400).json({
+          success: false,
+          error: 'Insufficient stock',
+          message: `Variant "${variant.data.name}" has insufficient stock. Available: ${variant.data.stock_quantity}, Requested: ${item.quantity}`
+        } as ApiResponse);
+      }
+
+      const unitPrice = variant.data.price || 0;
+      const totalPrice = unitPrice * item.quantity;
+      subtotal += totalPrice;
+
+      orderItems.push({
+        product_variant_id: item.product_variant_id,
+        quantity: item.quantity,
+        unit_price: unitPrice,
+        total_price: totalPrice
+      } as any);
+    }
+
+    // Apply coupon discount if provided
+    let discountAmount = 0;
+    if (orderData.coupon_code) {
+      const coupon = await db.coupons.find({
+        filters: { code: orderData.coupon_code, active: true }
+      });
+
+      if (coupon.data && coupon.data.length > 0) {
+        const couponData = coupon.data[0];
+
+        // Check coupon validity
+        if (couponData.expires_at && new Date(couponData.expires_at) < new Date()) {
+          return res.status(400).json({
+            success: false,
+            error: 'Invalid coupon',
+            message: 'This coupon has expired'
+          } as ApiResponse);
+        }
+
+        if (subtotal < couponData.min_purchase_amount) {
+          return res.status(400).json({
+            success: false,
+            error: 'Invalid coupon',
+            message: `Minimum purchase amount of ${couponData.min_purchase_amount} required`
+          } as ApiResponse);
+        }
+
+        // Calculate discount
+        if (couponData.discount_type === 'percentage') {
+          discountAmount = (subtotal * couponData.discount_value) / 100;
+        } else if (couponData.discount_type === 'fixed_amount') {
+          discountAmount = couponData.discount_value;
+        }
+
+        if (couponData.max_discount_amount && discountAmount > couponData.max_discount_amount) {
+          discountAmount = couponData.max_discount_amount;
+        }
+      }
+    }
+
+    // Set shipping fee
+    const shippingFee = orderData.shipping_address.shipping_fee || 0;
+
+    // Calculate totals
+    const totalAmount = subtotal - discountAmount + shippingFee;
+
+    // Create order
+    const orderResult = await db.orders.create({
+      user_id: req.userId,
+      order_number: orderNumber,
+      status: 'pending_payment',
+      currency: 'GHS',
+      subtotal,
+      shipping_fee: shippingFee,
+      discount_amount: discountAmount,
+      total_amount: totalAmount,
+      shipping_address: orderData.shipping_address,
+      billing_address: orderData.billing_address || orderData.shipping_address,
+      items: orderItems,
+      payment_status: 'unpaid',
+      notes: orderData.notes || null
+    });
+
+    if (orderResult.error || !orderResult.data) {
+      logger.error('Failed to create order:', orderResult.error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to create order',
+        message: orderResult.error
+      } as ApiResponse);
+    }
+
+    const orderId = orderResult.data.id;
+
+    // Create order items
+    for (const item of orderItems) {
+      await db.orderItems.create({
+        order_id: orderId,
+        product_variant_id: item.product_variant_id,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total_price: item.total_price
+      });
+    }
+
+    // Create delivery tracking record
+    await db.deliveryTracking.create({
+      order_id: orderId,
+      current_status: 'pending_payment',
+      estimated_delivery_date: null
+    });
+
+    // Record coupon usage if applicable
+    if (orderData.coupon_code) {
+      const coupon = await db.coupons.find({
+        filters: { code: orderData.coupon_code }
+      });
+
+      if (coupon.data && coupon.data.length > 0) {
+        await db.couponUsage.create({
+          coupon_id: coupon.data[0].id,
+          user_id: req.userId,
+          order_id: orderId,
+          discount_amount: discountAmount
+        });
+
+        // Increment coupon usage count
+        const currentUsage = coupon.data[0].usage_count || 0;
+        await db.coupons.updateById(coupon.data[0].id, {
+          usage_count: currentUsage + 1
+        });
+      }
+    }
+
+    // Fetch complete order details
+    const { data: createdOrder } = await req.db!
+      .from('order_details')
+      .select('*')
+      .eq('id', orderId)
+      .single();
+
+    logger.info(`Created order: ${orderId}`, {
+      userId: req.userId,
+      orderNumber,
+      total: totalAmount
+    });
+
+    res.status(201).json({
+      success: true,
+      data: createdOrder,
+      message: 'Order created successfully'
+    } as ApiResponse<OrderDetails>);
+
+  } catch (error) {
+    logger.error('Error creating order:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: 'Failed to create order'
+    } as ApiResponse);
+  }
+});
+
+/**
+ * PUT /api/orders/:id
+ * Update order status (users can cancel, admins can update any field)
+ */
+router.put('/:id', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const updateData: UpdateOrderRequest = req.body;
+
+    if (!dbUtils.isValidUUID(id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid order ID',
+        message: 'Order ID must be a valid UUID'
+      } as ApiResponse);
+    }
+
+    // Check if order exists
+    const existingOrder = await db.orders.findById(id);
+    if (existingOrder.error || !existingOrder.data) {
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found',
+        message: 'The requested order does not exist'
+      } as ApiResponse);
+    }
+
+    // Check authorization
+    if (!req.isAdmin && existingOrder.data.user_id !== req.userId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'You do not have access to update this order'
+      } as ApiResponse);
+    }
+
+    // Non-admin users can only cancel pending payment orders
+    if (!req.isAdmin) {
+      if (updateData.status && updateData.status !== 'cancelled') {
+        return res.status(403).json({
+          success: false,
+          error: 'Unauthorized',
+          message: 'You can only cancel your orders'
+        } as ApiResponse);
+      }
+
+      if (existingOrder.data.payment_status !== 'unpaid') {
+        return res.status(400).json({
+          success: false,
+          error: 'Cannot cancel order',
+          message: 'You can only cancel orders that have not been paid'
+        } as ApiResponse);
+      }
+
+      updateData.cancellation_reason = updateData.cancellation_reason || 'User cancelled order';
+      updateData.cancelled_at = new Date().toISOString();
+    }
+
+    // Update order
+    const result = await db.orders.updateById(id, updateData);
+
+    if (result.error || !result.data) {
+      logger.error('Failed to update order:', result.error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to update order',
+        message: result.error
+      } as ApiResponse);
+    }
+
+    // Update delivery tracking status if order status changed
+    if (updateData.status) {
+      await db.deliveryTracking.updateWhere(
+        { order_id: id },
+        { current_status: updateData.status }
+      );
+    }
+
+    // Fetch updated order details
+    const { data: updatedOrder } = await req.db!
+      .from('order_details')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    logger.info(`Updated order: ${id}`, {
+      userId: req.userId,
+      changes: updateData
+    });
+
+    res.json({
+      success: true,
+      data: updatedOrder,
+      message: 'Order updated successfully'
+    } as ApiResponse<OrderDetails>);
+
+  } catch (error) {
+    logger.error('Error updating order:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: 'Failed to update order'
+    } as ApiResponse);
+  }
+});
+
+/**
+ * GET /api/orders/:id/items
+ * Get order items
+ */
+router.get('/:id/items', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    if (!dbUtils.isValidUUID(id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid order ID',
+        message: 'Order ID must be a valid UUID'
+      } as ApiResponse);
+    }
+
+    // Check if order exists and user has access
+    const order = await db.orders.findById(id);
+    if (order.error || !order.data) {
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found',
+        message: 'The requested order does not exist'
+      } as ApiResponse);
+    }
+
+    if (!req.isAdmin && order.data.user_id !== req.userId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'You do not have access to this order'
+      } as ApiResponse);
+    }
+
+    // Get order items
+    const result = await db.orderItems.find({
+      filters: { order_id: id }
+    });
+
+    if (result.error) {
+      logger.error('Failed to fetch order items:', result.error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to fetch order items',
+        message: result.error
+      } as ApiResponse);
+    }
+
+    res.json({
+      success: true,
+      data: result.data || []
+    } as ApiResponse<OrderItem[]>);
+
+  } catch (error) {
+    logger.error('Error fetching order items:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: 'Failed to fetch order items'
+    } as ApiResponse);
+  }
+});
+
+/**
+ * GET /api/orders/:id/tracking
+ * Get order delivery tracking information
+ */
+router.get('/:id/tracking', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    if (!dbUtils.isValidUUID(id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid order ID',
+        message: 'Order ID must be a valid UUID'
+      } as ApiResponse);
+    }
+
+    // Check if order exists and user has access
+    const order = await db.orders.findById(id);
+    if (order.error || !order.data) {
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found',
+        message: 'The requested order does not exist'
+      } as ApiResponse);
+    }
+
+    if (!req.isAdmin && order.data.user_id !== req.userId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'You do not have access to this order'
+      } as ApiResponse);
+    }
+
+    // Get tracking information with updates
+    const { data, error } = await req.db!
+      .from('delivery_tracking')
+      .select(`
+        *,
+        tracking_updates(id, status, note, timestamp)
+      `)
+      .eq('order_id', id)
+      .single();
+
+    if (error || !data) {
+      return res.status(404).json({
+        success: false,
+        error: 'Tracking information not found',
+        message: 'Delivery tracking information does not exist for this order'
+      } as ApiResponse);
+    }
+
+    res.json({
+      success: true,
+      data
+    } as ApiResponse<DeliveryTracking>);
+
+  } catch (error) {
+    logger.error('Error fetching tracking information:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: 'Failed to fetch tracking information'
+    } as ApiResponse);
+  }
+});
+
+/**
+ * POST /api/orders/:id/tracking/update
+ * Add tracking update (Admin only)
+ */
+router.post('/:id/tracking/update', requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status, note } = req.body;
+
+    if (!dbUtils.isValidUUID(id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid order ID',
+        message: 'Order ID must be a valid UUID'
+      } as ApiResponse);
+    }
+
+    if (!status) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields',
+        message: 'Status is required'
+      } as ApiResponse);
+    }
+
+    // Get delivery tracking
+    const tracking = await db.deliveryTracking.find({
+      filters: { order_id: id }
+    });
+
+    if (tracking.error || !tracking.data || tracking.data.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Tracking not found',
+        message: 'Delivery tracking does not exist for this order'
+      } as ApiResponse);
+    }
+
+    const trackingId = tracking.data[0].id;
+
+    // Create tracking update
+    const result = await db.trackingUpdates.create({
+      delivery_tracking_id: trackingId,
+      status,
+      note: note || null
+    });
+
+    if (result.error || !result.data) {
+      logger.error('Failed to create tracking update:', result.error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to add tracking update',
+        message: result.error
+      } as ApiResponse);
+    }
+
+    // Update order status based on tracking status
+    const statusMap: Record<string, string> = {
+      'pending_payment': 'pending_payment',
+      'processing': 'processing',
+      'shipped': 'shipped',
+      'out_for_delivery': 'shipped',
+      'delivered': 'delivered',
+      'cancelled': 'cancelled',
+      'returned': 'returned'
+    };
+
+    if (statusMap[status]) {
+      await db.orders.updateById(id, {
+        status: statusMap[status]
+      });
+    }
+
+    logger.info(`Added tracking update for order: ${id}`, {
+      userId: req.userId,
+      status,
+      note
+    });
+
+    res.status(201).json({
+      success: true,
+      data: result.data,
+      message: 'Tracking update added successfully'
+    } as ApiResponse);
+
+  } catch (error) {
+    logger.error('Error adding tracking update:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: 'Failed to add tracking update'
+    } as ApiResponse);
+  }
+});
+
+/**
+ * GET /api/orders/stats/user
+ * Get user order statistics
+ */
+router.get('/stats/user', requireAuth, async (req: Request, res: Response) => {
+  try {
+    // Get user stats from the user_profile_stats view
+    const { data, error } = await req.db!
+      .from('user_profile_stats')
+      .select('total_orders, total_spent, review_count, wishlist_count')
+      .eq('id', req.userId)
+      .single();
+
+    if (error || !data) {
+      return res.status(404).json({
+        success: false,
+        error: 'User stats not found',
+        message: 'Could not retrieve user statistics'
+      } as ApiResponse);
+    }
+
+    res.json({
+      success: true,
+      data: {
+        total_orders: data.total_orders || 0,
+        total_spent: data.total_spent || 0,
+        average_order_value: data.total_orders > 0 ? data.total_spent / data.total_orders : 0,
+        reviews: data.review_count || 0,
+        wishlist_items: data.wishlist_count || 0
+      }
+    } as ApiResponse);
+
+  } catch (error) {
+    logger.error('Error fetching user stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: 'Failed to fetch user statistics'
+    } as ApiResponse);
+  }
+});
+
+export default router;

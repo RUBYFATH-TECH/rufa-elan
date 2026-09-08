@@ -4,13 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { 
-  User, 
   ShoppingBag, 
   Heart, 
   MapPin, 
   CreditCard, 
-  Bell, 
-  Settings,
   Package,
   Truck,
   CheckCircle,
@@ -18,11 +15,11 @@ import {
   Star,
   TrendingUp,
   ArrowRight,
-  Edit,
-  LogOut
+  Edit
 } from "lucide-react";
 import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
 import { isKnownAdminEmail } from "@/lib/admin-common";
+import AccountLayout from "@/components/account-layout";
 
 type UserProfile = {
   id: string;
@@ -48,16 +45,6 @@ type RecentOrder = {
   created_at: string;
   items_count: number;
 };
-
-const navigation = [
-  { name: 'Overview', href: '/account', icon: User, current: true },
-  { name: 'Orders', href: '/account/orders', icon: ShoppingBag, current: false },
-  { name: 'Wishlist', href: '/wishlist', icon: Heart, current: false },
-  { name: 'Addresses', href: '/account/addresses', icon: MapPin, current: false },
-  { name: 'Payment Methods', href: '/account/payments', icon: CreditCard, current: false },
-  { name: 'Notifications', href: '/account/notifications', icon: Bell, current: false },
-  { name: 'Settings', href: '/account/settings', icon: Settings, current: false },
-];
 
 export default function AccountPage() {
   const router = useRouter();
@@ -146,17 +133,6 @@ export default function AccountPage() {
     loadUserData();
   }, [router, supabase]);
 
-  const handleSignOut = async () => {
-    setIsLoading(true);
-    const { error } = await supabase.auth.signOut();
-    setIsLoading(false);
-    if (error) {
-      console.error('Sign out error:', error);
-      return;
-    }
-    router.push("/");
-  };
-
   const getStatusColor = (status: string) => {
     const colors = {
       pending: 'bg-yellow-50 text-yellow-700 border-yellow-200',
@@ -167,400 +143,326 @@ export default function AccountPage() {
     };
     return colors[status as keyof typeof colors] || 'bg-gray-50 text-gray-700 border-gray-200';
   };
+
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <AccountLayout requireAuth={false}>
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
           <p className="text-sm text-gray-600 mt-4">Loading your account...</p>
         </div>
-      </div>
+      </AccountLayout>
     );
   }
 
   if (!userProfile) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="lg:grid lg:grid-cols-2">
-              {/* Left Side - Branding */}
-              <div className="bg-orange-600 p-12 text-white">
-                <div className="flex items-center mb-8">
-                  <img src="/images/logo.png" alt="RUFA ELAN" className="h-10 w-10 rounded-full mr-3" />
-                  <span className="text-xl font-bold">RUFA ELAN</span>
+      <AccountLayout requireAuth={false}>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="lg:grid lg:grid-cols-2">
+            {/* Left Side - Branding */}
+            <div className="bg-orange-600 p-12 text-white">
+              <div className="flex items-center mb-8">
+                <img src="/images/logo.png" alt="RUFA ELAN" className="h-10 w-10 rounded-full mr-3" />
+                <span className="text-xl font-bold">RUFA ELAN</span>
+              </div>
+              <h1 className="text-3xl font-bold mb-4">Welcome to Your Account</h1>
+              <p className="text-orange-100 mb-8">Sign in to manage your orders, track deliveries, and enjoy a personalized shopping experience.</p>
+              <div className="space-y-4 text-sm">
+                <div className="flex items-center">
+                  <Package className="h-5 w-5 mr-3" />
+                  <span>Track your orders in real-time</span>
                 </div>
-                <h1 className="text-3xl font-bold mb-4">Welcome to Your Account</h1>
-                <p className="text-orange-100 mb-8">Sign in to manage your orders, track deliveries, and enjoy a personalized shopping experience.</p>
-                <div className="space-y-4 text-sm">
-                  <div className="flex items-center">
-                    <Package className="h-5 w-5 mr-3" />
-                    <span>Track your orders in real-time</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Heart className="h-5 w-5 mr-3" />
-                    <span>Save items to your wishlist</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Truck className="h-5 w-5 mr-3" />
-                    <span>Manage delivery addresses</span>
-                  </div>
+                <div className="flex items-center">
+                  <Heart className="h-5 w-5 mr-3" />
+                  <span>Save items to your wishlist</span>
+                </div>
+                <div className="flex items-center">
+                  <Truck className="h-5 w-5 mr-3" />
+                  <span>Manage delivery addresses</span>
                 </div>
               </div>
+            </div>
 
-              {/* Right Side - Actions */}
-              <div className="p-12">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Get Started</h2>
-                <p className="text-gray-600 mb-8">Choose an option below to access your account or create a new one.</p>
+            {/* Right Side - Actions */}
+            <div className="p-12">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Get Started</h2>
+              <p className="text-gray-600 mb-8">Choose an option below to access your account or create a new one.</p>
+              
+              <div className="space-y-4">
+                <Link 
+                  href="/auth/login"
+                  className="w-full bg-orange-600 text-white py-3 px-6 rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center font-medium"
+                >
+                  Sign In to Your Account
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
                 
-                <div className="space-y-4">
-                  <Link 
-                    href="/auth/login"
-                    className="w-full bg-orange-600 text-white py-3 px-6 rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center font-medium"
-                  >
-                    Sign In to Your Account
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                  
-                  <Link 
-                    href="/auth/register"
-                    className="w-full bg-white text-orange-600 py-3 px-6 rounded-lg border border-orange-600 hover:bg-orange-50 transition-colors flex items-center justify-center font-medium"
-                  >
-                    Create New Account
-                  </Link>
-                </div>
+                <Link 
+                  href="/auth/register"
+                  className="w-full bg-white text-orange-600 py-3 px-6 rounded-lg border border-orange-600 hover:bg-orange-50 transition-colors flex items-center justify-center font-medium"
+                >
+                  Create New Account
+                </Link>
+              </div>
 
-                <div className="mt-8 pt-8 border-t border-gray-200">
-                  <p className="text-sm text-gray-500 text-center">
-                    Continue shopping as a guest or sign in for the full experience
-                  </p>
-                  <Link 
-                    href="/"
-                    className="mt-4 w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center text-sm"
-                  >
-                    Continue Shopping
-                  </Link>
-                </div>
+              <div className="mt-8 pt-8 border-t border-gray-200">
+                <p className="text-sm text-gray-500 text-center">
+                  Continue shopping as a guest or sign in for the full experience
+                </p>
+                <Link 
+                  href="/"
+                  className="mt-4 w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center text-sm"
+                >
+                  Continue Shopping
+                </Link>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </AccountLayout>
     );
   }
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              <Link href="/" className="flex items-center">
-                <img src="/images/logo.png" alt="RUFA ELAN" className="h-8 w-8 rounded-full mr-3" />
-                <span className="text-lg font-semibold text-gray-900">RUFA ELAN</span>
-              </Link>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link href="/" className="text-sm text-gray-600 hover:text-gray-900">
-                Continue Shopping
-              </Link>
-              <button
-                onClick={handleSignOut}
-                className="flex items-center text-sm text-gray-600 hover:text-gray-900"
-              >
-                <LogOut className="h-4 w-4 mr-1" />
-                Sign Out
-              </button>
-            </div>
+    <AccountLayout>
+      {/* Welcome Section */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Welcome back, {userProfile.full_name?.split(' ')[0] || 'there'}!
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Here's what's happening with your account today.
+            </p>
           </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="lg:grid lg:grid-cols-4 lg:gap-8">
-          {/* Sidebar Navigation */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              {/* User Profile Section */}
-              <div className="flex items-center mb-6">
-                <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden">
-                  {userProfile.avatar_url ? (
-                    <img src={userProfile.avatar_url} alt="Profile" className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="text-orange-600 font-semibold">
-                      {userProfile.full_name?.charAt(0) || userProfile.email.charAt(0).toUpperCase()}
-                    </span>
-                  )}
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-900">
-                    {userProfile.full_name || 'User'}
-                  </p>
-                  <p className="text-xs text-gray-500">{userProfile.email}</p>
-                </div>
-              </div>
-
-              {/* Navigation Menu */}
-              <nav className="space-y-2">
-                {navigation.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                      item.current
-                        ? 'bg-orange-100 text-orange-900'
-                        : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                    }`}
-                  >
-                    <item.icon className={`mr-3 h-4 w-4 ${item.current ? 'text-orange-500' : 'text-gray-400'}`} />
-                    {item.name}
-                  </Link>
-                ))}
-              </nav>
-            </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="lg:col-span-3 mt-8 lg:mt-0">
-            {/* Welcome Section */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    Welcome back, {userProfile.full_name?.split(' ')[0] || 'there'}!
-                  </h1>
-                  <p className="text-gray-600 mt-1">
-                    Here's what's happening with your account today.
-                  </p>
-                </div>
-                <div className="hidden sm:block">
-                  <Link
-                    href="/account/settings"
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                  >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit Profile
-                  </Link>
-                </div>
-              </div>
-            </div>
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <ShoppingBag className="h-8 w-8 text-blue-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Total Orders</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {orderSummary?.total_orders || 0}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <Link href="/account/orders" className="text-sm font-medium text-blue-600 hover:text-blue-700">
-                    View all orders →
-                  </Link>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <TrendingUp className="h-8 w-8 text-green-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Total Spent</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      ${orderSummary?.total_spent.toFixed(2) || '0.00'}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <span className="text-sm text-gray-500">Lifetime value</span>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <Clock className="h-8 w-8 text-yellow-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Pending</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {orderSummary?.pending_orders || 0}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <span className="text-sm text-gray-500">Orders processing</span>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <CheckCircle className="h-8 w-8 text-green-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Completed</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {orderSummary?.completed_orders || 0}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <span className="text-sm text-gray-500">Successful deliveries</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Link
-                  href="/account/orders"
-                  className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-colors"
-                >
-                  <Package className="h-8 w-8 text-gray-400 mb-2" />
-                  <span className="text-sm font-medium text-gray-700">Track Orders</span>
-                </Link>
-                
-                <Link
-                  href="/wishlist"
-                  className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:border-red-300 hover:bg-red-50 transition-colors"
-                >
-                  <Heart className="h-8 w-8 text-gray-400 mb-2" />
-                  <span className="text-sm font-medium text-gray-700">Wishlist</span>
-                </Link>
-                
-                <Link
-                  href="/account/addresses"
-                  className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors"
-                >
-                  <MapPin className="h-8 w-8 text-gray-400 mb-2" />
-                  <span className="text-sm font-medium text-gray-700">Addresses</span>
-                </Link>
-                
-                <Link
-                  href="/account/payments"
-                  className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors"
-                >
-                  <CreditCard className="h-8 w-8 text-gray-400 mb-2" />
-                  <span className="text-sm font-medium text-gray-700">Payment Methods</span>
-                </Link>
-              </div>
-            </div>
-            {/* Recent Orders */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">Recent Orders</h3>
-                <Link 
-                  href="/account/orders"
-                  className="text-sm font-medium text-orange-600 hover:text-orange-700"
-                >
-                  View all orders
-                </Link>
-              </div>
-              
-              {recentOrders.length === 0 ? (
-                <div className="text-center py-8">
-                  <Package className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">No orders yet</p>
-                  <p className="text-sm text-gray-400 mt-1">Your order history will appear here</p>
-                  <Link 
-                    href="/"
-                    className="mt-4 inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 text-sm font-medium"
-                  >
-                    Start Shopping
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {recentOrders.map((order) => (
-                    <div key={order.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-                      <div className="flex items-center space-x-4">
-                        <div className="flex-shrink-0">
-                          <div className="h-10 w-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                            <Package className="h-5 w-5 text-orange-600" />
-                          </div>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">Order #{order.order_number}</p>
-                          <p className="text-sm text-gray-500">
-                            {order.items_count} item{order.items_count !== 1 ? 's' : ''} • {new Date(order.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-4">
-                        <span className={`px-3 py-1 text-xs font-medium rounded-full border ${getStatusColor(order.status)}`}>
-                          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                        </span>
-                        <span className="text-sm font-medium text-gray-900">${order.total_amount}</span>
-                        <Link 
-                          href={`/account/orders/${order.id}`}
-                          className="text-orange-600 hover:text-orange-700"
-                        >
-                          <ArrowRight className="h-4 w-4" />
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Account Health */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Account Security</h3>
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Email verified</span>
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Profile completed</span>
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Two-factor auth</span>
-                    <span className="text-xs text-gray-400">Not enabled</span>
-                  </div>
-                </div>
-                <Link 
-                  href="/account/settings"
-                  className="mt-4 inline-flex items-center text-sm font-medium text-orange-600 hover:text-orange-700"
-                >
-                  Manage security settings
-                  <ArrowRight className="ml-1 h-4 w-4" />
-                </Link>
-              </div>
-
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Loyalty Status</h3>
-                <div className="flex items-center mb-3">
-                  <Star className="h-5 w-5 text-yellow-500 mr-2" />
-                  <span className="text-sm font-medium text-gray-900">Regular Customer</span>
-                </div>
-                <p className="text-sm text-gray-600 mb-4">
-                  You've spent ${orderSummary?.total_spent.toFixed(2) || '0.00'} with us. Keep shopping to unlock exclusive benefits!
-                </p>
-                <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
-                  <div className="bg-orange-600 h-2 rounded-full" style={{ width: '45%' }}></div>
-                </div>
-                <p className="text-xs text-gray-500">$500 more to VIP status</p>
-              </div>
-            </div>
+          <div className="hidden sm:block">
+            <Link
+              href="/account/settings"
+              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              Edit Profile
+            </Link>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <ShoppingBag className="h-8 w-8 text-blue-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Total Orders</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {orderSummary?.total_orders || 0}
+              </p>
+            </div>
+          </div>
+          <div className="mt-4">
+            <Link href="/account/orders" className="text-sm font-medium text-blue-600 hover:text-blue-700">
+              View all orders →
+            </Link>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <TrendingUp className="h-8 w-8 text-green-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Total Spent</p>
+              <p className="text-2xl font-bold text-gray-900">
+                ${orderSummary?.total_spent.toFixed(2) || '0.00'}
+              </p>
+            </div>
+          </div>
+          <div className="mt-4">
+            <span className="text-sm text-gray-500">Lifetime value</span>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <Clock className="h-8 w-8 text-yellow-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Pending</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {orderSummary?.pending_orders || 0}
+              </p>
+            </div>
+          </div>
+          <div className="mt-4">
+            <span className="text-sm text-gray-500">Orders processing</span>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Completed</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {orderSummary?.completed_orders || 0}
+              </p>
+            </div>
+          </div>
+          <div className="mt-4">
+            <span className="text-sm text-gray-500">Successful deliveries</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Link
+            href="/account/orders"
+            className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-colors"
+          >
+            <Package className="h-8 w-8 text-gray-400 mb-2" />
+            <span className="text-sm font-medium text-gray-700">Track Orders</span>
+          </Link>
+          
+          <Link
+            href="/wishlist"
+            className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:border-red-300 hover:bg-red-50 transition-colors"
+          >
+            <Heart className="h-8 w-8 text-gray-400 mb-2" />
+            <span className="text-sm font-medium text-gray-700">Wishlist</span>
+          </Link>
+          
+          <Link
+            href="/account/addresses"
+            className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors"
+          >
+            <MapPin className="h-8 w-8 text-gray-400 mb-2" />
+            <span className="text-sm font-medium text-gray-700">Addresses</span>
+          </Link>
+          
+          <Link
+            href="/account/payments"
+            className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors"
+          >
+            <CreditCard className="h-8 w-8 text-gray-400 mb-2" />
+            <span className="text-sm font-medium text-gray-700">Payment Methods</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* Recent Orders */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-gray-900">Recent Orders</h3>
+          <Link 
+            href="/account/orders"
+            className="text-sm font-medium text-orange-600 hover:text-orange-700"
+          >
+            View all orders
+          </Link>
+        </div>
+        
+        {recentOrders.length === 0 ? (
+          <div className="text-center py-8">
+            <Package className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500">No orders yet</p>
+            <p className="text-sm text-gray-400 mt-1">Your order history will appear here</p>
+            <Link 
+              href="/shop"
+              className="mt-4 inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 text-sm font-medium"
+            >
+              Start Shopping
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {recentOrders.map((order) => (
+              <div key={order.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                <div className="flex items-center space-x-4">
+                  <div className="flex-shrink-0">
+                    <div className="h-10 w-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                      <Package className="h-5 w-5 text-orange-600" />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Order #{order.order_number}</p>
+                    <p className="text-sm text-gray-500">
+                      {order.items_count} item{order.items_count !== 1 ? 's' : ''} • {new Date(order.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <span className={`px-3 py-1 text-xs font-medium rounded-full border ${getStatusColor(order.status)}`}>
+                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                  </span>
+                  <span className="text-sm font-medium text-gray-900">${order.total_amount}</span>
+                  <Link 
+                    href={`/account/orders/${order.id}`}
+                    className="text-orange-600 hover:text-orange-700"
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Account Health & Loyalty Status */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Account Security</h3>
+            <CheckCircle className="h-5 w-5 text-green-500" />
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Email verified</span>
+              <CheckCircle className="h-4 w-4 text-green-500" />
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Profile completed</span>
+              <CheckCircle className="h-4 w-4 text-green-500" />
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Two-factor auth</span>
+              <span className="text-xs text-gray-400">Not enabled</span>
+            </div>
+          </div>
+          <Link 
+            href="/account/settings"
+            className="mt-4 inline-flex items-center text-sm font-medium text-orange-600 hover:text-orange-700"
+          >
+            Manage security settings
+            <ArrowRight className="ml-1 h-4 w-4" />
+          </Link>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Loyalty Status</h3>
+          <div className="flex items-center mb-3">
+            <Star className="h-5 w-5 text-yellow-500 mr-2" />
+            <span className="text-sm font-medium text-gray-900">Regular Customer</span>
+          </div>
+          <p className="text-sm text-gray-600 mb-4">
+            You've spent ${orderSummary?.total_spent.toFixed(2) || '0.00'} with us. Keep shopping to unlock exclusive benefits!
+          </p>
+          <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
+            <div className="bg-orange-600 h-2 rounded-full" style={{ width: '45%' }}></div>
+          </div>
+          <p className="text-xs text-gray-500">$500 more to VIP status</p>
+        </div>
+      </div>
+    </AccountLayout>
   );
 }

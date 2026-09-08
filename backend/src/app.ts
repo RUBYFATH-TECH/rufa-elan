@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
 import { errorHandler } from './middleware/error';
+import { databaseMiddleware, authMiddleware, queryLoggingMiddleware, databaseErrorHandler } from './middleware/database';
+import { initializeDatabase } from './utils/database';
 import { logger } from './utils/logger';
 import routes from './routes';
 
@@ -45,6 +47,11 @@ app.use(morgan('combined', {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Database middleware
+app.use(databaseMiddleware);
+app.use(authMiddleware);
+app.use(queryLoggingMiddleware);
+
 // Request timeout
 app.use((req, res, next) => {
   req.setTimeout(30000); // 30 seconds timeout
@@ -52,14 +59,25 @@ app.use((req, res, next) => {
 });
 
 // Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    version: process.env.APP_VERSION || '1.0.0',
-    environment: process.env.NODE_ENV || 'development'
-  });
+app.get('/health', async (req, res) => {
+  try {
+    const dbHealthy = await initializeDatabase();
+    res.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      version: process.env.APP_VERSION || '1.0.0',
+      environment: process.env.NODE_ENV || 'development',
+      database: dbHealthy ? 'connected' : 'disconnected'
+    });
+  } catch (error) {
+    logger.error('Health check failed:', error);
+    res.status(503).json({
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      database: 'error'
+    });
+  }
 });
 
 // API routes
@@ -91,6 +109,9 @@ app.use('*', (req, res) => {
     method: req.method
   });
 });
+
+// Database error handling
+app.use(databaseErrorHandler);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);

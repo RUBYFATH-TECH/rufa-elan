@@ -31,6 +31,17 @@ export default function LoginPage() {
   };
 
   useEffect(() => {
+    // Check for error messages from auth callback
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+    if (error) {
+      setServerMessage(decodeURIComponent(error));
+      // Clear the error from URL
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('error');
+      window.history.replaceState({}, '', newUrl.toString());
+    }
+
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
       const email = data.session?.user?.email?.trim().toLowerCase();
@@ -48,19 +59,23 @@ export default function LoginPage() {
     setServerMessage(null);
     setIsLoading(true);
     
-    // Determine the redirect URL after OAuth success
+    // Use the server-side callback route for proper PKCE handling
     const callbackUrl = `${window.location.origin}/auth/callback`;
     const currentRedirect = getDestination();
     
     // Add redirect parameter to callback URL if it's not the default
     const finalCallbackUrl = currentRedirect !== '/account' 
-      ? `${callbackUrl}?redirect=${encodeURIComponent(currentRedirect)}`
+      ? `${callbackUrl}?next=${encodeURIComponent(currentRedirect)}`
       : callbackUrl;
     
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { 
-        redirectTo: finalCallbackUrl
+        redirectTo: finalCallbackUrl,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        }
       }
     });
     

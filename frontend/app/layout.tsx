@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import TemuHeader from "@/components/temu-header";
-import Footer from "@/components/footer";
-import WhatsappButton from "@/components/whatsapp-button";
+import ConditionalHeader from "@/components/conditional-header";
+import ConditionalFooter from "@/components/conditional-footer";
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
@@ -30,12 +29,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="min-h-screen bg-gray-50 text-slate-900 antialiased">
-        <TemuHeader />
+        <ConditionalHeader />
         <main className="relative">
           {children}
         </main>
-        <Footer />
-        <WhatsappButton />
+        <ConditionalFooter />
       </body>
     </html>
   );
