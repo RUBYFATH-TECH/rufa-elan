@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
 import { isKnownAdminEmail } from "@/lib/admin-common";
+import { useCartStore } from "@/store/cart-store";
 import AccountLayout from "@/components/account-layout";
 
 type UserProfile = {
@@ -47,6 +48,7 @@ type Order = {
 export default function OrdersPage() {
   const router = useRouter();
   const supabase = createClientComponentSupabaseClient();
+  const { addItem } = useCartStore();
   const [isLoading, setIsLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -166,6 +168,30 @@ export default function OrdersPage() {
         return CheckCircle;
       default:
         return Package;
+    }
+  };
+
+  const handleReorder = (order: Order) => {
+    try {
+      // Add each item from the order to the cart
+      order.items.forEach((item) => {
+        addItem({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          image: item.image,
+        });
+      });
+
+      // Show a success message
+      alert(`Added ${order.items.length} item(s) to your cart!`);
+      
+      // Redirect to shop
+      router.push("/shop");
+    } catch (error) {
+      console.error("Failed to re-order:", error);
+      alert("Failed to add items to cart. Please try again.");
     }
   };
 
@@ -299,26 +325,32 @@ export default function OrdersPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <Link
-                      href={`/account/orders/${order.id}`}
-                      className="inline-flex items-center text-sm font-medium text-orange-600 hover:text-orange-700"
-                    >
-                      <Eye className="w-4 h-4 mr-1" />
-                      View Details
-                    </Link>
-                    <div className="flex space-x-3">
-                      <button className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900">
-                        <Download className="w-4 h-4 mr-1" />
-                        Invoice
-                      </button>
-                      {order.status === 'delivered' && (
-                        <button className="inline-flex items-center text-sm text-orange-600 hover:text-orange-700">
-                          Reorder
-                        </button>
-                      )}
+                    <div className="flex items-center justify-between">
+                      <Link
+                        href={`/account/orders/${order.id}`}
+                        className="inline-flex items-center text-sm font-medium text-orange-600 hover:text-orange-700"
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        View Details
+                      </Link>
+                      <div className="flex space-x-3">
+                        <Link
+                          href={`/account/orders/${order.id}`}
+                          className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
+                        >
+                          <Download className="w-4 h-4 mr-1" />
+                          Invoice
+                        </Link>
+                        {order.status === 'delivered' && (
+                          <button
+                            onClick={() => handleReorder(order)}
+                            className="inline-flex items-center text-sm text-orange-600 hover:text-orange-700 font-medium"
+                          >
+                            Reorder
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
                 </div>
               </div>
             );
