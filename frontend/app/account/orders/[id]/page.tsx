@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { useParams, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Download, ArrowLeft, ShoppingBag, Printer } from "lucide-react";
-import { downloadInvoicePDF } from "@/lib/pdf-utils";
 import { useCartStore } from "@/store/cart-store";
 import { featuredProducts } from "@/lib/sample-data";
+import InvoiceReceipt from "@/components/invoice-receipt";
 
 type OrderDetail = {
   id: string;
@@ -194,45 +194,34 @@ export default function OrderDetailPage() {
     if (!order) return;
 
     try {
-      const invoiceDate = new Date(order.created_at);
-      const dueDate = new Date(invoiceDate);
-      dueDate.setDate(dueDate.getDate() + 30);
+      // Get the current invoice HTML from the component
+      const invoiceElement = document.querySelector('[data-invoice-print]');
+      if (!invoiceElement) {
+        alert('Invoice not found');
+        return;
+      }
 
-      await downloadInvoicePDF({
-        orderNumber: order.order_number,
-        orderDate: invoiceDate.toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        }),
-        dueDate: dueDate.toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        }),
-        customerName: order.shipping_address.full_name,
-        customerEmail: order.shipping_address.email,
-        customerPhone: order.shipping_address.phone,
-        customerAddress: order.shipping_address.address,
-        customerCity: order.shipping_address.city,
-        paymentReference: order.payment_reference,
-        paymentStatus: order.payment_status,
-        items: order.items.map((item) => ({
-          name: item.name,
-          variant: item.variant,
-          sku: item.sku,
-          quantity: item.quantity,
-          unitPrice: item.price,
-          totalPrice: item.price * item.quantity,
-        })),
-        subtotal: order.subtotal,
-        shippingFee: order.shipping_fee,
-        discountAmount: order.discount_amount,
-        totalAmount: order.total_amount,
-      });
+      // Dynamically import html2pdf
+      const html2pdf = (await import('html2pdf.js')).default;
+
+      // Create PDF from current invoice component
+      const options = {
+        margin: 10,
+        filename: `${order.order_number}_invoice.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      };
+
+      html2pdf()
+        .set(options)
+        .from(invoiceElement)
+        .save();
     } catch (error) {
-      console.error("Failed to download PDF:", error);
-      alert("Failed to download invoice. Please try again.");
+      console.error('Error generating PDF:', error);
+      alert('Failed to download PDF. Trying print instead...');
+      window.print();
     }
   };
 
@@ -458,8 +447,38 @@ export default function OrderDetailPage() {
                 
                 {/* Modal Content */}
                 <div className="overflow-y-auto flex-1">
-                  <div className="p-8">
-                    <OrderInvoice order={order} />
+                  <div className="bg-gray-50 p-4">
+                    <InvoiceReceipt
+                      orderNumber={order.order_number}
+                      date={new Date(order.created_at)}
+                      items={order.items.map((item) => ({
+                        id: item.id,
+                        name: item.name,
+                        description: item.description,
+                        quantity: item.quantity,
+                        price: item.price,
+                        total: item.price * item.quantity,
+                        image: item.image,
+                      }))}
+                      customer={{
+                        id: order.id,
+                        firstName: order.shipping_address.full_name.split(" ")[0] || "",
+                        lastName: order.shipping_address.full_name.split(" ")[1] || "",
+                        email: order.shipping_address.email,
+                        phone: order.shipping_address.phone,
+                        address: order.shipping_address.address,
+                        city: order.shipping_address.city.split(",")[0] || "",
+                        state: order.shipping_address.city.split(",")[1]?.trim() || "",
+                        zipCode: "00001",
+                      }}
+                      subtotal={order.subtotal}
+                      tax={0}
+                      shipping={order.shipping_fee}
+                      total={order.total_amount}
+                      paymentMethod="Paystack"
+                      transactionId={order.payment_reference}
+                      status={order.status as any}
+                    />
                   </div>
                 </div>
                 
@@ -470,34 +489,17 @@ export default function OrderDetailPage() {
                   </div>
                   <div className="flex justify-end gap-3">
                     <button
-                      onClick={() => setShowInvoice(false)}
-                      className="rounded-lg border border-slate-300 px-6 py-2 font-semibold text-slate-950 transition hover:bg-white"
-                    >
-                      Close
-                    </button>
-                    <button
-                      onClick={() => {
-                        // Copy invoice text to clipboard
-                        const invoiceText = document.querySelector('[data-invoice-content]')?.textContent || '';
-                        navigator.clipboard.writeText(invoiceText);
-                        alert('Invoice copied to clipboard!');
-                      }}
-                      className="inline-flex items-center gap-2 rounded-lg bg-slate-600 px-6 py-2 font-semibold text-white transition hover:bg-slate-700"
-                    >
-                      Share
-                    </button>
-                    <button
                       onClick={() => {
                         window.print();
                       }}
-                      className="inline-flex items-center gap-2 rounded-lg bg-slate-600 px-6 py-2 font-semibold text-white transition hover:bg-slate-700"
+                      className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-6 py-2 font-semibold text-white transition hover:bg-teal-700"
                     >
                       <Printer className="w-4 h-4" />
                       Print
                     </button>
                     <button
                       onClick={handleDownloadPDF}
-                      className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2 font-semibold text-white transition hover:bg-blue-700"
+                      className="inline-flex items-center gap-2 rounded-lg bg-orange-600 px-6 py-2 font-semibold text-white transition hover:bg-orange-700"
                     >
                       <Download className="w-4 h-4" />
                       Download PDF
@@ -510,141 +512,5 @@ export default function OrderDetailPage() {
         </div>
       ) : null}
     </section>
-  );
-}
-
-/**
- * OrderInvoice Component - Professional invoice design
- */
-function OrderInvoice({ order }: { order: OrderDetail }) {
-  const invoiceDate = new Date(order.created_at);
-  const dueDate = new Date(invoiceDate);
-  dueDate.setDate(dueDate.getDate() + 30);
-
-  return (
-    <div className="space-y-8 bg-white p-8 text-slate-950 print:p-0" data-invoice-content>
-      {/* Header */}
-      <div className="flex items-center justify-between border-b-2 border-slate-200 pb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-blue-600">RUFA ELAN</h1>
-          <p className="text-sm text-slate-600">Premium E-commerce Solutions</p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs font-semibold uppercase text-slate-500">Invoice</p>
-          <p className="text-lg font-bold">{order.order_number}</p>
-          <p className="text-sm text-slate-600">{invoiceDate.toLocaleDateString()}</p>
-        </div>
-      </div>
-
-      {/* Customer & Order Info */}
-      <div className="grid gap-8 sm:grid-cols-2">
-        <div>
-          <p className="text-xs font-semibold uppercase text-slate-500">Bill To</p>
-          <div className="mt-3 space-y-1 text-sm">
-            <p className="font-semibold">{order.shipping_address.full_name}</p>
-            <p>{order.shipping_address.address}</p>
-            <p>{order.shipping_address.city}</p>
-            <p>{order.shipping_address.phone}</p>
-            <p>{order.shipping_address.email}</p>
-          </div>
-        </div>
-        <div>
-          <div className="space-y-2 text-sm">
-            <div>
-              <p className="text-xs font-semibold uppercase text-slate-500">Order Date</p>
-              <p className="font-semibold">{invoiceDate.toLocaleDateString()}</p>
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase text-slate-500">Due Date</p>
-              <p className="font-semibold">{dueDate.toLocaleDateString()}</p>
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase text-slate-500">Payment Status</p>
-              <p className="font-semibold capitalize">{order.payment_status}</p>
-            </div>
-            {order.payment_reference && (
-              <div>
-                <p className="text-xs font-semibold uppercase text-slate-500">Payment Ref</p>
-                <p className="font-mono text-xs">{order.payment_reference}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Items Table */}
-      <div>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b-2 border-slate-200">
-              <th className="py-3 text-left font-semibold">Item Description</th>
-              <th className="py-3 text-center font-semibold">Qty</th>
-              <th className="py-3 text-right font-semibold">Unit Price</th>
-              <th className="py-3 text-right font-semibold">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {order.items.map((item) => (
-              <tr key={item.id} className="border-b border-slate-100">
-                <td className="py-3">
-                  <p className="font-semibold">{item.name}</p>
-                  {item.description && (
-                    <p className="text-xs text-slate-600 mt-1">{item.description}</p>
-                  )}
-                  {item.variant && (
-                    <p className="text-xs text-slate-600">Color: {item.variant}</p>
-                  )}
-                  {item.sku && (
-                    <p className="text-xs text-slate-600">SKU: {item.sku}</p>
-                  )}
-                </td>
-                <td className="py-3 text-center">{item.quantity}</td>
-                <td className="py-3 text-right">GHS {item.price.toFixed(2)}</td>
-                <td className="py-3 text-right font-semibold">
-                  GHS {(item.price * item.quantity).toFixed(2)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Totals */}
-      <div className="flex justify-end">
-        <div className="w-full sm:w-72">
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between border-b border-slate-200 pb-2">
-              <span>Subtotal:</span>
-              <span className="font-semibold">GHS {order.subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between border-b border-slate-200 pb-2">
-              <span>Shipping Fee:</span>
-              <span className="font-semibold">GHS {order.shipping_fee.toFixed(2)}</span>
-            </div>
-            {order.discount_amount > 0 && (
-              <div className="flex justify-between border-b border-slate-200 pb-2">
-                <span>Discount:</span>
-                <span className="font-semibold text-green-600">
-                  -GHS {order.discount_amount.toFixed(2)}
-                </span>
-              </div>
-            )}
-            <div className="flex justify-between bg-blue-50 px-4 py-3 font-bold">
-              <span>Total Amount:</span>
-              <span className="text-blue-600">GHS {order.total_amount.toFixed(2)}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="border-t-2 border-slate-200 pt-6 text-center text-xs text-slate-600">
-        <p>Thank you for your business!</p>
-        <p className="mt-2">
-          For support, contact us at support@rufaelan.com | Phone: +233 (0) XXX XXX XXXX
-        </p>
-        <p className="mt-4 font-semibold text-slate-950">RUFA ELAN - Quality Products, Fast Delivery</p>
-      </div>
-    </div>
   );
 }

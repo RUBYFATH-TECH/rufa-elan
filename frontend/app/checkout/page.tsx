@@ -269,36 +269,92 @@ export default function CheckoutPage() {
     setPendingOrder(orderPayload);
 
     try {
-      const response = await fetch("/api/paystack/init", {
+      // Get auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        setMessage("Authentication required. Please log in.");
+        setPaymentStatus("failed");
+        return;
+      }
+
+      // Call backend payment initialization endpoint
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+      const response = await fetch(`${backendUrl}/api/payments/initialize`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`
+        },
         body: JSON.stringify({
-          email: selectedAddress.email,
+          order_id: orderId,
           amount: grandTotal,
-          orderId,
+          email: selectedAddress.email,
           metadata: {
-            deliveryOption,
-            addressId: selectedAddress.id
+            delivery_option: deliveryOption,
+            address_id: selectedAddress.id,
+            items: items.map(i => ({
+              product_variant_id: i.id,
+              quantity: i.quantity,
+              price: i.price
+            }))
           }
         })
       });
 
       const responseText = await response.text();
-      let data: any;
+      console.log("Raw response text:", responseText);
+      console.log("Response status:", response.status);
+      console.log("Response headers:", {
+        contentType: response.headers.get('content-type'),
+        contentLength: response.headers.get('content-length')
+      });
+
+      let data: any = {};
       try {
-        data = responseText ? JSON.parse(responseText) : {};
-      } catch (error) {
-        data = { message: responseText || "Invalid response from payment service." };
+        if (responseText) {
+          data = JSON.parse(responseText);
+        }
+      } catch (parseError) {
+        console.error("JSON parse error:", parseError, "Text:", responseText);
+        data = { message: `Invalid response from server: ${responseText}` };
       }
 
       if (!response.ok) {
+        console.error("Payment init error response:", {
+          status: response.status,
+          statusText: response.statusText,
+          data: data
+        });
         setMessage(data.message || `Payment initialization failed (${response.status}).`);
         setPaymentStatus("failed");
         return;
       }
 
+      // Check if response is empty
+      if (!responseText || Object.keys(data).length === 0) {
+        console.error("Empty response from backend");
+        setMessage("Empty response from payment service. Please try again.");
+        setPaymentStatus("failed");
+        return;
+      }
+
+      if (!data.success) {
+        console.error("Payment init not successful:", data);
+        setMessage(data.message || "Payment initialization failed.");
+        setPaymentStatus("failed");
+        return;
+      }
+
       const authorizationUrl = data.data?.authorization_url ?? "";
+      if (!authorizationUrl) {
+        console.error("No authorization URL in response:", data);
+        setMessage("Payment service did not return authorization URL");
+        setPaymentStatus("failed");
+        return;
+      }
       const reference = data.data?.reference ?? orderId;
+      const paymentId = data.data?.payment_id;
+      
       setPaymentUrl(authorizationUrl);
       setPaymentDetails({ authorization_url: authorizationUrl, reference, amount: grandTotal, email: selectedAddress.email });
       setPaymentStatus("initialized");
@@ -307,6 +363,7 @@ export default function CheckoutPage() {
       // Open Paystack
       openPaystackInline({ authorization_url: authorizationUrl, reference, amount: grandTotal, email: selectedAddress.email });
     } catch (error) {
+      console.error("Payment error:", error);
       setMessage("Failed to initialize payment. Please try again.");
       setPaymentStatus("failed");
     }
@@ -317,56 +374,50 @@ export default function CheckoutPage() {
     setMessage("Verifying payment...");
 
     try {
-      const res = await fetch("/api/paystack/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reference })
+      // Get auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        setPaymentStatus("failed");
+        setMessage("Authentication required for payment verification.");
+        return;
+      }
+
+      // Call backend verify endpoint
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+      const res = await fetch(`${backendUrl}/api/payments/verify/${reference}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`
+        }
       });
 
       const data = await res.json();
-      if (!res.ok) {
+      if (!res.ok || !data.success) {
         setPaymentStatus("failed");
         setMessage(data.message || "Payment verification failed.");
+        console.error("Verification failed:", data);
         return;
       }
 
-      if (!pendingOrder) {
-        setPaymentStatus("failed");
-        setMessage("Payment verified but order data is missing.");
-        return;
-      }
-
-      const orderRes = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...pendingOrder,
-          reference,
-          orderId: reference,
-          payment_reference: reference
-        })
-      });
-
-      const orderData = await orderRes.json();
-      if (!orderRes.ok) {
-        setPaymentStatus("failed");
-        setMessage(orderData.message || "Payment verified but saving order failed.");
-        return;
-      }
-
+      // Payment verified successfully
       setPaymentStatus("success");
-      setMessage("Payment successful! Order placed.");
+      setMessage("Payment successful! Your order has been placed.");
 
       try {
         clearCart();
-      } catch {}
+      } catch (e) {
+        console.error("Error clearing cart:", e);
+      }
 
+      // Redirect to orders or home page
       setTimeout(() => {
-        router.push("/");
-      }, 1500);
+        router.push("/orders");
+      }, 2000);
     } catch (error) {
+      console.error("Verification error:", error);
       setPaymentStatus("failed");
-      setMessage("An error occurred. Please try again.");
+      setMessage("An error occurred during verification. Please try again.");
     }
   };
 

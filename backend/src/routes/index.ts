@@ -8,6 +8,7 @@ import cartRouter from './cart';
 import wishlistRouter from './wishlist';
 import addressesRouter from './addresses';
 import paymentMethodsRouter from './payment-methods';
+import paymentsRouter from './payments';
 import notificationsRouter from './notifications';
 import userSettingsRouter from './user-settings';
 import adminUsersRouter from './admin-users';
@@ -46,6 +47,9 @@ router.use('/addresses', addressesRouter);
 
 // Payment Methods routes
 router.use('/payment-methods', paymentMethodsRouter);
+
+// Payments routes (Paystack integration)
+router.use('/payments', paymentsRouter);
 
 // Notifications routes
 router.use('/notifications', notificationsRouter);
