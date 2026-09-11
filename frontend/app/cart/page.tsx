@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/cart-store";
-import { CircleUserRound, ShoppingBag, Trash2, X } from "lucide-react";
+import { CircleUserRound, ShoppingBag, Trash2, X, Minus, Plus, Truck, Shield, RotateCcw } from "lucide-react";
 import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
 
 export default function CartPage() {
@@ -13,93 +13,242 @@ export default function CartPage() {
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
   const total = useMemo(() => items.reduce((sum, item) => sum + item.price * item.quantity, 0), [items]);
+  const subtotal = total;
+  const shippingEstimate = 25;
   const [showAccountPrompt, setShowAccountPrompt] = useState(false);
 
   const startCheckout = async () => {
     const supabase = createClientComponentSupabaseClient();
     const { data } = await supabase.auth.getSession();
-    if (data.session) {
-      router.push("/checkout");
+    if (!data.session) {
+      setShowAccountPrompt(true);
       return;
     }
-    setShowAccountPrompt(true);
+
+    // User is logged in - check for addresses
+    try {
+      const response = await fetch("/api/addresses", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" }
+      });
+
+      if (response.ok) {
+        const addresses = await response.json();
+        if (!addresses || addresses.length === 0) {
+          // No addresses - redirect to add address
+          router.push("/account/addresses?redirect=/checkout");
+          return;
+        }
+      }
+    } catch (error) {
+      console.error("Error checking addresses:", error);
+      // Continue to checkout anyway if API fails
+    }
+
+    // Has addresses or we couldn't check - proceed to checkout
+    router.push("/checkout");
   };
 
   if (items.length === 0) {
     return (
-      <section className="mx-auto max-w-6xl px-6 py-20 sm:px-8 lg:px-12">
-        <div className="rounded-[2rem] border border-slate-200 bg-white p-14 text-center shadow-soft">
-          <ShoppingBag className="mx-auto h-12 w-12 text-brand-700" />
-          <h1 className="mt-6 text-3xl font-semibold text-slate-950">Your cart is empty</h1>
-          <p className="mt-4 text-slate-600">Browse our shop and add your favorite handbags to checkout.</p>
+      <section className="mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:px-8">
+        <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-16 text-center shadow-lg">
+          <div className="flex justify-center">
+            <div className="rounded-full bg-slate-100 p-6">
+              <ShoppingBag className="h-12 w-12 text-slate-400" />
+            </div>
+          </div>
+          <h1 className="mt-8 text-3xl font-bold text-slate-950">Your cart is empty</h1>
+          <p className="mt-3 text-slate-600">Browse our collection and add your favorite items to get started.</p>
+          <Link 
+            href="/shop"
+            className="mt-8 inline-flex items-center gap-2 rounded-xl bg-orange-600 px-8 py-4 font-semibold text-white transition hover:bg-orange-700 shadow-md hover:shadow-lg"
+          >
+            <ShoppingBag className="h-5 w-5" />
+            Continue Shopping
+          </Link>
         </div>
       </section>
     );
   }
 
   return (
-    <section className="mx-auto max-w-6xl px-6 py-20 sm:px-8 lg:px-12">
-      <div className="grid gap-10 lg:grid-cols-[1.6fr,0.9fr]">
-        <div className="space-y-6">
+    <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-950">Shopping Cart</h1>
+        <p className="mt-2 text-slate-600">{items.length} item{items.length !== 1 ? 's' : ''} in your cart</p>
+      </div>
+
+      <div className="grid gap-8 lg:grid-cols-[1fr,380px]">
+        {/* Cart Items */}
+        <div className="space-y-4">
           {items.map((item) => (
-            <div key={item.id} className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-soft">
-              <div className="flex items-center gap-6">
-                <img src={item.image} alt={item.name} className="h-28 w-28 rounded-3xl object-cover" />
-                <div className="flex-1">
-                  <p className="text-sm text-slate-500">{item.variant ?? "Standard"}</p>
-                  <h2 className="mt-2 text-xl font-semibold text-slate-950">{item.name}</h2>
-                  <p className="mt-2 text-sm text-slate-600">GHS {item.price}</p>
-                  <div className="mt-4 flex items-center gap-3 rounded-full border border-slate-200 bg-slate-50 px-3 py-2">
-                    <button onClick={() => updateQuantity(item.id, Math.max(item.quantity - 1, 1))} className="text-brand-700">-</button>
-                    <span className="w-8 text-center text-sm font-semibold text-slate-900">{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="text-brand-700">+</button>
+            <div key={item.id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-all group">
+              <div className="flex gap-5">
+                {/* Product Image */}
+                <div className="relative flex-shrink-0">
+                  <img 
+                    src={item.image} 
+                    alt={item.name} 
+                    className="h-24 w-24 rounded-lg object-cover shadow-sm group-hover:shadow-md transition"
+                  />
+                  {item.variant && (
+                    <div className="absolute -bottom-1 -right-1 rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-700">
+                      {item.variant}
+                    </div>
+                  )}
+                </div>
+
+                {/* Product Details */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-bold text-slate-900 truncate">{item.name}</h3>
+                  <p className="mt-1 text-sm text-slate-600">{item.variant ?? "Standard"}</p>
+                  
+                  {/* Price and Quantity */}
+                  <div className="mt-4 flex items-center justify-between">
+                    <p className="text-lg font-bold text-slate-950">GHS {(item.price * item.quantity).toFixed(2)}</p>
+                    
+                    {/* Quantity Controls */}
+                    <div className="flex items-center gap-2 rounded-lg border border-slate-300 bg-slate-50 p-1">
+                      <button 
+                        onClick={() => updateQuantity(item.id, Math.max(item.quantity - 1, 1))}
+                        className="p-1.5 hover:bg-white rounded-md transition text-slate-600 hover:text-slate-900"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </button>
+                      <span className="w-8 text-center text-sm font-semibold text-slate-900">{item.quantity}</span>
+                      <button 
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        className="p-1.5 hover:bg-white rounded-md transition text-slate-600 hover:text-slate-900"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <button onClick={() => removeItem(item.id)} className="rounded-full border border-slate-200 p-3 text-slate-500 transition hover:text-red-600">
+
+                {/* Remove Button */}
+                <button 
+                  onClick={() => removeItem(item.id)} 
+                  className="flex-shrink-0 p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                  title="Remove item"
+                >
                   <Trash2 className="h-5 w-5" />
                 </button>
               </div>
             </div>
           ))}
+
+          {/* Continue Shopping */}
+          <Link 
+            href="/shop"
+            className="mt-6 inline-flex items-center gap-2 text-orange-600 hover:text-orange-700 font-semibold transition"
+          >
+            ← Continue Shopping
+          </Link>
         </div>
-        <aside className="space-y-6 rounded-[2rem] border border-slate-200 bg-white p-8 shadow-soft">
-          <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Order summary</p>
-            <p className="mt-3 text-3xl font-semibold text-slate-950">GHS {total.toFixed(2)}</p>
+
+        {/* Order Summary Sidebar */}
+        <aside className="h-fit rounded-xl border border-slate-200 bg-white p-6 shadow-md sticky top-4">
+          {/* Header */}
+          <h2 className="text-lg font-bold text-slate-950">Order Summary</h2>
+          
+          {/* Breakdown */}
+          <div className="mt-6 space-y-4 border-b border-slate-200 pb-6">
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-600">Subtotal</span>
+              <span className="font-semibold text-slate-900">GHS {subtotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-600">Shipping</span>
+              <span className="font-semibold text-slate-900">GHS {shippingEstimate.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-600">Tax</span>
+              <span className="font-semibold text-slate-900">Calculated at checkout</span>
+            </div>
           </div>
-          <div className="rounded-3xl bg-brand-50 p-6 text-slate-700">
-            <p className="text-sm font-semibold text-brand-700">Shipping estimate</p>
-            <p className="mt-3 text-sm">Delivery fees calculated at checkout based on city and service.</p>
+
+          {/* Total */}
+          <div className="mt-6 space-y-2">
+            <div className="flex justify-between">
+              <span className="font-semibold text-slate-950">Total</span>
+              <span className="text-2xl font-bold text-orange-600">GHS {(subtotal + shippingEstimate).toFixed(2)}</span>
+            </div>
+            <p className="text-xs text-slate-500">Excluding tax and final adjustments</p>
           </div>
+
+          {/* Checkout Button */}
           <button
             onClick={startCheckout}
-            className="w-full rounded-full bg-slate-950 px-6 py-4 text-sm font-semibold text-white transition hover:bg-slate-800"
+            className="w-full mt-6 rounded-lg bg-gradient-to-r from-orange-600 to-red-600 px-6 py-3.5 text-sm font-bold text-white transition hover:from-orange-700 hover:to-red-700 shadow-md hover:shadow-lg active:scale-95"
           >
-            Proceed to checkout
+            Proceed to Checkout
           </button>
+
+          {/* Trust Badges */}
+          <div className="mt-6 space-y-3 border-t border-slate-200 pt-6">
+            <div className="flex items-center gap-3 text-xs">
+              <Truck className="h-4 w-4 text-blue-600 flex-shrink-0" />
+              <span className="text-slate-700"><span className="font-semibold">Free Delivery</span> on orders over GHS 500</span>
+            </div>
+            <div className="flex items-center gap-3 text-xs">
+              <Shield className="h-4 w-4 text-green-600 flex-shrink-0" />
+              <span className="text-slate-700"><span className="font-semibold">Secure Checkout</span> with Paystack</span>
+            </div>
+            <div className="flex items-center gap-3 text-xs">
+              <RotateCcw className="h-4 w-4 text-purple-600 flex-shrink-0" />
+              <span className="text-slate-700"><span className="font-semibold">30-Day Returns</span> on all items</span>
+            </div>
+          </div>
+
+          {/* Shipping Info */}
+          <div className="mt-6 rounded-lg bg-blue-50 border border-blue-200 p-3 text-xs text-blue-900">
+            <p className="font-semibold mb-1">Shipping Information</p>
+            <p>Delivery fees calculated at checkout based on your location and selected service.</p>
+          </div>
         </aside>
       </div>
 
       {showAccountPrompt ? (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="account-prompt-title">
-          <div className="relative w-full max-w-md overflow-hidden rounded-3xl bg-white p-7 shadow-2xl sm:p-9">
-            <button onClick={() => setShowAccountPrompt(false)} aria-label="Close" className="absolute right-5 top-5 rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-950">
+          <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white p-8 shadow-2xl">
+            <button 
+              onClick={() => setShowAccountPrompt(false)} 
+              aria-label="Close" 
+              className="absolute right-4 top-4 rounded-full p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-950"
+            >
               <X className="h-5 w-5" />
             </button>
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff1e9] text-[#e65100]">
-              <CircleUserRound className="h-6 w-6" />
+
+            {/* Icon */}
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-orange-100">
+              <CircleUserRound className="h-7 w-7 text-orange-600" />
             </div>
-            <p className="mt-6 text-xs font-semibold uppercase tracking-[0.24em] text-[#e65100]">Almost there</p>
-            <h2 id="account-prompt-title" className="mt-3 text-2xl font-semibold text-slate-950">Sign in to continue</h2>
-            <p className="mt-3 text-sm leading-6 text-slate-600">Sign in or create a free account to securely continue to checkout and keep track of your order.</p>
-            <div className="mt-7 grid gap-3 sm:grid-cols-2">
-              <Link href="/auth/login?redirect=/checkout" className="inline-flex items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
-                Sign in
+
+            {/* Content */}
+            <h2 id="account-prompt-title" className="mt-6 text-2xl font-bold text-slate-950">Sign in to checkout</h2>
+            <p className="mt-3 text-sm text-slate-600 leading-relaxed">Create an account or sign in to securely checkout and track your orders. It takes just 30 seconds!</p>
+
+            {/* Action Buttons */}
+            <div className="mt-8 flex flex-col gap-3">
+              <Link 
+                href="/auth/login?redirect=/checkout" 
+                className="rounded-lg bg-orange-600 px-5 py-3 text-center text-sm font-bold text-white transition hover:bg-orange-700 shadow-md hover:shadow-lg"
+              >
+                Sign In
               </Link>
-              <Link href="/auth/register?redirect=/checkout" className="inline-flex items-center justify-center rounded-full border border-[#e65100] px-5 py-3 text-sm font-semibold text-[#e65100] transition hover:bg-[#fff7f3]">
-                Create account
+              <Link 
+                href="/auth/register?redirect=/checkout" 
+                className="rounded-lg border border-orange-300 bg-orange-50 px-5 py-3 text-center text-sm font-bold text-orange-600 transition hover:bg-orange-100"
+              >
+                Create Account
               </Link>
             </div>
+
+            {/* Privacy Note */}
+            <p className="mt-4 text-xs text-slate-500 text-center">We'll never share your personal information</p>
           </div>
         </div>
       ) : null}

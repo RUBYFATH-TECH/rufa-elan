@@ -97,7 +97,7 @@ export const authMiddleware = async (
     // Get user profile to check admin status
     const { data: profile, error: profileError } = await req.db
       .from('profiles')
-      .select('id, is_admin')
+      .select('id')
       .eq('id', user.id)
       .single();
 
@@ -107,7 +107,7 @@ export const authMiddleware = async (
       req.isAdmin = false;
     } else {
       req.userId = user.id;
-      req.isAdmin = profile?.is_admin || false;
+      req.isAdmin = false;
     }
 
     logger.info(`Authenticated user: ${user.id}, Admin: ${req.isAdmin}`);

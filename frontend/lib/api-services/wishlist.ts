@@ -3,7 +3,23 @@
  * Handles all wishlist-related API calls
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+import { createClientComponentSupabaseClient } from '@/lib/supabase-client';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/api` : 'http://localhost:8000/api';
+
+/**
+ * Get the Supabase session token for authenticated requests
+ */
+async function getAuthToken(): Promise<string> {
+  try {
+    const supabase = createClientComponentSupabaseClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || '';
+  } catch (error) {
+    console.warn('Failed to get auth token:', error);
+    return '';
+  }
+}
 
 export interface WishlistProduct {
   id: string;
@@ -67,13 +83,14 @@ class WishlistService {
    */
   async getWishlist(page: number = 1, limit: number = 20): Promise<WishlistItem[]> {
     try {
+      const token = await getAuthToken();
       const response = await fetch(
         `${API_BASE_URL}/wishlist?page=${page}&limit=${limit}`,
         {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -95,11 +112,12 @@ class WishlistService {
    */
   async checkProduct(productId: string): Promise<WishlistCheckResponse> {
     try {
+      const token = await getAuthToken();
       const response = await fetch(`${API_BASE_URL}/wishlist/check/${productId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -120,11 +138,12 @@ class WishlistService {
    */
   async addToWishlist(productId: string): Promise<WishlistItem> {
     try {
+      const token = await getAuthToken();
       const response = await fetch(`${API_BASE_URL}/wishlist/${productId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -146,11 +165,12 @@ class WishlistService {
    */
   async removeFromWishlist(productId: string): Promise<void> {
     try {
+      const token = await getAuthToken();
       const response = await fetch(`${API_BASE_URL}/wishlist/${productId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -169,11 +189,12 @@ class WishlistService {
    */
   async getWishlistStats(): Promise<WishlistStatsResponse> {
     try {
+      const token = await getAuthToken();
       const response = await fetch(`${API_BASE_URL}/wishlist/stats`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 

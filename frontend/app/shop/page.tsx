@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import ProductCard from "@/components/product-card";
 import { featuredProducts } from "@/lib/sample-data";
 import { Clock, Filter, Grid, List, ShoppingBag } from "lucide-react";
+import { useCartStore } from "@/store/cart-store";
 
 const categories = [
   { id: "all", name: "All Products", count: 12 },
@@ -16,44 +18,58 @@ const categories = [
   { id: "wallets", name: "Wallets", count: 1 },
 ];
 
-// Mock fast deals data
+// Mock fast deals data - using featured products with sale prices
 const fastDeals = [
   {
-    id: "deal-1",
-    name: "Premium Leather Handbag",
-    originalPrice: 299.99,
-    dealPrice: 199.99,
-    discount: 33,
-    image: "/images/WhatsApp Image 2026-07-18 at 16.16.13.jpeg",
+    id: "bag-alaia-01",
+    name: "Alaia Leather Tote",
+    slug: "alaia-leather-tote",
+    originalPrice: 320,
+    dealPrice: 280,
+    discount: 13,
+    image: "/images/2026-07-21 at 16.58.28.jpeg",
     timeLeft: "2h 45m",
     soldCount: 87
   },
   {
-    id: "deal-2", 
-    name: "Designer Crossbody Bag",
-    originalPrice: 159.99,
-    dealPrice: 99.99,
-    discount: 38,
-    image: "/images/WhatsApp Image 2026-07-18 at 16.16.37.jpeg",
+    id: "bag-luxury-01",
+    name: "Luxury Leather Handbag",
+    slug: "luxury-leather-handbag",
+    originalPrice: 450,
+    dealPrice: 399,
+    discount: 11,
+    image: "/images/WhatsApp Image 2026-07-21 at 16.58.26.jpeg",
     timeLeft: "4h 12m",
     soldCount: 156
   },
   {
-    id: "deal-3",
-    name: "Elegant Tote Bag Set",
-    originalPrice: 199.99,
-    dealPrice: 129.99,
-    discount: 35,
-    image: "/images/WhatsApp Image 2026-07-2 at 16.58.29.jpeg", 
+    id: "bag-handbag-03",
+    name: "Designer Satchel Handbag",
+    slug: "designer-satchel-handbag",
+    originalPrice: 380,
+    dealPrice: 329,
+    discount: 14,
+    image: "/images/WhatsApp Image 2026-07-18 at 16.15.58.jpeg",
     timeLeft: "1h 28m",
     soldCount: 203
   }
 ];
 
 export default function ShopPage() {
+  const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [sortBy, setSortBy] = useState("newest");
+  const [mounted, setMounted] = useState(false);
+
+  const cartItems = useCartStore((state) => state.items);
+  const hydrateCart = useCartStore((state) => state.hydrate);
+  const cartCount = cartItems.length;
+
+  useEffect(() => {
+    hydrateCart();
+    setMounted(true);
+  }, [hydrateCart]);
 
   const filteredProducts = selectedCategory === "all" 
     ? featuredProducts 
@@ -85,7 +101,9 @@ export default function ShopPage() {
             <div className="flex items-center space-x-4">
               <Link href="/cart" className="relative p-2 text-gray-700 hover:text-gray-900">
                 <ShoppingBag className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 bg-orange-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                {mounted && cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-orange-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold">{cartCount}</span>
+                )}
               </Link>
             </div>
           </div>
@@ -117,7 +135,11 @@ export default function ShopPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {fastDeals.map((deal) => (
-              <div key={deal.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+              <div 
+                key={deal.id} 
+                className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-shadow cursor-pointer"
+                onClick={() => router.push(`/products/${deal.slug}`)}
+              >
                 <div className="relative">
                   <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
                     {deal.discount}% OFF
@@ -128,7 +150,7 @@ export default function ShopPage() {
                   <img 
                     src={deal.image} 
                     alt={deal.name}
-                    className="w-full h-48 object-cover rounded-lg mb-4"
+                    className="w-full h-48 object-cover rounded-lg mb-4 hover:scale-105 transition-transform"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
                       e.currentTarget.parentElement!.innerHTML = `
@@ -148,15 +170,21 @@ export default function ShopPage() {
                     }}
                   />
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-2">{deal.name}</h3>
+                <h3 className="font-semibold text-gray-900 mb-2 hover:text-orange-600 transition-colors">{deal.name}</h3>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg font-bold text-red-600">${deal.dealPrice}</span>
-                  <span className="text-sm text-gray-500 line-through">${deal.originalPrice}</span>
+                  <span className="text-lg font-bold text-red-600">GHS {deal.dealPrice}</span>
+                  <span className="text-sm text-gray-500 line-through">GHS {deal.originalPrice}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-600">{deal.soldCount} sold</span>
-                  <button className="bg-orange-600 text-white px-4 py-2 rounded text-sm hover:bg-orange-700 transition-colors">
-                    Buy Now
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/products/${deal.slug}`);
+                    }}
+                    className="bg-orange-600 text-white px-4 py-2 rounded text-sm hover:bg-orange-700 transition-colors font-medium"
+                  >
+                    View Deal
                   </button>
                 </div>
               </div>

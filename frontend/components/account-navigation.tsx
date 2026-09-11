@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { 
   User, 
   ShoppingBag, 
-  Heart, 
+  Clock, 
   MapPin, 
   CreditCard, 
   Bell, 
@@ -33,7 +33,7 @@ export default function AccountNavigation({ userProfile }: AccountNavigationProp
     { name: 'Overview', href: '/account', icon: User },
     { name: 'Orders', href: '/account/orders', icon: ShoppingBag },
     { name: 'Shop Products', href: '/shop', icon: Store },
-    { name: 'Wishlist', href: '/wishlist', icon: Heart },
+    { name: 'Waitlist', href: '/account/waitlist', icon: Clock },
     { name: 'Addresses', href: '/account/addresses', icon: MapPin },
     { name: 'Payment Methods', href: '/account/payments', icon: CreditCard },
     { name: 'Notifications', href: '/account/notifications', icon: Bell },

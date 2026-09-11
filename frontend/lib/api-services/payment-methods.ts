@@ -1,6 +1,6 @@
 /**
- * Addresses API Service
- * Handles all address-related API calls
+ * Payment Methods API Service
+ * Handles all payment method-related API calls
  */
 
 import { createClientComponentSupabaseClient } from '@/lib/supabase-client';
@@ -21,48 +21,51 @@ async function getAuthToken(): Promise<string> {
   }
 }
 
-export interface Address {
+export interface PaymentMethod {
   id: string;
   user_id: string;
+  provider: string;
+  method_type: string;
   label: string;
-  full_name: string;
-  phone: string;
-  email?: string;
-  address: string;
-  city: string;
-  region?: string;
-  postal_code?: string;
-  country: string;
-  delivery_instructions?: string;
+  account_name: string;
+  account_number: string;
+  phone_number?: string;
+  card_last_four?: string;
+  card_brand?: string;
+  card_exp_month?: number;
+  card_exp_year?: number;
   is_default: boolean;
+  is_active: boolean;
+  metadata?: Record<string, any>;
   created_at: string;
   updated_at: string;
 }
 
-export interface CreateAddressInput {
+export interface CreatePaymentMethodInput {
+  provider: string;
+  method_type: string;
   label: string;
-  full_name: string;
-  phone: string;
-  email?: string;
-  address: string;
-  city: string;
-  region?: string;
-  postal_code?: string;
-  country: string;
-  delivery_instructions?: string;
+  account_name: string;
+  account_number: string;
+  phone_number?: string;
+  card_last_four?: string;
+  card_brand?: string;
+  card_exp_month?: number;
+  card_exp_year?: number;
   is_default?: boolean;
+  metadata?: Record<string, any>;
 }
 
-export interface UpdateAddressInput extends Partial<CreateAddressInput> {}
+export interface UpdatePaymentMethodInput extends Partial<CreatePaymentMethodInput> {}
 
-class AddressesService {
+class PaymentMethodsService {
   /**
-   * Get all user addresses
+   * Get all user payment methods
    */
-  async getAddresses(): Promise<Address[]> {
+  async getPaymentMethods(): Promise<PaymentMethod[]> {
     try {
       const token = await getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/addresses`, {
+      const response = await fetch(`${API_BASE_URL}/payment-methods`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -71,24 +74,24 @@ class AddressesService {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch addresses');
+        throw new Error('Failed to fetch payment methods');
       }
 
       const data = await response.json();
       return data.data || [];
     } catch (error) {
-      console.error('Error fetching addresses:', error);
+      console.error('Error fetching payment methods:', error);
       throw error;
     }
   }
 
   /**
-   * Get single address by ID
+   * Get single payment method by ID
    */
-  async getAddress(id: string): Promise<Address> {
+  async getPaymentMethod(id: string): Promise<PaymentMethod> {
     try {
       const token = await getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/addresses/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/payment-methods/${id}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -97,24 +100,24 @@ class AddressesService {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch address');
+        throw new Error('Failed to fetch payment method');
       }
 
       const data = await response.json();
       return data.data;
     } catch (error) {
-      console.error('Error fetching address:', error);
+      console.error('Error fetching payment method:', error);
       throw error;
     }
   }
 
   /**
-   * Create new address
+   * Create new payment method
    */
-  async createAddress(input: CreateAddressInput): Promise<Address> {
+  async createPaymentMethod(input: CreatePaymentMethodInput): Promise<PaymentMethod> {
     try {
       const token = await getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/addresses`, {
+      const response = await fetch(`${API_BASE_URL}/payment-methods`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -125,24 +128,24 @@ class AddressesService {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create address');
+        throw new Error(errorData.message || 'Failed to create payment method');
       }
 
       const data = await response.json();
       return data.data;
     } catch (error) {
-      console.error('Error creating address:', error);
+      console.error('Error creating payment method:', error);
       throw error;
     }
   }
 
   /**
-   * Update existing address
+   * Update existing payment method
    */
-  async updateAddress(id: string, input: UpdateAddressInput): Promise<Address> {
+  async updatePaymentMethod(id: string, input: UpdatePaymentMethodInput): Promise<PaymentMethod> {
     try {
       const token = await getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/addresses/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/payment-methods/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -153,24 +156,24 @@ class AddressesService {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update address');
+        throw new Error(errorData.message || 'Failed to update payment method');
       }
 
       const data = await response.json();
       return data.data;
     } catch (error) {
-      console.error('Error updating address:', error);
+      console.error('Error updating payment method:', error);
       throw error;
     }
   }
 
   /**
-   * Delete address
+   * Delete payment method
    */
-  async deleteAddress(id: string): Promise<void> {
+  async deletePaymentMethod(id: string): Promise<void> {
     try {
       const token = await getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/addresses/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/payment-methods/${id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -180,21 +183,21 @@ class AddressesService {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete address');
+        throw new Error(errorData.message || 'Failed to delete payment method');
       }
     } catch (error) {
-      console.error('Error deleting address:', error);
+      console.error('Error deleting payment method:', error);
       throw error;
     }
   }
 
   /**
-   * Set address as default
+   * Set payment method as default
    */
-  async setDefaultAddress(id: string): Promise<Address> {
+  async setDefaultPaymentMethod(id: string): Promise<PaymentMethod> {
     try {
       const token = await getAuthToken();
-      const response = await fetch(`${API_BASE_URL}/addresses/${id}/set-default`, {
+      const response = await fetch(`${API_BASE_URL}/payment-methods/${id}/set-default`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -204,16 +207,16 @@ class AddressesService {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to set default address');
+        throw new Error(errorData.message || 'Failed to set default payment method');
       }
 
       const data = await response.json();
       return data.data;
     } catch (error) {
-      console.error('Error setting default address:', error);
+      console.error('Error setting default payment method:', error);
       throw error;
     }
   }
 }
 
-export default new AddressesService();
+export default new PaymentMethodsService();

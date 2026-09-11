@@ -44,6 +44,12 @@ export default function AddressesPage() {
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; addressId: string | null; label: string }>({
+    show: false,
+    addressId: null,
+    label: ''
+  });
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const [formData, setFormData] = useState<CreateAddressInput>({
     label: '',
@@ -220,10 +226,15 @@ export default function AddressesPage() {
         setAddresses(updatedAddresses);
       }
 
+      // Auto-close modal after 1.5 seconds
       setTimeout(() => {
         handleCloseModal();
+      }, 1500);
+
+      // Clear success message after 3 seconds
+      setTimeout(() => {
         setSuccessMessage('');
-      }, 2000);
+      }, 3000);
     } catch (error: any) {
       console.error('Error saving address:', error);
       setErrorMessage(error.message || 'Failed to save address. Please try again.');
@@ -232,22 +243,36 @@ export default function AddressesPage() {
     }
   };
 
-  const handleDelete = async (addressId: string) => {
-    if (!confirm('Are you sure you want to delete this address?')) return;
+  const handleDelete = async (addressId: string, label: string) => {
+    setDeleteConfirm({ show: true, addressId, label });
+  };
 
+  const confirmDelete = async () => {
+    if (!deleteConfirm.addressId) return;
+
+    setIsDeleting(true);
     try {
-      await addressesService.deleteAddress(addressId);
+      await addressesService.deleteAddress(deleteConfirm.addressId);
       setSuccessMessage('Address deleted successfully!');
       
       // Refresh addresses
       const updatedAddresses = await addressesService.getAddresses();
       setAddresses(updatedAddresses);
 
-      setTimeout(() => setSuccessMessage(''), 2000);
+      setDeleteConfirm({ show: false, addressId: null, label: '' });
+
+      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error: any) {
       console.error('Error deleting address:', error);
       setErrorMessage(error.message || 'Failed to delete address. Please try again.');
+      setDeleteConfirm({ show: false, addressId: null, label: '' });
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirm({ show: false, addressId: null, label: '' });
   };
 
   const handleSetDefault = async (addressId: string) => {
@@ -319,6 +344,14 @@ export default function AddressesPage() {
         </div>
       </div>
 
+      {/* Info Banner */}
+      <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+        <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+        <p className="text-sm text-blue-800">
+          You must have at least one default address. To delete your default address, please set another address as default first.
+        </p>
+      </div>
+
       {/* Addresses Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {addresses.map((address) => (
@@ -342,9 +375,14 @@ export default function AddressesPage() {
                   <Edit className="h-4 w-4" />
                 </button>
                 <button
-                  onClick={() => handleDelete(address.id)}
-                  className="text-gray-400 hover:text-red-600 transition"
-                  title="Delete address"
+                  onClick={() => handleDelete(address.id, address.label)}
+                  disabled={address.is_default}
+                  className={`transition ${
+                    address.is_default
+                      ? 'text-gray-300 cursor-not-allowed'
+                      : 'text-gray-400 hover:text-red-600'
+                  }`}
+                  title={address.is_default ? "Cannot delete the default address" : "Delete address"}
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -611,6 +649,64 @@ export default function AddressesPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-sm w-full">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-red-50 to-red-50 border-b border-red-100 p-6">
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                  <Trash2 className="h-6 w-6 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">Delete Address</h3>
+                  <p className="text-sm text-gray-600 mt-1">This action cannot be undone</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6">
+              <p className="text-gray-700 mb-2">
+                Are you sure you want to delete this address?
+              </p>
+              <p className="text-sm text-gray-600 bg-gray-50 rounded-md p-3 border border-gray-200">
+                <span className="font-medium text-gray-900">{deleteConfirm.label}</span>
+              </p>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-gray-50 border-t border-gray-200 px-6 py-4 flex gap-3 justify-end">
+              <button
+                onClick={cancelDelete}
+                disabled={isDeleting}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition text-sm font-medium disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition text-sm font-medium inline-flex items-center gap-2 disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <>
+                    <span className="inline-block h-4 w-4 border-2 border-white border-r-transparent rounded-full animate-spin"></span>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4" />
+                    Delete Address
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

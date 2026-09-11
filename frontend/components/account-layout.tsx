@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LogOut } from "lucide-react";
+import { LogOut, ShoppingBag } from "lucide-react";
 import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
 import { isKnownAdminEmail } from "@/lib/admin-common";
+import { useCartStore } from "@/store/cart-store";
 import AccountNavigation from "./account-navigation";
 
 type UserProfile = {
@@ -27,6 +28,11 @@ export default function AccountLayout({ children, requireAuth = true }: AccountL
   const supabase = createClientComponentSupabaseClient();
   const [isLoading, setIsLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [mounted, setMounted] = useState(false);
+  
+  const cartItems = useCartStore((state) => state.items);
+  const hydrateCart = useCartStore((state) => state.hydrate);
+  const cartCount = cartItems.length;
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -75,7 +81,9 @@ export default function AccountLayout({ children, requireAuth = true }: AccountL
     };
 
     loadUserData();
-  }, [router, supabase, requireAuth]);
+    hydrateCart();
+    setMounted(true);
+  }, [router, supabase, requireAuth, hydrateCart]);
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -126,8 +134,13 @@ export default function AccountLayout({ children, requireAuth = true }: AccountL
               </Link>
             </div>
             <div className="flex items-center space-x-4">
-              <Link href="/" className="text-sm text-gray-600 hover:text-gray-900">
-                Continue Shopping
+              <Link href="/cart" className="relative rounded-full border border-slate-200 p-2 text-slate-600 transition hover:text-slate-900" aria-label="Shopping cart">
+                <ShoppingBag className="h-5 w-5" />
+                {mounted && cartCount > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-700 text-xs font-semibold text-white">
+                    {cartCount}
+                  </span>
+                )}
               </Link>
               <button
                 onClick={handleSignOut}

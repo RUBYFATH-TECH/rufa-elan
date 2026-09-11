@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
+import { useCartStore } from "@/store/cart-store";
 
 interface ProductCardProps {
   product: {
@@ -16,6 +20,19 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, layout = "grid" }: ProductCardProps) {
+  const addToCart = useCartStore((state) => state.addItem);
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.salePrice ?? product.price,
+      image: product.image,
+      quantity: 1
+    });
+  };
   if (layout === "list") {
     return (
       <Link href={`/products/${product.slug}`} className="group flex gap-6 overflow-hidden rounded-lg border border-gray-200 bg-white p-6 transition-shadow hover:shadow-md">
@@ -57,7 +74,10 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
                 <span className="text-sm text-gray-500 line-through">GHS {product.price}</span>
               )}
             </div>
-            <button className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors">
+            <button 
+              onClick={handleAddToCart}
+              className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors"
+            >
               Add to Cart
             </button>
           </div>
@@ -104,7 +124,10 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
             <span className="text-sm text-gray-500 line-through">GHS {product.price}</span>
           )}
         </div>
-        <button className="w-full bg-orange-600 text-white py-2 rounded-md hover:bg-orange-700 transition-colors">
+        <button 
+          onClick={handleAddToCart}
+          className="w-full bg-orange-600 text-white py-2 rounded-md hover:bg-orange-700 transition-colors"
+        >
           Add to Cart
         </button>
       </div>
