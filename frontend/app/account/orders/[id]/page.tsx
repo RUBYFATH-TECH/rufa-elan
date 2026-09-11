@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { Download, ArrowLeft, ShoppingBag, Printer } from "lucide-react";
 import { downloadInvoicePDF } from "@/lib/pdf-utils";
 import { useCartStore } from "@/store/cart-store";
+import { featuredProducts } from "@/lib/sample-data";
 
 type OrderDetail = {
   id: string;
@@ -19,8 +20,118 @@ type OrderDetail = {
   payment_status: string;
   payment_reference: string;
   shipping_address: { full_name: string; email: string; phone: string; address: string; city: string; deliveryOption: string };
-  items: Array<{ id: string; name: string; price: number; quantity: number; image: string; variant?: string; sku?: string }>;
+  items: Array<{ id: string; name: string; price: number; quantity: number; image: string; variant?: string; sku?: string; description?: string }>;
   created_at: string;
+};
+
+// Mock order data for demo
+const MOCK_ORDERS: Record<string, OrderDetail> = {
+  '1': {
+    id: '1',
+    order_number: 'ORD-2024-001',
+    total_amount: 299.99,
+    subtotal: 250.00,
+    shipping_fee: 40.00,
+    discount_amount: 0,
+    status: 'delivered',
+    payment_status: 'paid',
+    payment_reference: 'PAY-20240115-001',
+    shipping_address: {
+      full_name: 'Ama Mensah',
+      email: 'ama.mensah@email.com',
+      phone: '+233 123 456 789',
+      address: '123 Main Street, Osu',
+      city: 'Accra, Ghana',
+      deliveryOption: 'Standard Delivery'
+    },
+    items: [
+      {
+        id: 'bag-luxury-01',
+        name: 'Luxury Leather Handbag',
+        price: 125.00,
+        quantity: 2,
+        image: featuredProducts[0]?.image || '/images/placeholder.jpg',
+        variant: 'Black',
+        sku: 'RUFA-BAG-LUXURY-01',
+        description: 'Premium leather handbag with elegant design'
+      },
+      {
+        id: 'bag-handbag-03',
+        name: 'Designer Satchel Handbag',
+        price: 124.99,
+        quantity: 1,
+        image: featuredProducts[1]?.image || '/images/placeholder.jpg',
+        variant: 'Beige',
+        sku: 'RUFA-BAG-SATCHEL-03',
+        description: 'Professional satchel perfect for work and events'
+      }
+    ],
+    created_at: '2024-01-15T10:30:00Z'
+  },
+  '2': {
+    id: '2',
+    order_number: 'ORD-2024-002',
+    total_amount: 149.99,
+    subtotal: 124.99,
+    shipping_fee: 25.00,
+    discount_amount: 0,
+    status: 'shipped',
+    payment_status: 'paid',
+    payment_reference: 'PAY-20240120-002',
+    shipping_address: {
+      full_name: 'Kwesi Osei',
+      email: 'kwesi.osei@email.com',
+      phone: '+233 234 567 890',
+      address: '456 Oak Avenue, Victoria Island',
+      city: 'Lagos, Nigeria',
+      deliveryOption: 'Express Delivery'
+    },
+    items: [
+      {
+        id: 'bag-alaia-01',
+        name: 'Alaia Leather Tote',
+        price: 124.99,
+        quantity: 1,
+        image: featuredProducts[2]?.image || '/images/placeholder.jpg',
+        variant: 'Black',
+        sku: 'RUFA-BAG-ALAIA-01',
+        description: 'Stylish tote bag with spacious interior'
+      }
+    ],
+    created_at: '2024-01-20T14:45:00Z'
+  },
+  '3': {
+    id: '3',
+    order_number: 'ORD-2024-003',
+    total_amount: 89.99,
+    subtotal: 74.99,
+    shipping_fee: 15.00,
+    discount_amount: 0,
+    status: 'processing',
+    payment_status: 'paid',
+    payment_reference: 'PAY-20240125-003',
+    shipping_address: {
+      full_name: 'Abena Nyarko',
+      email: 'abena.nyarko@email.com',
+      phone: '+234 567 890 123',
+      address: '789 Pine Road, Lekki',
+      city: 'Lagos, Nigeria',
+      deliveryOption: 'Standard Delivery'
+    },
+    items: [
+      {
+        id: 'bag-crossbody-01',
+        name: 'Crossbody Leather Bag',
+        price: 74.99,
+        quantity: 1,
+        image: featuredProducts[3]?.image || '/images/placeholder.jpg',
+        variant: 'Pink',
+        sku: 'RUFA-BAG-CROSSBODY-01',
+        description: 'Compact crossbody bag perfect for everyday use'
+      }
+    ],
+    created_at: '2024-01-25T09:15:00Z'
+  }
 };
 
 export default function OrderDetailPage() {
@@ -32,29 +143,21 @@ export default function OrderDetailPage() {
   const [showInvoice, setShowInvoice] = useState(false);
 
   useEffect(() => {
-    const orderId = params?.id;
+    const orderId = params?.id as string;
     if (!orderId) {
       setMessage("Order not found.");
       setLoading(false);
       return;
     }
 
-    const loadOrder = async () => {
-      setLoading(true);
-      const res = await fetch(`/api/account/orders/${orderId}`);
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        setMessage(data?.message || "Unable to load order.");
-        setLoading(false);
-        return;
-      }
-
-      const data = await res.json();
-      setOrder(data.data || data);
-      setLoading(false);
-    };
-
-    loadOrder();
+    // Use mock data instead of API call
+    const mockOrder = MOCK_ORDERS[orderId];
+    if (mockOrder) {
+      setOrder(mockOrder);
+    } else {
+      setMessage("Order not found.");
+    }
+    setLoading(false);
   }, [params]);
 
   const handleReorder = () => {
@@ -208,11 +311,11 @@ export default function OrderDetailPage() {
               {order.items.map((item) => (
                 <div
                   key={item.id}
-                  className="flex flex-col gap-4 rounded-lg border border-slate-200 p-4 transition hover:border-slate-300 hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-4 rounded-lg border border-slate-200 p-4 transition hover:border-slate-300 hover:bg-slate-50 lg:flex-row lg:items-center lg:justify-between"
                 >
                   {/* Product Image */}
                   <div className="flex gap-4 flex-1">
-                    <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                    <div className="relative h-32 w-32 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
                       {item.image ? (
                         <Image
                           src={item.image}
@@ -220,28 +323,31 @@ export default function OrderDetailPage() {
                           fill
                           className="object-cover"
                           onError={(e) => {
-                            e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Crect fill='%23e2e8f0' width='96' height='96'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='12' fill='%2394a3b8'%3ENo Image%3C/text%3E%3C/svg%3E";
+                            e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128' viewBox='0 0 128 128'%3E%3Crect fill='%23e2e8f0' width='128' height='128'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='12' fill='%2394a3b8'%3ENo Image%3C/text%3E%3C/svg%3E";
                           }}
                         />
                       ) : (
                         <div className="flex items-center justify-center h-full text-slate-400">
-                          <ShoppingBag className="w-6 h-6" />
+                          <ShoppingBag className="w-8 h-8" />
                         </div>
                       )}
                     </div>
                     {/* Product Details */}
                     <div className="flex-1">
-                      <h3 className="font-semibold text-slate-950">{item.name}</h3>
-                      <p className="mt-1 text-sm text-slate-600">
+                      <h3 className="font-semibold text-slate-950 text-lg">{item.name}</h3>
+                      {item.description && (
+                        <p className="text-sm text-slate-600 mt-1 line-clamp-2">{item.description}</p>
+                      )}
+                      <p className="mt-2 text-sm text-slate-600">
                         Quantity: <span className="font-semibold">{item.quantity}</span>
                       </p>
                       {item.variant && (
                         <p className="text-sm text-slate-600">
-                          Variant: <span className="font-semibold">{item.variant}</span>
+                          Selected Color: <span className="font-semibold text-slate-950">{item.variant}</span>
                         </p>
                       )}
                       {item.sku && (
-                        <p className="text-xs text-slate-500">SKU: {item.sku}</p>
+                        <p className="text-xs text-slate-500 mt-1">SKU: {item.sku}</p>
                       )}
                     </div>
                   </div>
@@ -482,8 +588,11 @@ function OrderInvoice({ order }: { order: OrderDetail }) {
               <tr key={item.id} className="border-b border-slate-100">
                 <td className="py-3">
                   <p className="font-semibold">{item.name}</p>
+                  {item.description && (
+                    <p className="text-xs text-slate-600 mt-1">{item.description}</p>
+                  )}
                   {item.variant && (
-                    <p className="text-xs text-slate-600">Variant: {item.variant}</p>
+                    <p className="text-xs text-slate-600">Color: {item.variant}</p>
                   )}
                   {item.sku && (
                     <p className="text-xs text-slate-600">SKU: {item.sku}</p>

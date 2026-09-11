@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Heart, Minus, Plus, ShoppingBag, Check, Truck, AlertCircle, Zap, ArrowLeft } from "lucide-react";
+import { Heart, Minus, Plus, ShoppingBag, Check, Truck, AlertCircle, Zap, ArrowLeft, Star } from "lucide-react";
 import { featuredProducts } from "@/lib/sample-data";
 import { useCartStore } from "@/store/cart-store";
 import { useWaitlistStore } from "@/store/waitlist-store";
@@ -286,6 +286,137 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               <span>Ideal for formal and casual outfits</span>
             </li>
           </ul>
+        </div>
+      </div>
+
+      {/* Reviews Section */}
+      <div className="mt-12 rounded-2xl border border-slate-200 bg-white p-8">
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-slate-950 mb-4">Customer Reviews</h2>
+          
+          {/* Rating Summary */}
+          <div className="flex items-start gap-8 mb-8 pb-8 border-b border-slate-200">
+            <div className="text-center">
+              <div className="text-5xl font-bold text-slate-950 mb-2">{product.rating.toFixed(1)}</div>
+              <div className="flex items-center justify-center gap-1 mb-2">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className={`h-4 w-4 ${
+                      i < Math.round(product.rating)
+                        ? "fill-yellow-400 text-yellow-400"
+                        : "text-slate-300"
+                    }`}
+                  />
+                ))}
+              </div>
+              <p className="text-sm text-slate-600">Based on 1,234 reviews</p>
+            </div>
+
+            {/* Rating Breakdown */}
+            <div className="flex-1 space-y-3">
+              {[5, 4, 3, 2, 1].map((stars) => (
+                <div key={stars} className="flex items-center gap-3">
+                  <div className="flex items-center gap-1 w-12 text-sm">
+                    <span className="text-slate-600">{stars}</span>
+                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                  </div>
+                  <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-yellow-400 rounded-full"
+                      style={{
+                        width: `${
+                          stars === 5 ? 65 : stars === 4 ? 20 : stars === 3 ? 10 : 3
+                        }%`
+                      }}
+                    />
+                  </div>
+                  <span className="w-12 text-right text-sm text-slate-600">
+                    {stars === 5 ? "802" : stars === 4 ? "247" : stars === 3 ? "123" : stars === 2 ? "37" : "25"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Individual Reviews */}
+        <div className="space-y-6">
+          {[
+            {
+              name: "Ama Mensah",
+              rating: 5,
+              date: "2 weeks ago",
+              verified: true,
+              title: "Perfect handbag!",
+              comment: "This handbag exceeded my expectations. The quality is excellent and the design is timeless. Highly recommended!"
+            },
+            {
+              name: "Kwesi Osei",
+              rating: 5,
+              date: "1 month ago",
+              verified: true,
+              title: "Worth every cedis",
+              comment: "Beautiful bag, arrives well packaged. The leather is soft and feels premium. Great customer service!"
+            },
+            {
+              name: "Abena Nyarko",
+              rating: 4,
+              date: "1 month ago",
+              verified: true,
+              title: "Great quality, minor issue",
+              comment: "Lovely bag overall. Just took a bit longer to arrive than expected, but it was worth the wait."
+            },
+            {
+              name: "Kofi Adjei",
+              rating: 5,
+              date: "2 months ago",
+              verified: true,
+              title: "Perfect for everyday use",
+              comment: "I use this bag every day. The compartments are practical and it looks professional. Definitely a steal at this price!"
+            }
+          ].map((review, index) => (
+            <div key={index} className="pb-6 border-b border-slate-200 last:border-b-0">
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <p className="font-semibold text-slate-900">{review.name}</p>
+                  <div className="flex items-center gap-2 text-xs text-slate-600 mt-1">
+                    <span>{review.date}</span>
+                    {review.verified && (
+                      <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 px-2 py-1 rounded">
+                        <Check className="h-3 w-3" />
+                        Verified Purchase
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-0.5">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`h-4 w-4 ${
+                        i < review.rating
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-slate-300"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+              <h4 className="font-semibold text-slate-900 mb-2">{review.title}</h4>
+              <p className="text-slate-700 text-sm leading-relaxed mb-3">{review.comment}</p>
+              <button className="text-sm text-slate-600 hover:text-slate-900 font-medium">
+                Helpful (4)
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* Load More Reviews */}
+        <div className="mt-8 text-center">
+          <button className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition">
+            Load More Reviews
+          </button>
         </div>
       </div>
     </section>

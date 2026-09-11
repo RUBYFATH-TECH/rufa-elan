@@ -325,14 +325,23 @@ export default function OrdersPage() {
                     </div>
                   </div>
 
-                    <div className="flex items-center justify-between">
-                      <Link
-                        href={`/account/orders/${order.id}`}
-                        className="inline-flex items-center text-sm font-medium text-orange-600 hover:text-orange-700"
-                      >
-                        <Eye className="w-4 h-4 mr-1" />
-                        View Details
-                      </Link>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                      <div className="flex flex-wrap gap-3">
+                        <Link
+                          href={`/account/orders/${order.id}/track`}
+                          className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition"
+                        >
+                          <Truck className="w-4 h-4 mr-1" />
+                          Track Order
+                        </Link>
+                        <Link
+                          href={`/account/orders/${order.id}`}
+                          className="inline-flex items-center text-sm font-medium text-orange-600 hover:text-orange-700"
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          View Details
+                        </Link>
+                      </div>
                       <div className="flex space-x-3">
                         <Link
                           href={`/account/orders/${order.id}`}
