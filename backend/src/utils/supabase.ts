@@ -136,6 +136,35 @@ export const supabaseHelpers = {
     return true;
   },
 
+  // Migration helpers
+  async runRawSQL(sql: string) {
+    try {
+      // Use the Supabase RPC method to execute raw SQL
+      // This requires a function in the database, or we can use fetch directly
+      const response = await fetch(`${supabaseUrl}/rest/v1/rpc/exec_sql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseServiceRoleKey}`,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ sql })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        logger.error('Error running SQL:', error);
+        throw error;
+      }
+
+      logger.info('SQL executed successfully');
+      return true;
+    } catch (error) {
+      logger.error('Error executing SQL:', error);
+      throw error;
+    }
+  },
+
   // Database helpers
   async insertRecord(table: string, record: any) {
     const { data, error } = await supabaseAdmin

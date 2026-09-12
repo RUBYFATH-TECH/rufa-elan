@@ -109,7 +109,7 @@ router.get('/sync-profiles', async (req: Request, res: Response) => {
     logger.info(`Found ${existingProfileIds.size} existing profiles`);
 
     // Create profiles for users that don't have them
-    const usersToCreate = users.filter(u => !existingProfileIds.has(u.id));
+    const usersToCreate = users.filter((u: any) => !existingProfileIds.has(u.id));
     logger.info(`Creating ${usersToCreate.length} missing profiles`);
 
     if (usersToCreate.length === 0) {

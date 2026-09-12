@@ -15,6 +15,7 @@ import adminUsersRouter from './admin-users';
 import uploadRouter from './upload';
 import fastDealsRouter from './fast-deals';
 import customersRouter from './customers';
+import storeSettingsRouter from './store-settings';
 
 const router = express.Router();
 
@@ -62,6 +63,9 @@ router.use('/notifications', notificationsRouter);
 
 // User Settings routes
 router.use('/user-settings', userSettingsRouter);
+
+// Store Settings routes
+router.use('/store-settings', storeSettingsRouter);
 
 // Admin User Management routes
 router.use('/admin', adminUsersRouter);

@@ -1,47 +1,103 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Heart, Minus, Plus, ShoppingBag, Check, Truck, AlertCircle, Zap, ArrowLeft, Star } from "lucide-react";
 import { featuredProducts } from "@/lib/sample-data";
 import { useCartStore } from "@/store/cart-store";
 import { useWaitlistStore } from "@/store/waitlist-store";
+import { fetchProducts } from "@/lib/api/products";
 
 export default function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const router = useRouter();
   const resolvedParams = React.use(params);
-  const product = featuredProducts.find((item) => item.slug === resolvedParams?.slug) ?? featuredProducts[0];
+  const [product, setProduct] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState("Black");
   const [addedToCart, setAddedToCart] = useState(false);
   const addItem = useCartStore((state) => state.addItem);
   const addWaitlistItem = useWaitlistStore((state) => state.addItem);
-  const hasInWaitlist = useWaitlistStore((state) => state.hasItem(product.id));
+  const hasInWaitlist = useWaitlistStore((state) => state.hasItem(product?.id));
 
-  const price = product.salePrice ?? product.price;
-  const discount = product.salePrice ? Math.round(((product.price - product.salePrice) / product.price) * 100) : 0;
+  // Fetch product data from API based on slug
+  useEffect(() => {
+    const loadProduct = async () => {
+      if (!resolvedParams?.slug) return;
+      
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Fetch all products and find by slug
+        const data = await fetchProducts({ limit: 100 });
+        const allProducts = data.data || [];
+        
+        // Find product by slug
+        const foundProduct = allProducts.find((p: any) => p.slug === resolvedParams.slug);
+        
+        if (foundProduct) {
+          // Transform API data to match component expectations
+          const transformedProduct = {
+            id: foundProduct.id,
+            name: foundProduct.name,
+            category: foundProduct.category_id || "Uncategorized",
+            price: foundProduct.regular_price,
+            salePrice: foundProduct.sale_price,
+            rating: 4.5, // Default rating since API might not have it
+            image: foundProduct.product_images?.[0]?.url || "/images/placeholder.jpg",
+            slug: foundProduct.slug,
+            badge: foundProduct.sale_price ? `${Math.round(((foundProduct.regular_price - foundProduct.sale_price) / foundProduct.regular_price) * 100)}% OFF` : undefined,
+          };
+          setProduct(transformedProduct);
+        } else {
+          // Fallback to sample data if not found in API
+          const sampleProduct = featuredProducts.find((item) => item.slug === resolvedParams.slug) ?? featuredProducts[0];
+          setProduct(sampleProduct);
+        }
+      } catch (err) {
+        console.error("Error loading product:", err);
+        // Fallback to sample data on error
+        const sampleProduct = featuredProducts.find((item) => item.slug === resolvedParams?.slug) ?? featuredProducts[0];
+        setProduct(sampleProduct);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProduct();
+  }, [resolvedParams?.slug]);
+
+  const price = product?.salePrice ?? product?.price;
+  const discount = product?.salePrice ? Math.round(((product.price - product.salePrice) / product.price) * 100) : 0;
   
   const cartItem = useMemo(
-    () => ({
-      id: product.id,
-      name: product.name,
-      price,
-      quantity,
-      image: product.image,
-      variant: selectedColor,
-      sku: `RUFA-${product.id.toUpperCase()}`
-    }),
+    () => {
+      if (!product) return null;
+      return {
+        id: product.id,
+        name: product.name,
+        price,
+        quantity,
+        image: product.image,
+        variant: selectedColor,
+        sku: `RUFA-${product.id.toUpperCase()}`
+      };
+    },
     [product, price, quantity, selectedColor]
   );
 
   const handleAddToCart = () => {
+    if (!cartItem) return;
     addItem(cartItem);
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
   };
 
   const handleToggleWaitlist = () => {
+    if (!product) return;
     if (!hasInWaitlist) {
       addWaitlistItem({
         id: product.id,
@@ -58,6 +114,42 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
       router.push("/account/waitlist");
     }
   };
+
+  if (loading) {
+    return (
+      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <button
+          onClick={() => router.back()}
+          className="mb-6 flex items-center gap-2 text-slate-600 hover:text-slate-900 font-semibold transition"
+        >
+          <ArrowLeft className="h-5 w-5" />
+          Go Back
+        </button>
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-orange-600 mb-4"></div>
+          <p className="text-gray-600">Loading product details...</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (!product) {
+    return (
+      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <button
+          onClick={() => router.back()}
+          className="mb-6 flex items-center gap-2 text-slate-600 hover:text-slate-900 font-semibold transition"
+        >
+          <ArrowLeft className="h-5 w-5" />
+          Go Back
+        </button>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800 font-semibold">Product not found</p>
+          <p className="text-red-700 text-sm">The product you're looking for doesn't exist.</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
