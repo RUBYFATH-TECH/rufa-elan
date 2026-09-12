@@ -94,7 +94,7 @@ export const authMiddleware = async (
       return next();
     }
 
-    // Get user profile to check admin status
+    // Get user profile to verify they exist
     const { data: profile, error: profileError } = await req.db
       .from('profiles')
       .select('id')
@@ -103,14 +103,31 @@ export const authMiddleware = async (
 
     if (profileError) {
       logger.warn('Failed to fetch user profile:', profileError.message);
-      req.userId = user.id;
-      req.isAdmin = false;
-    } else {
-      req.userId = user.id;
-      req.isAdmin = false;
+      // Profile doesn't exist yet, but user is still authenticated
+      // We'll still check admin status
     }
+    
+    req.userId = user.id;
+    
+    // Check if user is an admin by looking up their email in admin_users table
+    const { data: adminUser, error: adminError } = await req.db
+      .from('admin_users')
+      .select('id, email')
+      .eq('email', user.email?.toLowerCase())
+      .single();
+    
+    req.isAdmin = !adminError && adminUser !== null;
+    
+    logger.info(`Admin check for user ${user.email}:`, {
+      userId: user.id,
+      email: user.email,
+      adminUser: adminUser?.email || null,
+      adminError: adminError?.message || null,
+      isAdmin: req.isAdmin,
+      profileExists: !profileError
+    });
 
-    logger.info(`Authenticated user: ${user.id}, Admin: ${req.isAdmin}`);
+    logger.info(`Authenticated user: ${user.id} (${user.email}), Admin: ${req.isAdmin}`);
     next();
   } catch (error) {
     logger.error('Authentication middleware error:', error);

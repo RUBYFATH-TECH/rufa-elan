@@ -34,26 +34,33 @@ class CloudinaryService {
   private readonly uploadUrl = `https://api.cloudinary.com/v1_1/${this.cloudName}/image/upload`;
 
   // Generate signature for authenticated uploads
-  private generateSignature(params: any, timestamp: number): string {
+  // Only parameters that should be signed for Cloudinary API
+  private generateSignature(params: any): string {
     const crypto = require('crypto');
     
-    // Sort parameters
-    const sortedParams = Object.keys(params)
-      .sort()
-      .reduce((result, key) => {
-        result[key] = params[key];
-        return result;
-      }, {} as any);
-
-    // Create signature string
-    const signatureString = Object.entries(sortedParams)
-      .map(([key, value]) => `${key}=${value}`)
+    // Create signature string with all parameters that will be uploaded
+    // Sort by key and format as key1=value1&key2=value2&...&api_secret
+    const sortedKeys = Object.keys(params).sort();
+    
+    const signatureString = sortedKeys
+      .map(key => `${key}=${params[key]}`)
       .join('&') + this.apiSecret;
 
-    return crypto
+    logger.info('Generating Cloudinary signature', {
+      params: sortedKeys,
+      apiKey: this.apiKey.substring(0, 5) + '...',
+      apiSecret: this.apiSecret.substring(0, 5) + '...',
+      signatureBase: sortedKeys.map(key => `${key}=${params[key]}`).join('&'),
+    });
+
+    const hash = crypto
       .createHash('sha1')
       .update(signatureString)
       .digest('hex');
+    
+    logger.info('Signature generated:', { hash: hash.substring(0, 10) + '...' });
+    
+    return hash;
   }
 
   async uploadFile(
@@ -62,57 +69,62 @@ class CloudinaryService {
   ): Promise<CloudinaryUploadResult> {
     try {
       const FormData = require('form-data');
-      const fetch = require('node-fetch');
-      
+      const folder = options.folder || 'rufa_elan';
+
+      // Use simple unsigned upload without requiring any preset
+      // Just send file + folder, let Cloudinary handle it
       const form = new FormData();
-      const timestamp = Math.round(Date.now() / 1000);
-
-      // Prepare upload parameters
-      const params: any = {
-        timestamp,
-        folder: options.folder || 'rufa_elan',
-        ...options,
-      };
-
-      // Remove undefined values
-      Object.keys(params).forEach(key => {
-        if (params[key] === undefined) {
-          delete params[key];
-        }
-      });
-
-      // Generate signature
-      const signature = this.generateSignature(params, timestamp);
-
-      // Add parameters to form
-      Object.entries(params).forEach(([key, value]) => {
-        form.append(key, value);
-      });
-
-      form.append('api_key', this.apiKey);
-      form.append('signature', signature);
       form.append('file', file);
+      form.append('folder', folder);
 
-      const response = await fetch(this.uploadUrl, {
-        method: 'POST',
-        body: form,
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        logger.error('Cloudinary upload error:', result);
-        throw new Error(result.error?.message || 'Cloudinary upload failed');
+      if (options.public_id) {
+        form.append('public_id', options.public_id);
       }
 
-      logger.info('File uploaded to Cloudinary:', { 
+      const fetchFn = typeof fetch !== 'undefined' ? fetch : require('node-fetch').default;
+      
+      logger.info('Uploading to Cloudinary (simple unsigned)', {
+        cloudName: this.cloudName,
+        folder,
+      });
+
+      const response = await fetchFn(this.uploadUrl, {
+        method: 'POST',
+        body: form,
+        headers: form.getHeaders ? form.getHeaders() : {},
+      });
+
+      const responseText = await response.text();
+
+      logger.info('Cloudinary response', {
+        status: response.status,
+        bodyLength: responseText.length,
+      });
+      
+      if (!response.ok) {
+        logger.error('Cloudinary error:', {
+          status: response.status,
+          body: responseText.substring(0, 500),
+        });
+        
+        try {
+          const errorData = JSON.parse(responseText);
+          throw new Error(errorData.error?.message || errorData.message || `Upload failed ${response.status}`);
+        } catch (e) {
+          throw new Error(responseText || `Upload failed ${response.status}`);
+        }
+      }
+
+      const result = JSON.parse(responseText);
+
+      logger.info('Upload successful', { 
         public_id: result.public_id,
         url: result.secure_url 
       });
 
       return result;
     } catch (error) {
-      logger.error('Error uploading to Cloudinary:', error);
+      logger.error('Upload error:', error);
       throw error;
     }
   }
@@ -135,29 +147,31 @@ class CloudinaryService {
 
   async deleteFile(publicId: string): Promise<boolean> {
     try {
-      const fetch = require('node-fetch');
       const FormData = require('form-data');
+      const fetchFn = typeof fetch !== 'undefined' ? fetch : require('node-fetch').default;
       
       const form = new FormData();
       const timestamp = Math.round(Date.now() / 1000);
 
+      // Parameters FOR SIGNATURE (not including api_key)
       const params = {
         public_id: publicId,
         timestamp,
       };
 
-      const signature = this.generateSignature(params, timestamp);
+      const signature = this.generateSignature(params);
 
       form.append('public_id', publicId);
       form.append('timestamp', timestamp.toString());
       form.append('api_key', this.apiKey);
       form.append('signature', signature);
 
-      const response = await fetch(
+      const response = await fetchFn(
         `https://api.cloudinary.com/v1_1/${this.cloudName}/image/destroy`,
         {
           method: 'POST',
           body: form,
+          headers: form.getHeaders ? form.getHeaders() : undefined,
         }
       );
 

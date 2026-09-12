@@ -69,8 +69,8 @@ router.get('/', async (req: Request, res: Response) => {
       select: `
         *,
         categories!inner(name, slug),
-        product_images(id, url, alt_text, is_primary, position),
-        product_variants(id, name, value, price, stock_quantity, is_default)
+        product_images(id, url, position),
+        product_variants(id, name, value, price, stock_quantity)
       `,
       filters,
       orderBy: [{ column: sort_by, ascending: sort_order === 'asc' }],
@@ -183,24 +183,22 @@ router.get('/:id', async (req: Request, res: Response) => {
       } as ApiResponse);
     }
 
-    // Use the product_details view for complete information
-    const { data, error } = await req.db!
-      .from('product_details')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) {
-      logger.error('Failed to fetch product:', error);
+    // First check if product exists and get basic info
+    const productResult = await db.products.findById(id);
+    
+    if (productResult.error || !productResult.data) {
+      logger.error('Product not found:', { id, error: productResult.error });
       return res.status(404).json({
         success: false,
         error: 'Product not found',
         message: 'The requested product does not exist'
       } as ApiResponse);
     }
+
+    const product = productResult.data as any;
 
     // Check if product is active or user is admin
-    if (data.status !== 'active' && !req.isAdmin) {
+    if (product.status !== 'active' && !req.isAdmin) {
       return res.status(404).json({
         success: false,
         error: 'Product not found',
@@ -208,18 +206,52 @@ router.get('/:id', async (req: Request, res: Response) => {
       } as ApiResponse);
     }
 
-    // Increment view count
-    if (data.status === 'active') {
-      await db.products.updateById(id, {
-        view_count: (data.view_count || 0) + 1
-      });
+    // Fetch images for this product
+    const imagesResult = await db.productImages.find({
+      filters: { product_id: id },
+      orderBy: [
+        { column: 'position', ascending: true }
+      ]
+    });
+
+    // Fetch variants for this product
+    const variantsResult = await db.productVariants.find({
+      filters: { product_id: id },
+      orderBy: [
+        { column: 'created_at', ascending: true }
+      ]
+    });
+
+    // Fetch category details
+    let categoryData = null;
+    if (product.category_id) {
+      const categoryResult = await db.categories.findById(product.category_id);
+      if (!categoryResult.error && categoryResult.data) {
+        categoryData = categoryResult.data;
+      }
     }
+
+    // Increment view count only for active products
+    if (product.status === 'active') {
+      await db.products.updateById(id, {
+        popularity: (product.popularity || 0) + 1
+      }).catch(err => logger.warn('Failed to increment popularity:', err));
+    }
+
+    // Construct response with all related data
+    const responseData = {
+      ...product,
+      category_name: categoryData?.name || null,
+      category_slug: categoryData?.slug || null,
+      product_images: imagesResult.data || [],
+      product_variants: variantsResult.data || []
+    };
 
     logger.info(`Fetched product: ${id}`, { userId: req.userId });
 
     res.json({
       success: true,
-      data
+      data: responseData
     } as ApiResponse<ProductDetails>);
 
   } catch (error) {
@@ -278,9 +310,12 @@ router.post('/', requireAdmin, async (req: Request, res: Response) => {
       } as ApiResponse);
     }
 
-    // Verify category exists
-    const category = await db.categories.findById(productData.category_id);
-    if (category.error || !category.data) {
+    // Verify category exists - search by slug instead of ID
+    const categoryResult = await db.categories.find({
+      filters: { slug: productData.category_id }
+    });
+
+    if (!categoryResult.data || categoryResult.data.length === 0) {
       return res.status(400).json({
         success: false,
         error: 'Invalid category',
@@ -288,17 +323,22 @@ router.post('/', requireAdmin, async (req: Request, res: Response) => {
       } as ApiResponse);
     }
 
-    // Prepare product data
+    const category = categoryResult.data[0];
+    const category_id = category.id; // Get the actual UUID from the category
+
+    // Prepare product data with actual category UUID
+    // Extract images separately (not part of products table)
+    const { images, ...productDataWithoutImages } = productData;
+    
     const newProduct = {
-      ...productData,
+      ...productDataWithoutImages,
+      category_id,  // Use the actual UUID, not the slug
       slug,
       status: productData.status || 'active',
       featured: productData.featured || false,
-      popularity: 0,
-      total_stock: 0,
-      avg_rating: 0,
-      review_count: 0,
-      view_count: 0
+      popularity: 0
+      // Don't include: images, total_stock, avg_rating, review_count, view_count
+      // These either are in separate tables or don't exist in the products table
     };
 
     // Create product
@@ -316,13 +356,14 @@ router.post('/', requireAdmin, async (req: Request, res: Response) => {
     const productId = result.data.id;
 
     // Create product images if provided
-    if (productData.images && productData.images.length > 0) {
-      const imagePromises = productData.images.map((image, index) => 
+    if (images && images.length > 0) {
+      const imagePromises = images.map((image, index) => 
         db.productImages.create({
-          ...image,
           product_id: productId,
-          position: image.position || index,
-          is_primary: image.is_primary || index === 0
+          url: image.url,
+          alt_text: image.alt_text || '',
+          position: image.position || index
+          // Note: is_primary is not in base schema, added via migration
         })
       );
 
@@ -357,11 +398,36 @@ router.post('/', requireAdmin, async (req: Request, res: Response) => {
     }
 
     // Fetch the complete product details
-    const { data: createdProduct } = await req.db!
-      .from('product_details')
-      .select('*')
-      .eq('id', productId)
-      .single();
+    const imagesResult = await db.productImages.find({
+      filters: { product_id: productId },
+      orderBy: [
+        { column: 'position', ascending: true }
+      ]
+    });
+
+    const variantsResult = await db.productVariants.find({
+      filters: { product_id: productId },
+      orderBy: [
+        { column: 'created_at', ascending: true }
+      ]
+    });
+
+    // Fetch category details
+    let categoryData = null;
+    if (newProduct.category_id) {
+      const categoryResult = await db.categories.findById(newProduct.category_id);
+      if (!categoryResult.error && categoryResult.data) {
+        categoryData = categoryResult.data;
+      }
+    }
+
+    const createdProduct = {
+      ...result.data,
+      category_name: categoryData?.name || null,
+      category_slug: categoryData?.slug || null,
+      product_images: imagesResult.data || [],
+      product_variants: variantsResult.data || []
+    };
 
     logger.info(`Created product: ${productId}`, { userId: req.userId });
 
@@ -445,18 +511,28 @@ router.put('/:id', requireAdmin, async (req: Request, res: Response) => {
 
     // Verify category exists if being updated
     if (updateData.category_id && updateData.category_id !== existingProduct.data.category_id) {
-      const category = await db.categories.findById(updateData.category_id);
-      if (category.error || !category.data) {
+      // Search by slug instead of UUID (frontend sends slugs)
+      const categoryResult = await db.categories.find({
+        filters: { slug: updateData.category_id }
+      });
+
+      if (!categoryResult.data || categoryResult.data.length === 0) {
         return res.status(400).json({
           success: false,
           error: 'Invalid category',
           message: 'The specified category does not exist'
         } as ApiResponse);
       }
+
+      // Use the actual UUID from the category
+      updateData.category_id = categoryResult.data[0].id;
     }
 
-    // Update product
-    const result = await db.products.updateById(id, updateData);
+    // Extract images if provided (they're stored in separate table)
+    const { images, ...updateDataWithoutImages } = updateData;
+
+    // Update product (without images)
+    const result = await db.products.updateById(id, updateDataWithoutImages);
 
     if (result.error || !result.data) {
       logger.error('Failed to update product:', result.error);
@@ -467,18 +543,44 @@ router.put('/:id', requireAdmin, async (req: Request, res: Response) => {
       } as ApiResponse);
     }
 
-    // Fetch updated product details
-    const { data: updatedProduct } = await req.db!
-      .from('product_details')
-      .select('*')
-      .eq('id', id)
-      .single();
+    // Fetch updated product details with all related data
+    const imagesResult = await db.productImages.find({
+      filters: { product_id: id },
+      orderBy: [
+        { column: 'position', ascending: true }
+      ]
+    });
+
+    const variantsResult = await db.productVariants.find({
+      filters: { product_id: id },
+      orderBy: [
+        { column: 'created_at', ascending: true }
+      ]
+    });
+
+    // Fetch category details
+    let categoryData = null;
+    const updatedProduct = result.data as any;
+    if (updatedProduct.category_id) {
+      const categoryResult = await db.categories.findById(updatedProduct.category_id);
+      if (!categoryResult.error && categoryResult.data) {
+        categoryData = categoryResult.data;
+      }
+    }
+
+    const responseData = {
+      ...updatedProduct,
+      category_name: categoryData?.name || null,
+      category_slug: categoryData?.slug || null,
+      product_images: imagesResult.data || [],
+      product_variants: variantsResult.data || []
+    };
 
     logger.info(`Updated product: ${id}`, { userId: req.userId });
 
     res.json({
       success: true,
-      data: updatedProduct,
+      data: responseData,
       message: 'Product updated successfully'
     } as ApiResponse<ProductDetails>);
 
@@ -749,8 +851,8 @@ router.get('/search/advanced', async (req: Request, res: Response) => {
       select: `
         *,
         categories!inner(name, slug),
-        product_images(id, url, alt_text, is_primary, position),
-        product_variants(id, name, value, price, stock_quantity, is_default)
+        product_images(id, url, position),
+        product_variants(id, name, value, price, stock_quantity)
       `,
       filters: {
         status: req.isAdmin ? undefined : 'active',

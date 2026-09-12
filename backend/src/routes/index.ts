@@ -12,6 +12,8 @@ import paymentsRouter from './payments';
 import notificationsRouter from './notifications';
 import userSettingsRouter from './user-settings';
 import adminUsersRouter from './admin-users';
+import uploadRouter from './upload';
+import fastDealsRouter from './fast-deals';
 
 const router = express.Router();
 
@@ -59,6 +61,12 @@ router.use('/user-settings', userSettingsRouter);
 
 // Admin User Management routes
 router.use('/admin', adminUsersRouter);
+
+// Upload routes
+router.use('/upload', uploadRouter);
+
+// Fast Deals routes
+router.use('/fast-deals', fastDealsRouter);
 
 // API documentation endpoint
 router.get('/', (req, res) => {

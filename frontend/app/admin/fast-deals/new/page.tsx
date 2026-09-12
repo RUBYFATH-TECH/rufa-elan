@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
 import {
   ArrowLeft,
   Save,
@@ -23,7 +24,7 @@ type Product = {
 
 type FormData = {
   product_id: string;
-  deal_price: number;
+  deal_price: string | number;
   start_time: string;
   start_date: string;
   end_time: string;
@@ -43,7 +44,7 @@ export default function CreateFastDealPage() {
 
   const [formData, setFormData] = useState<FormData>({
     product_id: "",
-    deal_price: 0,
+    deal_price: "",  // Changed from 0 to empty string
     start_date: new Date().toISOString().split("T")[0],
     start_time: "00:00",
     end_date: new Date(Date.now() + 24 * 60 * 60 * 1000)
@@ -61,17 +62,35 @@ export default function CreateFastDealPage() {
 
   const loadProducts = async () => {
     try {
-      // Mock data
-      const mockProducts: Product[] = [
-        { id: "prod-1", name: "Premium Leather Handbag", regular_price: 299.99, sku: "SKU-001" },
-        { id: "prod-2", name: "Designer Crossbody Bag", regular_price: 249.99, sku: "SKU-002" },
-        { id: "prod-3", name: "Vintage Shoulder Bag", regular_price: 199.99, sku: "SKU-003" },
-        { id: "prod-4", name: "Modern Tote Bag", regular_price: 179.99, sku: "SKU-004" },
-      ];
-      setProducts(mockProducts);
+      // Fetch products from API
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const response = await fetch(`${backendUrl}/api/products?limit=1000`, {
+        headers: { "Content-Type": "application/json" },
+        cache: 'no-store',
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch products");
+      }
+
+      const data = await response.json();
+      
+      // Map API response to Product format
+      const productsFromAPI = (data.data || []).map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        regular_price: p.regular_price,
+        sku: p.sku,
+      }));
+
+      setProducts(productsFromAPI);
+      
+      if (productsFromAPI.length === 0) {
+        setMessage({ type: "error", text: "No products available. Please create products first." });
+      }
     } catch (error) {
       console.error("Error loading products:", error);
-      setMessage({ type: "error", text: "Failed to load products" });
+      setMessage({ type: "error", text: "Failed to load products from database" });
     } finally {
       setLoading(false);
     }
@@ -92,8 +111,9 @@ export default function CreateFastDealPage() {
 
   const calculateDiscount = () => {
     if (!selectedProduct || !formData.deal_price) return 0;
+    const dealPrice = parseFloat(formData.deal_price.toString());
     return Math.round(
-      ((selectedProduct.regular_price - formData.deal_price) /
+      ((selectedProduct.regular_price - dealPrice) /
         selectedProduct.regular_price) *
         100
     );
@@ -107,12 +127,13 @@ export default function CreateFastDealPage() {
       return;
     }
 
-    if (!formData.deal_price || formData.deal_price <= 0) {
+    const dealPrice = parseFloat(formData.deal_price.toString());
+    if (!dealPrice || dealPrice <= 0) {
       setMessage({ type: "error", text: "Please enter a valid deal price" });
       return;
     }
 
-    if (selectedProduct && formData.deal_price >= selectedProduct.regular_price) {
+    if (selectedProduct && dealPrice >= selectedProduct.regular_price) {
       setMessage({
         type: "error",
         text: "Deal price must be less than regular price",
@@ -122,12 +143,47 @@ export default function CreateFastDealPage() {
 
     setSaving(true);
     try {
-      // API call would go here
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const supabase = createClientComponentSupabaseClient();
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      
+      const dealData = {
+        product_id: formData.product_id,
+        deal_price: dealPrice,
+        start_date: formData.start_date,
+        start_time: formData.start_time,
+        end_date: formData.end_date,
+        end_time: formData.end_time,
+        stock_quantity: formData.stock_quantity,
+      };
+
+      // Get auth token from Supabase
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        throw new Error('Not authenticated. Please log in as admin.');
+      }
+
+      const response = await fetch(`${backendUrl}/api/fast-deals`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify(dealData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create fast deal');
+      }
+
+      const result = await response.json();
+      
       setMessage({ type: "success", text: "Fast deal created successfully!" });
       setTimeout(() => router.push("/admin/fast-deals"), 2000);
     } catch (error) {
-      setMessage({ type: "error", text: "Failed to create deal" });
+      console.error("Error creating deal:", error);
+      setMessage({ type: "error", text: error instanceof Error ? error.message : "Failed to create deal" });
     } finally {
       setSaving(false);
     }
@@ -197,15 +253,24 @@ export default function CreateFastDealPage() {
                 value={formData.product_id}
                 onChange={(e) => handleProductChange(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white"
+                disabled={loading}
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
               >
-                <option value="">Choose a product...</option>
+                <option value="">
+                  {loading ? "Loading products..." : "Choose a product..."}
+                </option>
                 {products.map((product) => (
                   <option key={product.id} value={product.id}>
                     {product.name} (${product.regular_price.toFixed(2)})
                   </option>
                 ))}
               </select>
+              {products.length === 0 && !loading && (
+                <p className="mt-2 text-sm text-amber-600 flex items-center gap-1">
+                  <AlertCircle className="w-4 h-4" />
+                  No products available. Create products first.
+                </p>
+              )}
             </div>
 
             {selectedProduct && (
@@ -244,9 +309,9 @@ export default function CreateFastDealPage() {
                   type="number"
                   min="0"
                   step="0.01"
-                  value={formData.deal_price}
+                  value={formData.deal_price || ""}
                   onChange={(e) =>
-                    handleChange("deal_price", parseFloat(e.target.value))
+                    handleChange("deal_price", e.target.value)
                   }
                   required
                   className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
@@ -371,17 +436,17 @@ export default function CreateFastDealPage() {
           <div className="flex items-center justify-end gap-3">
             <Link
               href="/admin/fast-deals"
-              className="px-6 py-2.5 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+              className="px-6 py-2.5 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50"
             >
               Cancel
             </Link>
             <button
               type="submit"
-              disabled={saving}
+              disabled={saving || loading || products.length === 0}
               className="inline-flex items-center px-6 py-2.5 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <Save className="w-4 h-4 mr-2" />
-              {saving ? "Creating..." : "Create Deal"}
+              {saving ? "Creating..." : loading ? "Loading..." : "Create Deal"}
             </button>
           </div>
         </form>

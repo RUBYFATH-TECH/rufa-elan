@@ -1,19 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import DataTable, { Column } from "@/components/admin/DataTable";
-import StatusBadge from "@/components/admin/StatusBadge";
+import { useRouter } from "next/navigation";
+import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
+import { useProducts } from "@/lib/hooks/useProducts";
+import { useNotification } from "@/lib/hooks/useNotification";
+import NotificationStack from "@/components/NotificationStack";
+import DeleteConfirmationModal from "@/components/admin/DeleteConfirmationModal";
+import { deleteProduct } from "@/lib/api/products";
 import { 
   Plus, 
   Edit, 
   Trash2, 
-  Eye,
-  MoreHorizontal,
-  Tag,
-  DollarSign,
   Package,
   AlertCircle,
+  Loader2,
+  Tag,
   Check
 } from "lucide-react";
 
@@ -30,156 +33,78 @@ type Product = {
 };
 
 export default function AdminProductsPage() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const supabase = createClientComponentSupabaseClient();
+  const { products: apiProducts, loading, error, refresh } = useProducts({ 
+    autoRefresh: true, 
+    refreshInterval: 10000 
+  });
+  const { notifications, removeNotification, success: showSuccess, error: showError } = useNotification();
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [updating, setUpdating] = useState<string | null>(null);
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; productId?: string; productName?: string }>({
+    isOpen: false
+  });
 
-  useEffect(() => {
-    loadProducts();
-  }, []);
-
-  const loadProducts = async () => {
-    try {
-      setLoading(true);
-      // Mock data for demonstration
-      const mockProducts: Product[] = [
-        {
-          id: "1",
-          name: "Premium Leather Handbag",
-          slug: "premium-leather-handbag",
-          sku: "SKU-001",
-          category_name: "Handbags",
-          regular_price: 299.99,
-          sale_price: null,
-          is_in_stock: true,
-        },
-        {
-          id: "2",
-          name: "Designer Crossbody Bag",
-          slug: "designer-crossbody",
-          sku: "SKU-002",
-          category_name: "Crossbags",
-          regular_price: 249.99,
-          sale_price: 199.99,
-          is_in_stock: false,
-        },
-        {
-          id: "3",
-          name: "Vintage Shoulder Bag",
-          slug: "vintage-shoulder",
-          sku: "SKU-003",
-          category_name: "Shoulder Bags",
-          regular_price: 199.99,
-          sale_price: null,
-          is_in_stock: true,
-        },
-      ];
-      setProducts(mockProducts);
-    } catch (error) {
-      console.error("Error loading products:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const products = (apiProducts as any[]).map((p: any) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    sku: p.sku,
+    category_name: p.categories?.name || p.category_name || "Uncategorized",
+    regular_price: p.regular_price,
+    sale_price: p.sale_price,
+    image_urls: p.product_images?.map((img: any) => img.url) || [],
+    is_in_stock: p.status === "active",
+  })) as Product[];
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this product?")) return;
-    
+    // Open the confirmation modal instead of using browser confirm
+    const product = products.find(p => p.id === id);
+    setDeleteModal({
+      isOpen: true,
+      productId: id,
+      productName: product?.name || "this product"
+    });
+  };
+
+  const confirmDelete = async (id: string) => {
     try {
       setDeleting(id);
-      // API call would go here
-      setProducts(products.filter(p => p.id !== id));
+      
+      // Get fresh auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      const authToken = session?.access_token;
+      
+      if (!authToken) {
+        throw new Error("Not authenticated. Please log in again.");
+      }
+
+      await deleteProduct(id, authToken);
+      showSuccess("Product deleted", "The product has been successfully removed");
+      
+      // Refresh products after deletion
+      await refresh();
     } catch (error) {
       console.error("Error deleting product:", error);
-      alert("Failed to delete product");
+      showError("Failed to delete", error instanceof Error ? error.message : "An error occurred while deleting the product");
     } finally {
       setDeleting(null);
+      setDeleteModal({ isOpen: false });
     }
   };
 
   const toggleStockStatus = async (id: string) => {
-    try {
-      setUpdating(id);
-      // API call would go here
-      setProducts(products.map(p => 
-        p.id === id ? { ...p, is_in_stock: !p.is_in_stock } : p
-      ));
-    } catch (error) {
-      console.error("Error updating stock status:", error);
-      alert("Failed to update stock status");
-    } finally {
-      setUpdating(null);
-    }
+    console.log("Toggle stock for product:", id);
   };
-
-  const columns: Column<Product>[] = [
-    {
-      key: "name",
-      label: "Product",
-      sortable: true,
-      render: (value, row) => (
-        <div className="flex items-center gap-3">
-          {row.image_urls?.[0] ? (
-            <img 
-              src={row.image_urls[0]} 
-              alt={value}
-              className="w-10 h-10 rounded-lg object-cover"
-            />
-          ) : (
-            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
-              <Package className="w-5 h-5 text-slate-400" />
-            </div>
-          )}
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-slate-900 truncate">{value}</p>
-            <p className="text-xs text-slate-600">{row.sku}</p>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "category_name",
-      label: "Category",
-      sortable: true,
-      render: (value) => (
-        <div className="inline-flex items-center gap-2">
-          <Tag className="w-4 h-4 text-slate-400" />
-          <span className="text-sm text-slate-700">{value}</span>
-        </div>
-      ),
-    },
-    {
-      key: "regular_price",
-      label: "Price",
-      sortable: true,
-      render: (value, row) => (
-        <div className="text-sm">
-          {row.sale_price ? (
-            <>
-              <span className="font-medium text-slate-900">${row.sale_price.toFixed(2)}</span>
-              <span className="text-slate-500 line-through ml-2">${value.toFixed(2)}</span>
-            </>
-          ) : (
-            <span className="font-medium text-slate-900">${value.toFixed(2)}</span>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: "is_in_stock",
-      label: "Stock Status",
-      render: (value) => (
-        <StatusBadge 
-          status={value ? "active" : "out_of_stock"} 
-          size="sm" 
-        />
-      ),
-    },
-  ];
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {/* Notification Stack */}
+      <NotificationStack 
+        notifications={notifications} 
+        onRemove={removeNotification} 
+      />
+
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex items-center justify-between">
@@ -198,18 +123,34 @@ export default function AdminProductsPage() {
       </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 mb-4">
-                <div className="animate-spin">
-                  <Package className="w-6 h-6 text-slate-400" />
-                </div>
-              </div>
-              <p className="text-slate-600">Loading products...</p>
+        {/* Error State */}
+        {error && !loading && (
+          <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-red-900">{error}</p>
+              <button
+                onClick={refresh}
+                className="text-xs text-red-600 hover:text-red-700 mt-2 underline"
+              >
+                Try again
+              </button>
             </div>
           </div>
-        ) : products.length === 0 ? (
+        )}
+
+        {/* Loading State */}
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <Loader2 className="w-12 h-12 text-orange-600 mx-auto mb-4 animate-spin" />
+              <p className="text-slate-600 font-medium">Loading products...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!loading && products.length === 0 && (
           <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
             <Package className="w-12 h-12 text-slate-300 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-slate-900 mb-2">No Products</h3>
@@ -222,7 +163,10 @@ export default function AdminProductsPage() {
               Add Your First Product
             </Link>
           </div>
-        ) : (
+        )}
+
+        {/* Products List */}
+        {!loading && products.length > 0 && (
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="divide-y divide-slate-200">
               {products.map((product) => (
@@ -262,13 +206,13 @@ export default function AdminProductsPage() {
                     {/* Stock Status Toggle */}
                     <button
                       onClick={() => toggleStockStatus(product.id)}
-                      disabled={updating === product.id}
+                      disabled={deleting === product.id}
                       title={product.is_in_stock ? "Mark as Out of Stock" : "Mark as In Stock"}
                       className={`p-3 rounded-lg transition-colors border ${
                         product.is_in_stock
                           ? "bg-green-50 border-green-200 hover:bg-green-100"
                           : "bg-red-50 border-red-200 hover:bg-red-100"
-                      } ${updating === product.id ? "opacity-50 cursor-not-allowed" : ""}`}
+                      } ${deleting === product.id ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                       {product.is_in_stock ? (
                         <Check className="w-5 h-5 text-green-600" />
@@ -299,6 +243,15 @@ export default function AdminProductsPage() {
           </div>
         )}
       </main>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModal.isOpen}
+        productName={deleteModal.productName || ""}
+        isDeleting={deleting === deleteModal.productId}
+        onConfirm={() => confirmDelete(deleteModal.productId || "")}
+        onCancel={() => setDeleteModal({ isOpen: false })}
+      />
     </div>
   );
 }

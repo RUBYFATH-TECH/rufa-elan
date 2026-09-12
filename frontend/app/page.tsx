@@ -1,39 +1,70 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import FilterBar from "@/components/filter-bar";
 import OrderTrackingCta from "@/components/order-tracking-cta";
 import TemuDealsSection from "@/components/temu-deals-section";
+import FastDealsSection from "@/components/fast-deals-section";
 import TemuProductCard from "@/components/temu-product-card";
-import { temuProducts } from "@/lib/sample-data";
+import { fetchProducts } from "@/lib/api/products";
+import { Loader2, AlertCircle } from "lucide-react";
+
+interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  regular_price: number;
+  sale_price?: number;
+  product_images?: Array<{ url: string; is_primary?: boolean }>;
+}
 
 export default function HomePage() {
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const productsPerPage = 6;
   const [recommendedPage, setRecommendedPage] = useState(1);
   const [pageInput, setPageInput] = useState("");
 
-  // Transform our products to match the expected format
-  const formattedProducts = temuProducts.map(product => ({
-    id: product.id,
-    name: product.name,
-    price: product.price,
-    originalPrice: product.originalPrice,
-    image: product.image,
-    rating: product.rating,
-    reviewCount: product.reviewCount,
-    soldCount: product.soldCount,
-    badge: product.badge,
-    freeShipping: product.freeShipping,
-    slug: product.slug
-  }));
-  const totalRecommendedPages = Math.ceil(formattedProducts.length / productsPerPage);
-  const paginatedProducts = formattedProducts.slice(
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await fetchProducts({ limit: 100 });
+      const apiProducts = (data.data || []).map((p: Product) => ({
+        id: p.id,
+        name: p.name,
+        price: p.sale_price || p.regular_price,
+        originalPrice: p.regular_price,
+        image: p.product_images?.[0]?.url || "/images/placeholder.jpg",
+        rating: 4.5,
+        reviewCount: Math.floor(Math.random() * 100),
+        soldCount: Math.floor(Math.random() * 500),
+        badge: p.sale_price ? `${Math.round(((p.regular_price - p.sale_price) / p.regular_price) * 100)}% OFF` : null,
+        freeShipping: true,
+        slug: p.slug,
+      }));
+      setProducts(apiProducts);
+    } catch (err) {
+      console.error("Error loading products:", err);
+      setError("Failed to load products. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const totalRecommendedPages = Math.ceil(products.length / productsPerPage);
+  const paginatedProducts = products.slice(
     (recommendedPage - 1) * productsPerPage,
     recommendedPage * productsPerPage
   );
   const firstVisibleProduct = (recommendedPage - 1) * productsPerPage + 1;
-  const lastVisibleProduct = Math.min(recommendedPage * productsPerPage, formattedProducts.length);
+  const lastVisibleProduct = Math.min(recommendedPage * productsPerPage, products.length);
 
   function goToRecommendedPage(page: number) {
     if (page >= 1 && page <= totalRecommendedPages) {
@@ -94,80 +125,111 @@ export default function HomePage() {
 
       <div className="mx-auto max-w-7xl px-4 py-6">
         <FilterBar
-          totalItems={formattedProducts.length}
+          totalItems={products.length}
           viewMode="grid"
         />
 
         <div className="mt-6 space-y-8">
           <TemuDealsSection />
+          <FastDealsSection />
           
-          <div id="recommended" className="bg-white rounded-lg p-6">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-slate-900">Recommended for you</h2>
-              <span className="text-sm text-slate-600">
-                Showing {firstVisibleProduct}–{lastVisibleProduct} of {formattedProducts.length} items
-              </span>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <Loader2 className="w-12 h-12 text-orange-600 mx-auto mb-4 animate-spin" />
+                <p className="text-gray-600 font-medium">Loading products...</p>
+              </div>
             </div>
-            
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {paginatedProducts.map((product) => (
-                <TemuProductCard key={product.id} product={product} />
-              ))}
+          ) : error ? (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-red-900">{error}</p>
+                <button
+                  onClick={loadProducts}
+                  className="text-xs text-red-600 hover:text-red-700 mt-2 underline"
+                >
+                  Try again
+                </button>
+              </div>
             </div>
+          ) : (
+            <div id="recommended" className="bg-white rounded-lg p-6">
+              <div className="mb-6 flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-slate-900">Recommended for you</h2>
+                <span className="text-sm text-slate-600">
+                  Showing {firstVisibleProduct}–{lastVisibleProduct} of {products.length} items
+                </span>
+              </div>
+              
+              {paginatedProducts.length > 0 ? (
+                <>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                    {paginatedProducts.map((product) => (
+                      <TemuProductCard key={product.id} product={product} />
+                    ))}
+                  </div>
 
-            {totalRecommendedPages > 1 && (
-              <nav className="mt-8 flex flex-wrap items-center justify-center gap-2" aria-label="Recommended products pages">
-                {Array.from({ length: totalRecommendedPages }, (_, index) => index + 1).map((page) => (
-                  <button
-                    key={page}
-                    type="button"
-                    onClick={() => goToRecommendedPage(page)}
-                    aria-current={recommendedPage === page ? "page" : undefined}
-                    className={[
-                      "flex h-10 min-w-10 items-center justify-center rounded-lg border px-3 text-sm font-semibold transition",
-                      recommendedPage === page
-                        ? "border-slate-900 bg-slate-900 text-white"
-                        : "border-slate-200 bg-white text-slate-700 hover:border-rufaelan-primary hover:text-rufaelan-primary",
-                    ].join(" ")}
-                  >
-                    {page}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => goToRecommendedPage(recommendedPage + 1)}
-                  disabled={recommendedPage === totalRecommendedPages}
-                  className="h-10 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:border-rufaelan-primary hover:text-rufaelan-primary disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Next →
-                </button>
-                <span className="hidden h-6 w-px bg-slate-200 sm:block" />
-                <label className="flex items-center gap-2 text-sm text-slate-500">
-                  Go to page
-                  <input
-                    value={pageInput}
-                    onChange={(event) => setPageInput(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") submitPageNumber();
-                    }}
-                    inputMode="numeric"
-                    aria-label="Page number"
-                    className="h-10 w-12 rounded-lg border border-slate-200 px-2 text-center text-sm text-slate-900 outline-none focus:border-rufaelan-primary focus:ring-2 focus:ring-rufaelan-primary/20"
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={submitPageNumber}
-                  className="h-10 rounded-lg bg-slate-900 px-4 text-sm font-semibold text-white transition hover:bg-slate-700"
-                >
-                  Go
-                </button>
-              </nav>
-            )}
-          </div>
+                  {totalRecommendedPages > 1 && (
+                    <nav className="mt-8 flex flex-wrap items-center justify-center gap-2" aria-label="Recommended products pages">
+                      {Array.from({ length: totalRecommendedPages }, (_, index) => index + 1).map((page) => (
+                        <button
+                          key={page}
+                          type="button"
+                          onClick={() => goToRecommendedPage(page)}
+                          aria-current={recommendedPage === page ? "page" : undefined}
+                          className={[
+                            "flex h-10 min-w-10 items-center justify-center rounded-lg border px-3 text-sm font-semibold transition",
+                            recommendedPage === page
+                              ? "border-slate-900 bg-slate-900 text-white"
+                              : "border-slate-200 bg-white text-slate-700 hover:border-orange-500 hover:text-orange-500",
+                          ].join(" ")}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => goToRecommendedPage(recommendedPage + 1)}
+                        disabled={recommendedPage === totalRecommendedPages}
+                        className="h-10 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:border-orange-500 hover:text-orange-500 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Next →
+                      </button>
+                      <span className="hidden h-6 w-px bg-slate-200 sm:block" />
+                      <label className="flex items-center gap-2 text-sm text-slate-500">
+                        Go to page
+                        <input
+                          value={pageInput}
+                          onChange={(event) => setPageInput(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") submitPageNumber();
+                          }}
+                          inputMode="numeric"
+                          aria-label="Page number"
+                          className="h-10 w-12 rounded-lg border border-slate-200 px-2 text-center text-sm text-slate-900 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={submitPageNumber}
+                        className="h-10 rounded-lg bg-slate-900 px-4 text-sm font-semibold text-white transition hover:bg-slate-700"
+                      >
+                        Go
+                      </button>
+                    </nav>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-slate-600">No products available at the moment.</p>
+                </div>
+              )}
+            </div>
+          )}
 
           <section className="rounded-2xl border border-rose-100 bg-gradient-to-br from-rose-50 via-white to-violet-50 px-5 py-10 text-center shadow-sm sm:px-8 sm:py-12" aria-labelledby="fashion-brands-heading">
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-rufaelan-primary">Fashion favourites</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-orange-600">Fashion favourites</p>
             <h2 id="fashion-brands-heading" className="mt-2 text-2xl font-bold text-slate-900">
               Women&apos;s Fashion Brands, All in One Place
             </h2>
@@ -192,7 +254,7 @@ export default function HomePage() {
                 <Link
                   key={brand}
                   href={`/shop?brand=${encodeURIComponent(brand)}`}
-                  className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-rufaelan-primary hover:bg-rufaelan-primary hover:text-white"
+                  className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-orange-500 hover:bg-orange-500 hover:text-white"
                 >
                   {brand}
                 </Link>

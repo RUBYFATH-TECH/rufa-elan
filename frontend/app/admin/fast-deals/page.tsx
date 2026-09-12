@@ -2,6 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
+import { useNotification } from "@/lib/hooks/useNotification";
+import NotificationStack from "@/components/NotificationStack";
+import DeleteConfirmationModal from "@/components/admin/DeleteConfirmationModal";
+import { deleteFastDeal } from "@/lib/api/fast-deals";
 import DataTable, { Column } from "@/components/admin/DataTable";
 import StatusBadge from "@/components/admin/StatusBadge";
 import CountdownTimer from "@/components/admin/CountdownTimer";
@@ -34,9 +39,14 @@ type FastDeal = {
 };
 
 export default function AdminFastDealsPage() {
+  const supabase = createClientComponentSupabaseClient();
+  const { notifications, removeNotification, success: showSuccess, error: showError } = useNotification();
   const [deals, setDeals] = useState<FastDeal[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; dealId?: string; dealName?: string }>({
+    isOpen: false
+  });
   const [stats, setStats] = useState({
     activeDealss: 0,
     totalRevenue: 0,
@@ -50,57 +60,55 @@ export default function AdminFastDealsPage() {
   const loadDeals = async () => {
     try {
       setLoading(true);
-      // Mock data for now
-      const mockDeals: FastDeal[] = [
-        {
-          id: "deal-001",
-          product_id: "prod-001",
-          product_name: "Premium Leather Handbag",
-          regular_price: 299.99,
-          deal_price: 199.99,
-          discount_percentage: 33,
-          start_time: new Date().toISOString(),
-          end_time: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-          status: "active",
-          stock_quantity: 50,
-          stock_sold: 23,
-        },
-        {
-          id: "deal-002",
-          product_id: "prod-002",
-          product_name: "Designer Crossbody Bag",
-          regular_price: 249.99,
-          deal_price: 149.99,
-          discount_percentage: 40,
-          start_time: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-          end_time: new Date(Date.now() + 26 * 60 * 60 * 1000).toISOString(),
-          status: "scheduled",
-          stock_quantity: 30,
-          stock_sold: 0,
-        },
-        {
-          id: "deal-003",
-          product_id: "prod-003",
-          product_name: "Vintage Shoulder Bag",
-          regular_price: 199.99,
-          deal_price: 99.99,
-          discount_percentage: 50,
-          start_time: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
-          end_time: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-          status: "expired",
-          stock_quantity: 40,
-          stock_sold: 40,
-        },
-      ];
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      
+      const response = await fetch(`${backendUrl}/api/fast-deals?limit=100`, {
+        headers: { "Content-Type": "application/json" },
+        cache: 'no-store',
+      });
 
-      setDeals(mockDeals);
+      if (!response.ok) {
+        throw new Error("Failed to fetch deals");
+      }
+
+      const data = await response.json();
+      
+      // Map API response to FastDeal format
+      const dealsFromAPI = (data.data || []).map((d: any) => {
+        const startDateTime = new Date(`${d.start_date}T${d.start_time}`);
+        const endDateTime = new Date(`${d.end_date}T${d.end_time}`);
+        const now = new Date();
+        
+        let status: "scheduled" | "active" | "expired" = "scheduled";
+        if (now > endDateTime) status = "expired";
+        else if (now >= startDateTime) status = "active";
+        
+        return {
+          id: d.id,
+          product_id: d.product_id,
+          product_name: d.products?.name || "Unknown Product",
+          regular_price: d.products?.regular_price || 0,
+          deal_price: d.deal_price,
+          discount_percentage: d.products?.regular_price 
+            ? Math.round(((d.products.regular_price - d.deal_price) / d.products.regular_price) * 100)
+            : 0,
+          start_time: startDateTime.toISOString(),
+          end_time: endDateTime.toISOString(),
+          status,
+          stock_quantity: d.stock_quantity,
+          stock_sold: d.sold_quantity || 0,
+          product_image: d.products?.product_images?.[0]?.url,
+        };
+      });
+
+      setDeals(dealsFromAPI);
       setStats({
-        activeDealss: mockDeals.filter((d) => d.status === "active").length,
-        totalRevenue: mockDeals.reduce(
+        activeDealss: dealsFromAPI.filter((d) => d.status === "active").length,
+        totalRevenue: dealsFromAPI.reduce(
           (sum, d) => sum + d.deal_price * d.stock_sold,
           0
         ),
-        soldUnits: mockDeals.reduce((sum, d) => sum + d.stock_sold, 0),
+        soldUnits: dealsFromAPI.reduce((sum, d) => sum + d.stock_sold, 0),
       });
     } catch (error) {
       console.error("Error loading deals:", error);
@@ -110,15 +118,38 @@ export default function AdminFastDealsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this fast deal?")) return;
+    // Open the confirmation modal instead of using browser confirm
+    const deal = deals.find(d => d.id === id);
+    setDeleteModal({
+      isOpen: true,
+      dealId: id,
+      dealName: deal?.product_name || "this deal"
+    });
+  };
+
+  const confirmDelete = async (id: string) => {
     try {
       setDeleting(id);
-      // API call would go here
-      setDeals(deals.filter((d) => d.id !== id));
+      
+      // Get fresh auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      const authToken = session?.access_token;
+      
+      if (!authToken) {
+        throw new Error("Not authenticated. Please log in again.");
+      }
+
+      await deleteFastDeal(id, authToken);
+      showSuccess("Fast deal deleted", "The deal has been successfully removed");
+      
+      // Refresh deals after deletion
+      await loadDeals();
     } catch (error) {
       console.error("Error deleting deal:", error);
+      showError("Failed to delete", error instanceof Error ? error.message : "An error occurred while deleting the deal");
     } finally {
       setDeleting(null);
+      setDeleteModal({ isOpen: false });
     }
   };
 
@@ -201,6 +232,21 @@ export default function AdminFastDealsPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {/* Notification Stack */}
+      <NotificationStack 
+        notifications={notifications} 
+        onRemove={removeNotification} 
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModal.isOpen}
+        productName={deleteModal.dealName || ""}
+        isDeleting={deleting === deleteModal.dealId}
+        onConfirm={() => confirmDelete(deleteModal.dealId || "")}
+        onCancel={() => setDeleteModal({ isOpen: false })}
+      />
+
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex items-center justify-between">

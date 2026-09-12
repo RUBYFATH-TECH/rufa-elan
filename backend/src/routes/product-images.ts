@@ -58,7 +58,6 @@ router.get('/:productId/images', async (req: Request, res: Response) => {
     const result = await db.productImages.find({
       filters: { product_id: productId },
       orderBy: [
-        { column: 'is_primary', ascending: false },
         { column: 'position', ascending: true },
         { column: 'created_at', ascending: true }
       ]
@@ -131,20 +130,13 @@ router.post('/:productId/images', requireAdmin, async (req: Request, res: Respon
 
     const imageCount = existingImages.data?.length || 0;
 
-    // If this is set as primary, unset other primary images
-    if (imageData.is_primary) {
-      await db.productImages.updateWhere(
-        { product_id: productId, is_primary: true },
-        { is_primary: false }
-      );
-    }
-
     // Create image
     const result = await db.productImages.create({
-      ...imageData,
       product_id: productId,
-      position: imageData.position !== undefined ? imageData.position : imageCount,
-      is_primary: imageCount === 0 ? true : (imageData.is_primary || false)
+      url: imageData.url,
+      alt_text: imageData.alt_text || '',
+      position: imageData.position !== undefined ? imageData.position : imageCount
+      // Note: is_primary column doesn't exist in base schema
     });
 
     if (result.error || !result.data) {

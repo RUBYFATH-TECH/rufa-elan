@@ -669,8 +669,8 @@ router.get('/:id/products', async (req: Request, res: Response) => {
     // Get products in category
     const result = await db.products.find({
       select: `*,
-        product_images(id, url, alt_text, is_primary, position),
-        product_variants(id, name, value, price, stock_quantity, is_default)
+        product_images(id, url, position),
+        product_variants(id, name, value, price, stock_quantity)
       `,
       filters: {
         category_id: id,

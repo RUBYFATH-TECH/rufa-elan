@@ -486,7 +486,8 @@ export const db = {
   couponUsage: new DatabaseHelper('coupon_usage'),
   notifications: new DatabaseHelper('notifications'),
   adminUsers: new DatabaseHelper('admin_users'),
-  auditLogs: new DatabaseHelper('audit_logs')
+  auditLogs: new DatabaseHelper('audit_logs'),
+  fastDeals: new DatabaseHelper('fast_deals')
 };
 
 /**

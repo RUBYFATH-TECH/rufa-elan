@@ -41,8 +41,8 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
         product:product_id(
           id, name, slug, description, regular_price, sale_price,
           category_id, avg_rating, review_count,
-          product_images(id, url, alt_text, is_primary, position),
-          product_variants(id, name, value, price, stock_quantity, is_default)
+          product_images(id, url, position),
+          product_variants(id, name, value, price, stock_quantity)
         )
       `)
       .eq('user_id', req.userId)

@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
+import { Request, Response, NextFunction } from 'express';
 import { errorHandler } from './middleware/error';
 import { databaseMiddleware, authMiddleware, queryLoggingMiddleware, databaseErrorHandler } from './middleware/database';
 import { initializeDatabase } from './utils/database';
@@ -49,11 +50,20 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Database middleware
 app.use(databaseMiddleware);
-app.use(authMiddleware);
+
+// Apply auth middleware to all routes except upload
+app.use((req: Request, res: Response, next: NextFunction) => {
+  // Skip auth middleware for upload endpoint
+  if (req.path === '/api/upload' || req.path.startsWith('/upload')) {
+    return next();
+  }
+  authMiddleware(req, res, next);
+});
+
 app.use(queryLoggingMiddleware);
 
 // Request timeout
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
   req.setTimeout(30000); // 30 seconds timeout
   next();
 });
@@ -78,6 +88,16 @@ app.get('/health', async (req, res) => {
       database: 'error'
     });
   }
+});
+
+// Debug endpoint to check auth status (remove in production)
+app.get('/api/debug/auth', (req, res) => {
+  res.json({
+    userId: req.userId || null,
+    isAdmin: req.isAdmin || false,
+    authorization: req.headers.authorization ? 'Bearer token present' : 'No auth header',
+    message: 'This is a debug endpoint - remove in production'
+  });
 });
 
 // API routes
