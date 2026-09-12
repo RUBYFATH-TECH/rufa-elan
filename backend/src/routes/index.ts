@@ -14,6 +14,7 @@ import userSettingsRouter from './user-settings';
 import adminUsersRouter from './admin-users';
 import uploadRouter from './upload';
 import fastDealsRouter from './fast-deals';
+import customersRouter from './customers';
 
 const router = express.Router();
 
@@ -37,6 +38,9 @@ router.use('/categories', categoriesRouter);
 
 // Order routes
 router.use('/orders', ordersRouter);
+
+// Customers routes
+router.use('/customers', customersRouter);
 
 // Cart routes
 router.use('/cart', cartRouter);

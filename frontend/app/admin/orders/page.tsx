@@ -2,15 +2,19 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
+import { fetchAdminOrders } from "@/lib/api/orders";
+import { useNotification } from "@/lib/hooks/useNotification";
+import NotificationStack from "@/components/NotificationStack";
 import DataTable, { Column } from "@/components/admin/DataTable";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { 
   Eye,
-  MapPin,
-  Calendar,
   ShoppingCart,
+  Calendar,
   DollarSign,
-  Truck
+  AlertCircle,
+  Loader2
 } from "lucide-react";
 
 type Order = {
@@ -33,8 +37,11 @@ type Order = {
 };
 
 export default function AdminOrdersPage() {
+  const supabase = createClientComponentSupabaseClient();
+  const { notifications, removeNotification, error: showError } = useNotification();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadOrders();
@@ -43,12 +50,21 @@ export default function AdminOrdersPage() {
   const loadOrders = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/admin/orders");
-      if (!res.ok) throw new Error("Failed to load orders");
-      const data = await res.json();
-      setOrders(data ?? []);
-    } catch (error) {
-      console.error("Error loading orders:", error);
+      setError(null);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      const authToken = session?.access_token;
+
+      if (!authToken) {
+        throw new Error("Not authenticated");
+      }
+
+      const response = await fetchAdminOrders(1, 100, undefined, authToken);
+      setOrders(response.data || []);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to load orders";
+      setError(message);
+      console.error("Error loading orders:", err);
     } finally {
       setLoading(false);
     }
@@ -112,6 +128,12 @@ export default function AdminOrdersPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {/* Notification Stack */}
+      <NotificationStack 
+        notifications={notifications} 
+        onRemove={removeNotification} 
+      />
+
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -123,14 +145,26 @@ export default function AdminOrdersPage() {
       </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Error State */}
+        {error && !loading && (
+          <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-red-900">{error}</p>
+              <button
+                onClick={loadOrders}
+                className="text-xs text-red-600 hover:text-red-700 mt-2 underline"
+              >
+                Try again
+              </button>
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 mb-4">
-                <div className="animate-spin">
-                  <ShoppingCart className="w-6 h-6 text-slate-400" />
-                </div>
-              </div>
+              <Loader2 className="w-12 h-12 text-orange-600 mx-auto mb-4 animate-spin" />
               <p className="text-slate-600">Loading orders...</p>
             </div>
           </div>

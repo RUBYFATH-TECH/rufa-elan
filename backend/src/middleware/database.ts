@@ -22,27 +22,26 @@ declare global {
  * Database connection middleware
  * Ensures database is available and adds db instance to request
  */
-export const databaseMiddleware = async (
+let databaseHealthy = false;
+
+export const databaseMiddleware = (
   req: Request,
   res: Response,
   next: NextFunction
-): Promise<void> => {
+): void => {
   try {
-    // Check if database is healthy
-    const isHealthy = await checkDatabaseConnection();
+    // Add database instance to request
+    req.db = supabase;
     
-    if (!isHealthy) {
-      logger.error('Database connection is not healthy');
+    // If database is unhealthy, return error (only checked on startup)
+    if (!databaseHealthy) {
       res.status(503).json({
         success: false,
-        error: 'Database service unavailable',
-        message: 'Please try again later'
+        error: 'Database service starting up',
+        message: 'Please try again in a moment'
       });
       return;
     }
-
-    // Add database instance to request
-    req.db = supabase;
     
     next();
   } catch (error) {
@@ -52,6 +51,21 @@ export const databaseMiddleware = async (
       error: 'Internal server error',
       message: 'Database configuration error'
     });
+  }
+};
+
+/**
+ * Initialize database health flag on startup
+ */
+export const initializeDatabaseHealth = async (): Promise<boolean> => {
+  try {
+    const isHealthy = await checkDatabaseConnection();
+    databaseHealthy = isHealthy;
+    return isHealthy;
+  } catch (error) {
+    logger.error('Failed to initialize database health:', error);
+    databaseHealthy = false;
+    return false;
   }
 };
 

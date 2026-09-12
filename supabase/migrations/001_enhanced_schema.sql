@@ -41,7 +41,12 @@ CREATE POLICY "Users can update their own profile"
 
 CREATE POLICY "Users can insert their own profile" 
   ON profiles FOR INSERT 
-  WITH CHECK (auth.uid() = id);
+  WITH CHECK (auth.uid() = id OR auth.role() = 'authenticated');
+
+-- Allow service role and triggers to create profiles
+CREATE POLICY "Service role can create profiles" 
+  ON profiles FOR INSERT 
+  WITH CHECK (true);
 
 CREATE POLICY "Admins can view all profiles" 
   ON profiles FOR ALL 

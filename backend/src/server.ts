@@ -8,6 +8,7 @@ import app from './app';
 import { logger } from './utils/logger';
 import { validateServiceConfig } from './config/services';
 import { testSupabaseConnection } from './utils/supabase';
+import { initializeDatabaseHealth } from './middleware/database';
 
 // The project keeps the Supabase URL under the Next.js-compatible public name.
 // Mirror it for the backend's server-only validation and service integrations.
@@ -22,6 +23,12 @@ const startServer = async () => {
   try {
     // Validate service configuration
     validateServiceConfig();
+    
+    // Initialize database health check
+    const dbHealthy = await initializeDatabaseHealth();
+    if (!dbHealthy) {
+      logger.warn('Database is not healthy on startup, but server will continue');
+    }
     
     // Test Supabase connection (optional - don't block server startup)
     testSupabaseConnection().catch(error => {
