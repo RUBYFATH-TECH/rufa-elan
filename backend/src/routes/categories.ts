@@ -110,7 +110,7 @@ router.get('/', async (req: Request, res: Response) => {
       success: true,
       data: result.data || [],
       pagination
-    } as ApiResponse<PaginatedResponse<Category>>);
+    } as any);
 
   } catch (error) {
     logger.error('Error fetching categories:', error);
@@ -248,7 +248,7 @@ router.get('/:id/children', async (req: Request, res: Response) => {
       success: true,
       data: result.data || [],
       pagination
-    } as ApiResponse<PaginatedResponse<Category>>);
+    } as any);
 
   } catch (error) {
     logger.error('Error fetching child categories:', error);

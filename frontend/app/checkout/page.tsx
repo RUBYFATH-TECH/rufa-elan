@@ -292,6 +292,9 @@ export default function CheckoutPage() {
           metadata: {
             delivery_option: deliveryOption,
             address_id: selectedAddress.id,
+            subtotal_amount: totalAmount,
+            shipping_fee: deliveryFee,
+            discount_amount: 0,
             items: items.map(i => ({
               product_variant_id: i.id,
               quantity: i.quantity,
@@ -311,7 +314,7 @@ export default function CheckoutPage() {
 
       let data: any = {};
       try {
-        if (responseText) {
+        if (responseText && responseText.trim()) {
           data = JSON.parse(responseText);
         }
       } catch (parseError) {
@@ -320,12 +323,10 @@ export default function CheckoutPage() {
       }
 
       if (!response.ok) {
-        console.error("Payment init error response:", {
-          status: response.status,
-          statusText: response.statusText,
-          data: data
-        });
-        setMessage(data.message || `Payment initialization failed (${response.status}).`);
+        const failureMessage = data?.message || data?.error ||
+          (responseText ? `Payment initialization failed: ${responseText}` : `Payment service returned HTTP ${response.status} ${response.statusText}.`);
+        console.error(`Payment initialization failed (HTTP ${response.status}): ${failureMessage}`);
+        setMessage(failureMessage);
         setPaymentStatus("failed");
         return;
       }
@@ -370,6 +371,8 @@ export default function CheckoutPage() {
   };
 
   const verifyPayment = async (reference: string) => {
+    console.log("=== Starting Payment Verification ===");
+    console.log("Reference:", reference);
     setPaymentStatus("verifying");
     setMessage("Verifying payment...");
 
@@ -377,14 +380,20 @@ export default function CheckoutPage() {
       // Get auth token
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
+        console.error("No auth token available");
         setPaymentStatus("failed");
         setMessage("Authentication required for payment verification.");
         return;
       }
 
+      console.log("Auth token obtained, calling verify endpoint");
+
       // Call backend verify endpoint
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
-      const res = await fetch(`${backendUrl}/api/payments/verify/${reference}`, {
+      const verifyUrl = `${backendUrl}/api/payments/verify/${reference}`;
+      console.log("Calling:", verifyUrl);
+      
+      const res = await fetch(verifyUrl, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -392,14 +401,26 @@ export default function CheckoutPage() {
         }
       });
 
-      const data = await res.json();
+      console.log("Verify response status:", res.status);
+      const responseText = await res.text();
+      let data: any = {};
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        data = { message: responseText || "The payment service returned an invalid response." };
+      }
+      console.log("Verify response data:", data);
+      
       if (!res.ok || !data.success) {
+        const failureMessage = data.message || data.error ||
+          (responseText ? `Payment verification failed: ${responseText}` : `Payment verification returned HTTP ${res.status} ${res.statusText}.`);
+        console.error(`Payment verification failed (HTTP ${res.status}): ${failureMessage}`);
         setPaymentStatus("failed");
-        setMessage(data.message || "Payment verification failed.");
-        console.error("Verification failed:", data);
+        setMessage(failureMessage);
         return;
       }
 
+      console.log("Payment verified successfully!");
       // Payment verified successfully
       setPaymentStatus("success");
       setMessage("Payment successful! Your order has been placed.");
@@ -411,8 +432,9 @@ export default function CheckoutPage() {
       }
 
       // Redirect to orders or home page
+      console.log("Redirecting to orders page");
       setTimeout(() => {
-        router.push("/orders");
+        router.push("/account/orders");
       }, 2000);
     } catch (error) {
       console.error("Verification error:", error);
@@ -422,17 +444,23 @@ export default function CheckoutPage() {
   };
 
   const openPaystackInline = (details: any) => {
+    console.log("Opening Paystack with details:", { reference: details.reference, amount: details.amount, email: details.email });
+    
     if (!paystackPublicKey || typeof window === "undefined") {
+      console.log("No public key or window, opening in new tab");
       window.open(details.authorization_url, "_blank");
       return;
     }
 
     const paystack = (window as any).PaystackPop;
     if (!paystack) {
+      console.log("PaystackPop not available, opening in new tab");
       window.open(details.authorization_url, "_blank");
       return;
     }
 
+    console.log("Setting up Paystack handler with reference:", details.reference);
+    
     const handler = paystack.setup({
       key: paystackPublicKey,
       email: details.email,
@@ -440,18 +468,23 @@ export default function CheckoutPage() {
       currency: "GHS",
       ref: details.reference,
       onClose: () => {
+        console.log("Payment window closed by user");
         setMessage("Payment window closed. Please verify your payment or try again.");
       },
       callback: (response: any) => {
+        console.log("Paystack callback received:", response);
         if (response?.reference) {
+          console.log("Calling verifyPayment with reference:", response.reference);
           verifyPayment(response.reference);
         } else {
+          console.log("No reference in response:", response);
           setPaymentStatus("failed");
           setMessage("Payment response did not return a reference.");
         }
       }
     });
 
+    console.log("Opening Paystack iframe");
     handler.openIframe();
   };
 

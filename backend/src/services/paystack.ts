@@ -75,11 +75,11 @@ class PaystackService {
         body: options.body ? JSON.stringify(options.body) : undefined,
       });
 
-      const data = await response.json();
+      const data: any = await response.json();
 
       if (!response.ok) {
         logger.error('Paystack API error:', data);
-        throw new Error(data.message || 'Paystack API request failed');
+        throw new Error((data as any)?.message || 'Paystack API request failed');
       }
 
       return data;
@@ -117,15 +117,15 @@ class PaystackService {
     try {
       logger.info('Verifying Paystack payment:', { reference });
 
-      const response = await this.makeRequest(`/transaction/verify/${reference}`);
+      const response: any = await this.makeRequest(`/transaction/verify/${reference}`);
 
       logger.info('Payment verification result:', { 
         reference, 
-        status: response.data?.status,
-        amount: response.data?.amount 
+        status: (response as any)?.data?.status,
+        amount: (response as any)?.data?.amount 
       });
 
-      return response;
+      return response as PaystackVerifyPaymentResponse;
     } catch (error) {
       logger.error('Error verifying payment:', error);
       throw error;

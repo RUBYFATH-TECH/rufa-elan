@@ -9,6 +9,16 @@ const nextConfig = {
   reactStrictMode: true,
   outputFileTracingRoot: path.resolve(__dirname),
   allowedDevOrigins: ["http://192.168.137.1:3000"],
+  async rewrites() {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+
+    return [
+      {
+        source: "/backend-api/:path*",
+        destination: `${backendUrl}/api/:path*`,
+      },
+    ];
+  },
   transpilePackages: [],
   outputFileTracingExcludes: {
     '*': ['./backend/**/*']

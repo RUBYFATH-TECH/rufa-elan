@@ -2,9 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { verifyPayment } from '@/lib/paystack';
-import { useToast } from '@/hooks/use-toast';
+import { createClientComponentSupabaseClient } from '@/lib/supabase-client';
 
 interface PaymentStatus {
   loading: boolean;
@@ -21,8 +20,6 @@ interface PaymentStatus {
 export default function PaymentCallbackPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { data: session } = useSession();
-  const { toast } = useToast();
   const [status, setStatus] = useState<PaymentStatus>({
     loading: true,
     success: false
@@ -42,7 +39,10 @@ export default function PaymentCallbackPage() {
           return;
         }
 
-        if (!session?.accessToken) {
+        const supabase = createClientComponentSupabaseClient();
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session?.access_token) {
           setStatus({
             loading: false,
             success: false,
@@ -52,7 +52,7 @@ export default function PaymentCallbackPage() {
         }
 
         // Verify payment with backend
-        const result = await verifyPayment(reference, session.accessToken);
+        const result = await verifyPayment(reference, session.access_token);
 
         if (result.success) {
           setStatus({
@@ -62,15 +62,9 @@ export default function PaymentCallbackPage() {
             payment: result.data
           });
 
-          toast({
-            title: 'Payment Verified',
-            description: 'Your payment has been successfully verified!',
-            variant: 'default'
-          });
-
           // Redirect to orders page after 3 seconds
           setTimeout(() => {
-            router.push('/orders');
+            router.push('/account/orders');
           }, 3000);
         } else {
           setStatus({
@@ -80,11 +74,6 @@ export default function PaymentCallbackPage() {
             reference
           });
 
-          toast({
-            title: 'Verification Failed',
-            description: result.message || 'Failed to verify payment',
-            variant: 'destructive'
-          });
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'An error occurred';
@@ -94,16 +83,11 @@ export default function PaymentCallbackPage() {
           error: errorMessage
         });
 
-        toast({
-          title: 'Error',
-          description: errorMessage,
-          variant: 'destructive'
-        });
       }
     };
 
     verifyPaymentTransaction();
-  }, [searchParams, session, router, toast]);
+  }, [searchParams, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -158,7 +142,7 @@ export default function PaymentCallbackPage() {
               Redirecting to your orders page...
             </p>
             <button
-              onClick={() => router.push('/orders')}
+              onClick={() => router.push('/account/orders')}
               className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
             >
               Go to Orders
@@ -205,7 +189,7 @@ export default function PaymentCallbackPage() {
                 Go Back
               </button>
               <button
-                onClick={() => router.push('/orders')}
+                onClick={() => router.push('/account/orders')}
                 className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
               >
                 To Orders

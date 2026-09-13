@@ -65,7 +65,13 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
     const queryOptions = {
       select: `
         *,
-        order_items(id, product_variant_id, quantity, unit_price, total_price),
+        order_items(
+          id, product_variant_id, quantity, unit_price, total_price,
+          product_variants(
+            id, name, value, sku,
+            products(id, name, description, product_images(url, position))
+          )
+        ),
         payments(id, provider, reference, status, amount),
         delivery_tracking(id, courier_name, tracking_number, current_status, estimated_delivery_date)
       `,
@@ -124,7 +130,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
       success: true,
       data: orders,
       pagination
-    } as ApiResponse<PaginatedResponse<OrderDetails>>);
+    } as any);
 
   } catch (error) {
     logger.error('Error fetching orders:', error);
@@ -152,10 +158,22 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
       } as ApiResponse);
     }
 
-    // Fetch order with all related data using the order_details view
+    // Fetch the order with product information required by the customer detail,
+    // tracking, and invoice screens.
     const { data, error } = await req.db!
-      .from('order_details')
-      .select('*')
+      .from('orders')
+      .select(`
+        *,
+        order_items(
+          id, product_variant_id, quantity, unit_price, total_price,
+          product_variants(
+            id, name, value, sku,
+            products(id, name, description, product_images(url, position))
+          )
+        ),
+        payments(id, provider, reference, status, amount),
+        delivery_tracking(id, courier_name, tracking_number, current_status, estimated_delivery_date)
+      `)
       .eq('id', id)
       .single();
 
@@ -236,8 +254,20 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
         } as ApiResponse);
       }
 
-      const variant = await db.productVariants.findById(item.product_variant_id);
-      if (variant.error || !variant.data) {
+      // Fetch variant with full product and image details
+      const { data: variant, error: variantError } = await req.db!
+        .from('product_variants')
+        .select(`
+          id, name, value, sku, price, stock_quantity,
+          products(
+            id, name, description,
+            product_images(id, url, position)
+          )
+        `)
+        .eq('id', item.product_variant_id)
+        .single();
+
+      if (variantError || !variant) {
         return res.status(400).json({
           success: false,
           error: 'Product variant not found',
@@ -246,23 +276,53 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       }
 
       // Check stock availability
-      if (variant.data.stock_quantity < item.quantity) {
+      if (variant.stock_quantity < item.quantity) {
         return res.status(400).json({
           success: false,
           error: 'Insufficient stock',
-          message: `Variant "${variant.data.name}" has insufficient stock. Available: ${variant.data.stock_quantity}, Requested: ${item.quantity}`
+          message: `Variant "${variant.name}" has insufficient stock. Available: ${variant.stock_quantity}, Requested: ${item.quantity}`
         } as ApiResponse);
       }
 
-      const unitPrice = variant.data.price || 0;
+      const unitPrice = variant.price || 0;
       const totalPrice = unitPrice * item.quantity;
       subtotal += totalPrice;
+
+      // Store complete product snapshot for the order item
+      const product = (variant as any).products;
+      if (!product) {
+        logger.error('Product relationship not found in variant', {
+          productVariantId: item.product_variant_id,
+          variant
+        });
+        return res.status(400).json({
+          success: false,
+          error: 'Product data missing',
+          message: `Product details not found for variant ${item.product_variant_id}`
+        } as ApiResponse);
+      }
+
+      const images = Array.isArray((product as any)?.product_images) ? (product as any).product_images : [];
+      const primaryImage = images.find((img: any) => img.position === 1) || images[0];
 
       orderItems.push({
         product_variant_id: item.product_variant_id,
         quantity: item.quantity,
         unit_price: unitPrice,
-        total_price: totalPrice
+        total_price: totalPrice,
+        product_snapshot: {
+          product_id: (product as any)?.id,
+          product_name: (product as any)?.name,
+          variant_name: variant.name,
+          description: (product as any)?.description,
+          sku: variant.sku,
+          color: variant.value, // variant value typically contains color
+          image_url: primaryImage?.url || null,
+          all_images: images.map((img: any) => ({
+            url: img.url,
+            position: img.position
+          }))
+        }
       } as any);
     }
 
@@ -340,14 +400,15 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
 
     const orderId = orderResult.data.id;
 
-    // Create order items
+    // Create order items with product snapshots
     for (const item of orderItems) {
       await db.orderItems.create({
         order_id: orderId,
         product_variant_id: item.product_variant_id,
         quantity: item.quantity,
         unit_price: item.unit_price,
-        total_price: item.total_price
+        total_price: item.total_price,
+        product_snapshot: item.product_snapshot || null
       });
     }
 
@@ -382,8 +443,19 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
 
     // Fetch complete order details
     const { data: createdOrder } = await req.db!
-      .from('order_details')
-      .select('*')
+      .from('orders')
+      .select(`
+        *,
+        order_items(
+          id, product_variant_id, quantity, unit_price, total_price, product_snapshot,
+          product_variants(
+            id, name, value, sku,
+            products(id, name, description, product_images(url, position))
+          )
+        ),
+        payments(id, provider, reference, status, amount),
+        delivery_tracking(id, courier_name, tracking_number, current_status, estimated_delivery_date)
+      `)
       .eq('id', orderId)
       .single();
 
@@ -464,7 +536,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
       }
 
       updateData.cancellation_reason = updateData.cancellation_reason || 'User cancelled order';
-      updateData.cancelled_at = new Date().toISOString();
+      (updateData as any).cancelled_at = new Date().toISOString();
     }
 
     // Update order
@@ -489,8 +561,19 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
 
     // Fetch updated order details
     const { data: updatedOrder } = await req.db!
-      .from('order_details')
-      .select('*')
+      .from('orders')
+      .select(`
+        *,
+        order_items(
+          id, product_variant_id, quantity, unit_price, total_price, product_snapshot,
+          product_variants(
+            id, name, value, sku,
+            products(id, name, description, product_images(url, position))
+          )
+        ),
+        payments(id, provider, reference, status, amount),
+        delivery_tracking(id, courier_name, tracking_number, current_status, estimated_delivery_date)
+      `)
       .eq('id', id)
       .single();
 

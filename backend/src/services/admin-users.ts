@@ -104,7 +104,7 @@ export class AdminUsersService {
       if (error) throw error;
       if (!data) throw new Error('User not found');
 
-      return data;
+      return data as any;
     } catch (error) {
       logger.error('Error getting user profile', { error, userId });
       throw error;

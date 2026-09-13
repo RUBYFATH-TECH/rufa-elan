@@ -54,7 +54,7 @@ class EmailService {
 
       if (!response.ok) {
         logger.error('Resend API error:', result);
-        throw new Error(result.message || 'Email sending failed');
+        throw new Error(((result as any) || {}).message || 'Email sending failed');
       }
 
       return result;
@@ -90,7 +90,7 @@ class EmailService {
       logger.info('Email sent successfully:', { 
         to: emailData.to, 
         subject: emailData.subject,
-        id: result.id 
+        id: (result as any).id 
       });
 
       return result;

@@ -155,7 +155,7 @@ router.get('/', async (req: Request, res: Response) => {
       success: true,
       data: products,
       pagination
-    } as ApiResponse<PaginatedResponse<ProductDetails>>);
+    } as any);
 
   } catch (error) {
     logger.error('Error fetching products:', error);
@@ -491,7 +491,7 @@ router.put('/:id', requireAdmin, async (req: Request, res: Response) => {
         } as ApiResponse);
       }
 
-      updateData.slug = newSlug;
+      (updateData as any).slug = newSlug;
     }
 
     // Check SKU uniqueness if being updated

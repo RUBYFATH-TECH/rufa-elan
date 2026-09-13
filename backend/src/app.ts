@@ -31,17 +31,29 @@ app.use(helmet({
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // Allow all origins in development
+    if (process.env.NODE_ENV === 'development') {
+      callback(null, true);
+    } else {
+      const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000').split(',');
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('CORS not allowed'));
+      }
+    }
+  },
   credentials: true,
   optionsSuccessStatus: 200,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 };
 
 app.use(cors(corsOptions));
 
 // Basic middleware
-app.use(compression());
+app.use(compression() as any);
 app.use(morgan('combined', {
   stream: { write: (message) => logger.info(message.trim()) }
 }));

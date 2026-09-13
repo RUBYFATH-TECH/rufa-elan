@@ -66,7 +66,7 @@ export class DatabaseHelper {
   /**
    * Create a new record
    */
-  async create<T = any>(data: Partial<T>): Promise<DatabaseResult<T>> {
+  async create<T = any>(data: any): Promise<DatabaseResult<T>> {
     try {
       logger.info(`Creating record in ${this.tableName}`, { data });
       
@@ -139,7 +139,7 @@ export class DatabaseHelper {
       }
 
       logger.info(`Successfully found ${data?.length || 0} records in ${this.tableName}`);
-      return { data: data || [], error: null, count: count || 0 };
+      return { data: (data as any) || [], error: null, count: count || 0 };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       logger.error(`Unexpected error finding records in ${this.tableName}:`, err);
@@ -166,7 +166,7 @@ export class DatabaseHelper {
       }
 
       logger.info(`Successfully found record by ID in ${this.tableName}`, { id });
-      return { data, error: null };
+      return { data: data as any, error: null };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       logger.error(`Unexpected error finding record by ID in ${this.tableName}:`, err);
@@ -177,7 +177,7 @@ export class DatabaseHelper {
   /**
    * Update a record by ID
    */
-  async updateById<T = any>(id: string, data: Partial<T>): Promise<DatabaseResult<T>> {
+  async updateById<T = any>(id: string, data: any): Promise<DatabaseResult<T>> {
     try {
       logger.info(`Updating record by ID in ${this.tableName}`, { id, data });
 
@@ -205,7 +205,7 @@ export class DatabaseHelper {
   /**
    * Update records with filters
    */
-  async updateWhere<T = any>(filters: Record<string, any>, data: Partial<T>): Promise<DatabaseResult<T[]>> {
+  async updateWhere<T = any>(filters: Record<string, any>, data: any): Promise<DatabaseResult<T[]>> {
     try {
       logger.info(`Updating records with filters in ${this.tableName}`, { filters, data });
 
@@ -359,7 +359,7 @@ export class DatabaseHelper {
   /**
    * Bulk insert records
    */
-  async bulkInsert<T = any>(records: Partial<T>[]): Promise<DatabaseResult<T[]>> {
+  async bulkInsert<T = any>(records: any[]): Promise<DatabaseResult<T[]>> {
     try {
       logger.info(`Bulk inserting ${records.length} records in ${this.tableName}`);
 
@@ -386,7 +386,7 @@ export class DatabaseHelper {
    * Upsert (insert or update) records
    */
   async upsert<T = any>(
-    records: Partial<T>[], 
+    records: any[], 
     onConflict?: string
   ): Promise<DatabaseResult<T[]>> {
     try {

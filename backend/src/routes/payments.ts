@@ -35,6 +35,7 @@ router.post('/initialize', requireAuth, async (req: Request, res: Response) => {
       orderId: order_id,
       amount,
       email,
+      hasMetadata: !!metadata,
       hasDb: !!req.db
     });
 
@@ -46,6 +47,42 @@ router.post('/initialize', requireAuth, async (req: Request, res: Response) => {
         error: 'Missing required fields',
         message: 'order_id, amount, and email are required'
       } as ApiResponse);
+    }
+
+    // Validate metadata if provided (needed for order creation after payment)
+    if (metadata) {
+      if (!metadata.items || !Array.isArray(metadata.items) || metadata.items.length === 0) {
+        logger.warn('Invalid metadata: missing items array', { metadata });
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid metadata',
+          message: 'metadata.items must be a non-empty array'
+        } as ApiResponse);
+      }
+
+      if (!metadata.address_id) {
+        logger.warn('Invalid metadata: missing address_id', { metadata });
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid metadata',
+          message: 'metadata.address_id is required for order creation'
+        } as ApiResponse);
+      }
+
+      if (typeof metadata.subtotal_amount !== 'number' || metadata.subtotal_amount <= 0) {
+        logger.warn('Invalid metadata: invalid subtotal_amount', { metadata });
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid metadata',
+          message: 'metadata.subtotal_amount must be a positive number'
+        } as ApiResponse);
+      }
+
+      logger.info('Metadata validation passed', {
+        itemCount: metadata.items.length,
+        addressId: metadata.address_id,
+        subtotalAmount: metadata.subtotal_amount
+      });
     }
 
     // Validate amount is positive
@@ -71,19 +108,24 @@ router.post('/initialize', requireAuth, async (req: Request, res: Response) => {
     let orderError: any = null;
     
     if (req.db) {
-      const result = await req.db
-        .from('orders')
-        .select('id, user_id, status, total_amount')
-        .eq('id', order_id)
-        .single();
-      
-      order = result.data;
-      orderError = result.error;
-      
-      logger.info('Order lookup result', {
-        found: !!order,
-        error: orderError?.message
-      });
+      try {
+        const result = await req.db
+          .from('orders')
+          .select('id, user_id, status, total_amount')
+          .eq('id', order_id)
+          .single();
+        
+        order = result.data;
+        orderError = result.error;
+        
+        logger.info('Order lookup result', {
+          found: !!order,
+          error: orderError?.message
+        });
+      } catch (dbErr) {
+        logger.error('Error querying orders table:', dbErr);
+        orderError = dbErr;
+      }
     }
 
     // If order exists, verify it
@@ -114,12 +156,40 @@ router.post('/initialize', requireAuth, async (req: Request, res: Response) => {
       });
     }
 
+    // Check if Paystack is configured
+    if (!serviceConfig.paystack.publicKey || !serviceConfig.paystack.secretKey) {
+      logger.error('Paystack not configured');
+      return res.status(503).json({
+        success: false,
+        error: 'Payment service not configured',
+        message: 'Payment service is temporarily unavailable'
+      } as ApiResponse);
+    }
+
     // Generate unique reference for this transaction
     const reference = paystackService.generateReference(`ORD_${order_id.substring(0, 8)}`);
 
+    // Get store settings to determine currency
+    let storeCurrency = 'GHS'; // Default to GHS
+    if (req.db) {
+      try {
+        const { data: settings } = await req.db
+          .from('store_settings')
+          .select('currency_code')
+          .single();
+        
+        if (settings?.currency_code) {
+          storeCurrency = settings.currency_code;
+          logger.info('Using store currency:', { currency: storeCurrency });
+        }
+      } catch (err) {
+        logger.warn('Failed to fetch store currency, using default GHS:', err);
+      }
+    }
+
     // Prepare payment data
     const paymentData = {
-      amount: paystackService.nairaToKobo(amount), // Convert to kobo
+      amount: paystackService.nairaToKobo(amount), // Convert to smallest unit (kobo for NGN, pesewas for GHS, etc.)
       email,
       reference,
       metadata: {
@@ -128,8 +198,15 @@ router.post('/initialize', requireAuth, async (req: Request, res: Response) => {
         ...metadata
       },
       callback_url: `${serviceConfig.app.frontendUrl}/payment-callback`,
-      channels: ['card', 'bank', 'ussd', 'qr', 'mobile_money']
+      channels: ['card', 'bank', 'ussd', 'qr', 'mobile_money'],
+      currency: storeCurrency // Use the store's configured currency
     };
+
+    logger.info('Calling Paystack API', {
+      amount: paymentData.amount,
+      email,
+      reference
+    });
 
     // Initialize payment with Paystack
     const paystackResponse = await paystackService.initializePayment(paymentData);
@@ -152,29 +229,17 @@ router.post('/initialize', requireAuth, async (req: Request, res: Response) => {
     let paymentError: any = null;
     
     if (req.db) {
-      const result = await req.db
-        .from('payments')
-        .insert({
-          order_id: order_id || 'temp-' + reference, // Use temp ID if order_id is placeholder
-          user_id: req.userId,
-          provider: 'paystack',
+      try {
+        // For initial checkout (order_id is a temp string), we don't create payment record yet
+        // We'll create it after payment verification when we have the real order_id
+        // This prevents UUID constraint violations
+        
+        logger.info('Payment initialization complete - record will be created after verification', {
           reference,
-          amount,
-          currency: 'NGN',
-          status: 'pending',
-          metadata: paymentData.metadata
-        })
-        .select()
-        .single();
-      
-      payment = result.data;
-      paymentError = result.error;
-      
-      if (paymentError) {
-        logger.error('Failed to store payment record', {
-          orderId: order_id,
-          error: paymentError.message
+          orderId: order_id
         });
+      } catch (dbErr) {
+        logger.error('Error with payment record:', dbErr);
         // Don't fail the request - we can still initialize payment
       }
     }
@@ -185,7 +250,7 @@ router.post('/initialize', requireAuth, async (req: Request, res: Response) => {
       authorizationUrl: paystackResponse.data?.authorization_url
     });
 
-    res.json({
+    const responsePayload = {
       success: true,
       data: {
         reference,
@@ -196,7 +261,10 @@ router.post('/initialize', requireAuth, async (req: Request, res: Response) => {
         payment_id: payment?.id
       },
       message: 'Payment initialized successfully'
-    } as ApiResponse);
+    };
+    
+    logger.info('Sending payment response:', responsePayload);
+    res.json(responsePayload);
 
   } catch (error) {
     logger.error('Error initializing payment:', {
@@ -252,19 +320,55 @@ router.get('/verify/:reference', requireAuth, async (req: Request, res: Response
 
     const paymentData = verifyResponse.data;
 
-    // Update payment record in database
+    // Paystack returns the checkout metadata with the verified transaction.  A
+    // new checkout deliberately has no local payment row yet, so this is the
+    // authoritative source for creating its order.
+    const orderMetadata = paymentData.metadata as any;
+    if (orderMetadata?.user_id && orderMetadata.user_id !== req.userId) {
+      logger.warn('Payment verification attempted by a different user', {
+        reference,
+        paymentUserId: orderMetadata.user_id,
+        requestUserId: req.userId
+      });
+      return res.status(403).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'This payment does not belong to the authenticated user'
+      } as ApiResponse);
+    }
+
+    // Update payment record in database (or create if it doesn't exist)
     const paymentStatus = paymentData.status === 'success' ? 'completed' : paymentData.status;
 
-    const { data: payment, error: updateError } = await req.db!
+    let payment = null;
+    let updateError = null;
+    
+    // Check if payment record exists
+    const { data: existingPayment } = await req.db!
       .from('payments')
-      .update({
-        status: paymentStatus,
-        transaction_id: paymentData.id,
-        metadata: paymentData
-      })
+      .select('*')
       .eq('reference', reference)
-      .select()
       .single();
+    
+    if (existingPayment) {
+      // Update existing payment record
+      const result = await req.db!
+        .from('payments')
+        .update({
+          status: paymentStatus,
+          metadata: paymentData
+        })
+        .eq('reference', reference)
+        .select()
+        .single();
+      
+      payment = result.data;
+      updateError = result.error;
+    } else {
+      // Payment record doesn't exist yet - this is normal for initial checkout flow
+      // We'll create it later when we create the order
+      logger.info('Payment record will be created with order', { reference });
+    }
 
     if (updateError) {
       logger.error('Failed to update payment record', {
@@ -273,26 +377,382 @@ router.get('/verify/:reference', requireAuth, async (req: Request, res: Response
       });
     }
 
-    // If payment is successful, update order status
-    if (paymentData.status === 'success' && payment?.order_id) {
-      const { error: orderError } = await req.db!
-        .from('orders')
-        .update({
-          payment_status: 'paid',
-          status: 'processing'
-        })
-        .eq('id', payment.order_id);
+    // If payment is successful, create or update order
+    if (paymentData.status === 'success') {
+      let order = null;
+      let orderError: any = null;
 
-      if (orderError) {
-        logger.error('Failed to update order status', {
-          orderId: payment.order_id,
-          error: orderError
+      // A payment row can point at an order whose item insertion failed during
+      // an earlier verification attempt. Treat that as incomplete, so a later
+      // verification can repair the order instead of only updating its status.
+      let existingOrderHasItems = false;
+      if (payment?.order_id && payment.order_id !== `temp-${reference}`) {
+        const { count, error: itemCountError } = await req.db!
+          .from('order_items')
+          .select('id', { count: 'exact', head: true })
+          .eq('order_id', payment.order_id);
+
+        if (itemCountError) {
+          throw new Error(`Failed to inspect existing order items: ${itemCountError.message}`);
+        }
+        existingOrderHasItems = (count || 0) > 0;
+      }
+
+      // Only skip order creation when the existing order already has products.
+      if (payment?.order_id && payment.order_id !== `temp-${reference}` && existingOrderHasItems) {
+        // Order already exists, just update its status
+        const { error: updateOrderError } = await req.db!
+          .from('orders')
+          .update({
+            payment_status: 'paid',
+            status: 'processing'
+          })
+          .eq('id', payment.order_id);
+
+        if (updateOrderError) {
+          logger.error('Failed to update order status', {
+            orderId: payment.order_id,
+            error: updateOrderError
+          });
+        } else {
+          logger.info('Order status updated to processing', {
+            orderId: payment.order_id,
+            reference
+          });
+        }
+      } else if (orderMetadata) {
+        // Order doesn't exist yet - create it from payment metadata
+        logger.info('Creating order from payment metadata', {
+          reference,
+          metadata: orderMetadata
         });
+
+        try {
+          // Extract delivery option and items from metadata
+          const deliveryOption = orderMetadata.delivery_option || 'delivery';
+          const items = orderMetadata.items || [];
+          const addressId = orderMetadata.address_id;
+
+          // Validate items exist
+          if (!items || items.length === 0) {
+            logger.error('No items in payment metadata - cannot create order', { reference });
+            throw new Error('No items in payment metadata');
+          }
+
+          // A prior item-write failure can leave a paid order with no items.
+          // Reuse that order on verification retries instead of duplicating it.
+          const { data: existingOrder } = await req.db!
+            .from('orders')
+            .select('id, order_number')
+            .eq('payment_reference', reference)
+            .eq('user_id', req.userId)
+            .maybeSingle();
+          const orderNumber = existingOrder?.order_number || `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+          // Get shipping address from address ID
+          const { data: addressData, error: addressError } = await req.db!
+            .from('addresses')
+            .select('*')
+            .eq('id', addressId)
+            .eq('user_id', req.userId)
+            .single();
+
+          if (addressError || !addressData) {
+            logger.error('Address not found for order creation', { addressId, error: addressError });
+            throw new Error(`Address not found: ${addressId}`);
+          }
+
+          // Calculate totals from payment metadata
+          const paidAmount = paystackService.koboToNaira(paymentData.amount);
+          const subtotal = orderMetadata.subtotal_amount || (paidAmount - (orderMetadata.shipping_fee || 0));
+          const shippingFee = orderMetadata.shipping_fee || 0;
+          const discountAmount = orderMetadata.discount_amount || 0;
+
+          logger.info('Creating order from metadata', {
+            reference,
+            orderNumber,
+            itemCount: items.length,
+            subtotal,
+            shippingFee,
+            discountAmount,
+            totalAmount: paidAmount
+          });
+
+          // Create a new order only when this reference has not already made
+          // it to the database. Existing incomplete orders are repaired below.
+          let newOrder: any = existingOrder;
+          if (!newOrder) {
+            const { data, error: createOrderError } = await req.db!
+              .from('orders')
+              .insert({
+              user_id: req.userId,
+              order_number: orderNumber,
+              status: 'processing',
+              payment_status: 'paid',
+              currency: 'GHS',
+              subtotal,
+              shipping_fee: shippingFee,
+              discount_amount: discountAmount,
+              total_amount: paidAmount,
+              payment_reference: reference,
+              shipping_address: {
+                full_name: addressData.full_name,
+                email: addressData.email,
+                phone: addressData.phone,
+                address: addressData.address,
+                city: addressData.city,
+                delivery_option: deliveryOption
+              }
+              })
+              .select()
+              .single();
+
+            if (createOrderError) {
+              logger.error('Failed to create order from payment', {
+                reference,
+                error: createOrderError
+              });
+              throw new Error(`Failed to create order: ${createOrderError.message}`);
+            }
+            newOrder = data;
+          }
+
+          if (!newOrder) {
+            logger.error('Order creation returned no data', { reference });
+            throw new Error('Order creation returned no data');
+          }
+
+          logger.info(existingOrder ? 'Recovering incomplete order' : 'Order created successfully', {
+            orderId: newOrder.id,
+            reference,
+            orderNumber
+          });
+
+          const { count: existingItemCount, error: existingItemsError } = await req.db!
+            .from('order_items')
+            .select('id', { count: 'exact', head: true })
+            .eq('order_id', newOrder.id);
+          if (existingItemsError) throw new Error(`Failed to inspect order items: ${existingItemsError.message}`);
+
+          // Create order items in separate table. A completed retry must not
+          // insert duplicates when the earlier attempt already succeeded.
+          let itemsCreated = 0;
+          for (const item of existingItemCount ? [] : items) {
+            // Shop cards currently store the product id in the cart, whereas
+            // order_items requires a product variant id.  First accept a real
+            // variant id, then resolve legacy/product cart ids to a variant.
+            let productVariantId = item.product_variant_id;
+            let { data: variant } = await req.db!
+              .from('product_variants')
+              .select(`
+                id, name, value, sku, price, stock_quantity,
+                products(
+                  id, name, description,
+                  product_images(id, url, position)
+                )
+              `)
+              .eq('id', productVariantId)
+              .maybeSingle();
+
+            if (!variant) {
+              const { data: productVariant } = await req.db!
+                .from('product_variants')
+                .select(`
+                  id, name, value, sku, price, stock_quantity,
+                  products(
+                    id, name, description,
+                    product_images(id, url, position)
+                  )
+                `)
+                .eq('product_id', productVariantId)
+                .order('created_at', { ascending: true })
+                .limit(1)
+                .maybeSingle();
+              variant = productVariant;
+              productVariantId = productVariant?.id;
+            }
+
+            // Older catalog records were created without variants, even though
+            // order_items requires one. Preserve those paid checkouts by
+            // creating a single default variant for the referenced product.
+            if (!variant) {
+              const { data: legacyProduct, error: legacyProductError } = await req.db!
+                .from('products')
+                .select('id, name, sku, regular_price, sale_price')
+                .eq('id', item.product_variant_id)
+                .maybeSingle();
+
+              if (legacyProductError || !legacyProduct) {
+                throw new Error(`No purchasable product found for item ${item.product_variant_id}`);
+              }
+
+              const defaultSku = `${legacyProduct.sku}-DEFAULT`;
+              const { data: createdVariant, error: createVariantError } = await req.db!
+                .from('product_variants')
+                .insert({
+                  product_id: legacyProduct.id,
+                  name: 'Default',
+                  value: 'Default',
+                  sku: defaultSku,
+                  price: legacyProduct.sale_price ?? legacyProduct.regular_price,
+                  stock_quantity: 0
+                })
+                .select(`
+                  id, name, value, sku, price, stock_quantity,
+                  products(
+                    id, name, description,
+                    product_images(id, url, position)
+                  )
+                `)
+                .single();
+
+              if (createVariantError || !createdVariant) {
+                // A concurrent retry may have just created the default variant.
+                const { data: concurrentVariant, error: concurrentVariantError } = await req.db!
+                  .from('product_variants')
+                  .select(`
+                    id, name, value, sku, price, stock_quantity,
+                    products(
+                      id, name, description,
+                      product_images(id, url, position)
+                    )
+                  `)
+                  .eq('product_id', legacyProduct.id)
+                  .eq('sku', defaultSku)
+                  .maybeSingle();
+
+                if (concurrentVariantError || !concurrentVariant) {
+                  throw new Error(`Failed to create a default variant for product ${legacyProduct.id}: ${createVariantError?.message || concurrentVariantError?.message}`);
+                }
+                variant = concurrentVariant;
+              } else {
+                variant = createdVariant;
+              }
+              productVariantId = variant.id;
+            }
+
+            if (!variant || !productVariantId) {
+              throw new Error(`No purchasable variant found for item ${item.product_variant_id}`);
+            }
+
+            const unitPrice = Number(variant.price ?? item.price);
+            
+            // Create product snapshot for the order item
+            const product = (variant as any).products;
+            if (!product) {
+              logger.error('Product relationship not found in variant', {
+                productVariantId,
+                variant: (variant as any)
+              });
+              throw new Error(`Product data missing for variant ${productVariantId}`);
+            }
+
+            const images = Array.isArray((product as any)?.product_images) ? (product as any).product_images : [];
+            const primaryImage = images.find((img: any) => img.position === 1) || images[0];
+            
+            const productSnapshot = {
+              product_id: (product as any)?.id,
+              product_name: (product as any)?.name,
+              variant_name: (variant as any).name,
+              description: (product as any)?.description,
+              sku: (variant as any).sku,
+              color: (variant as any).value,
+              image_url: primaryImage?.url || null,
+              all_images: images.map((img: any) => ({
+                url: img.url,
+                position: img.position
+              }))
+            };
+
+            const { error: itemError } = await req.db!
+              .from('order_items')
+              .insert({
+                order_id: newOrder.id,
+                product_variant_id: productVariantId,
+                quantity: item.quantity,
+                unit_price: unitPrice,
+                total_price: unitPrice * item.quantity,
+                product_snapshot: productSnapshot
+              });
+
+            if (itemError) {
+              logger.error('Failed to create order item', {
+                orderId: newOrder.id,
+                item,
+                error: itemError
+              });
+              throw new Error(`Failed to create order item: ${itemError.message}`);
+            }
+            itemsCreated++;
+          }
+
+          logger.info('Order items created successfully', {
+            orderId: newOrder.id,
+            itemsCreated
+          });
+
+          // Link the recovered/new order to its payment only once.
+          const { data: paymentForReference } = await req.db!
+            .from('payments')
+            .select('id')
+            .eq('reference', reference)
+            .maybeSingle();
+          const { error: createPaymentError } = paymentForReference ? { error: null } : await req.db!
+            .from('payments')
+            .insert({
+              order_id: newOrder.id,
+              user_id: req.userId,
+              provider: 'paystack',
+              reference,
+              amount: paidAmount,
+              currency: 'GHS',
+              status: paymentStatus,
+              metadata: paymentData
+            });
+
+          if (createPaymentError) {
+            logger.error('Failed to create payment record', {
+              orderId: newOrder.id,
+              reference,
+              error: createPaymentError
+            });
+          } else {
+            logger.info('Payment record created successfully', {
+              orderId: newOrder.id,
+              reference
+            });
+          }
+
+          logger.info('Order creation from payment complete', {
+            orderId: newOrder.id,
+            reference,
+            orderNumber,
+            itemsCreated
+          });
+
+        } catch (err) {
+          logger.error('Error creating order from payment metadata:', {
+            reference,
+            error: err instanceof Error ? err.message : String(err),
+            stack: err instanceof Error ? err.stack : undefined
+          });
+          // A verified charge without a persisted order must not be presented
+          // as a completed checkout.  The reference lets support safely retry.
+          return res.status(500).json({
+            success: false,
+            error: 'Order creation failed',
+            message: 'Your payment was verified, but we could not create the order. Please contact support with the payment reference.',
+            data: { reference }
+          } as ApiResponse);
+        }
       } else {
-        logger.info('Order status updated to processing', {
-          orderId: payment.order_id,
-          reference
-        });
+        logger.error('Verified payment has no checkout metadata', { reference });
+        return res.status(500).json({
+          success: false,
+          error: 'Order creation failed',
+          message: 'The payment was verified but its checkout details are missing. Please contact support with the payment reference.',
+          data: { reference }
+        } as ApiResponse);
       }
     }
 
@@ -468,7 +928,6 @@ router.post('/webhook/paystack', async (req: Request, res: Response) => {
         .from('payments')
         .update({
           status: 'completed',
-          transaction_id: paymentData.id,
           metadata: paymentData
         })
         .eq('reference', paymentData.reference)
@@ -616,6 +1075,23 @@ router.post('/retry/:orderId', requireAuth, async (req: Request, res: Response) 
       email
     });
 
+    // Get store settings for currency
+    let storeCurrency = 'GHS'; // Default
+    if (req.db) {
+      try {
+        const { data: settings } = await req.db
+          .from('store_settings')
+          .select('currency_code')
+          .single();
+        
+        if (settings?.currency_code) {
+          storeCurrency = settings.currency_code;
+        }
+      } catch (err) {
+        logger.warn('Failed to fetch store currency, using default GHS');
+      }
+    }
+
     // Reinitialize payment
     const reference = paystackService.generateReference(`RETRY_${orderId.substring(0, 8)}`);
 
@@ -629,7 +1105,8 @@ router.post('/retry/:orderId', requireAuth, async (req: Request, res: Response) 
         retry: true
       },
       callback_url: `${serviceConfig.app.frontendUrl}/payment-callback`,
-      channels: ['card', 'bank', 'ussd', 'qr', 'mobile_money']
+      channels: ['card', 'bank', 'ussd', 'qr', 'mobile_money'],
+      currency: storeCurrency
     };
 
     const paystackResponse = await paystackService.initializePayment(paymentData);
@@ -651,7 +1128,7 @@ router.post('/retry/:orderId', requireAuth, async (req: Request, res: Response) 
         provider: 'paystack',
         reference,
         amount: order.total_amount,
-        currency: 'NGN',
+        currency: storeCurrency,
         status: 'pending',
         metadata: paymentData.metadata
       })

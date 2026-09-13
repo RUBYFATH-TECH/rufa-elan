@@ -45,6 +45,34 @@ type Order = {
     quantity: number;
     unit_price: number;
     total_price: number;
+    product_snapshot?: {
+      product_id: string;
+      product_name: string;
+      variant_name: string;
+      description: string;
+      sku: string;
+      color: string;
+      image_url: string;
+      all_images: Array<{
+        url: string;
+        position: number;
+      }>;
+    };
+    product_variants?: {
+      id: string;
+      name: string;
+      value: string;
+      sku: string;
+      products?: {
+        id: string;
+        name: string;
+        description: string;
+        product_images?: Array<{
+          url: string;
+          position: number;
+        }>;
+      };
+    };
   }>;
   payments: Array<{
     id: string;
@@ -387,19 +415,105 @@ export default function OrderTrackingPage() {
         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm mb-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Order Items</h2>
 
-          <div className="space-y-3">
-            {order.items && order.items.map((item) => (
-              <div key={item.id} className="flex items-center justify-between pb-3 border-b border-slate-200 last:border-0">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-900">Qty: {item.quantity}</p>
-                  <p className="text-xs text-slate-600 mt-1">ID: {item.product_variant_id}</p>
+          <div className="space-y-6">
+            {order.items && order.items.map((item) => {
+              // Use product_snapshot if available, otherwise use product_variants data
+              const snapshot = item.product_snapshot;
+              const variant = item.product_variants;
+              const product = variant?.products;
+              const images = product?.product_images || snapshot?.all_images || [];
+              const primaryImage = images.find((img: any) => img.position === 1) || images[0];
+
+              return (
+                <div key={item.id} className="border border-slate-200 rounded-lg overflow-hidden">
+                  <div className="flex gap-4 p-4">
+                    {/* Product Image */}
+                    <div className="flex-shrink-0 w-24 h-24 bg-slate-100 rounded-lg overflow-hidden">
+                      {primaryImage?.url ? (
+                        <img
+                          src={primaryImage.url}
+                          alt={snapshot?.product_name || variant?.products?.name || 'Product'}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-slate-200">
+                          <Package className="w-6 h-6 text-slate-400" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Product Details */}
+                    <div className="flex-1">
+                      <div className="mb-3">
+                        <h3 className="text-base font-semibold text-slate-900">
+                          {snapshot?.product_name || product?.name || 'Product'}
+                        </h3>
+                        <p className="text-sm text-slate-600 mt-1">
+                          {snapshot?.variant_name || variant?.name || 'Variant'}
+                        </p>
+                      </div>
+
+                      {/* Color and SKU */}
+                      <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+                        {(snapshot?.color || variant?.value) && (
+                          <div>
+                            <span className="text-slate-600">Color:</span>
+                            <p className="font-medium text-slate-900">
+                              {snapshot?.color || variant?.value}
+                            </p>
+                          </div>
+                        )}
+                        {(snapshot?.sku || variant?.sku) && (
+                          <div>
+                            <span className="text-slate-600">SKU:</span>
+                            <p className="font-mono text-slate-900 text-xs">
+                              {snapshot?.sku || variant?.sku}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Description */}
+                      {(snapshot?.description || product?.description) && (
+                        <p className="text-sm text-slate-600 mb-3 line-clamp-2">
+                          {snapshot?.description || product?.description}
+                        </p>
+                      )}
+
+                      {/* Quantity and Price */}
+                      <div className="flex items-center justify-between pt-3 border-t border-slate-200">
+                        <div className="text-sm">
+                          <span className="text-slate-600">Quantity:</span>
+                          <p className="font-semibold text-slate-900">{item.quantity}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-slate-600">Unit Price: ${item.unit_price.toFixed(2)}</p>
+                          <p className="text-base font-semibold text-orange-600">${item.total_price.toFixed(2)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Additional Images */}
+                  {images.length > 1 && (
+                    <div className="border-t border-slate-200 p-4 bg-slate-50">
+                      <p className="text-xs font-medium text-slate-600 mb-2">Product Images</p>
+                      <div className="flex gap-2 overflow-x-auto">
+                        {images.map((img: any, idx: number) => (
+                          <div key={idx} className="flex-shrink-0">
+                            <img
+                              src={img.url}
+                              alt={`Product image ${img.position}`}
+                              className="w-16 h-16 rounded object-cover border border-slate-200"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-slate-900">${item.total_price.toFixed(2)}</p>
-                  <p className="text-xs text-slate-600">${item.unit_price.toFixed(2)} each</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 

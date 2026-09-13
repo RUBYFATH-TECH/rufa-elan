@@ -74,22 +74,66 @@ export async function fetchOrder(id: string, authToken?: string) {
     const headers: HeadersInit = { "Content-Type": "application/json" };
     if (authToken) {
       headers.Authorization = `Bearer ${authToken}`;
+    } else {
+      console.warn(`[fetchOrder] No auth token provided for order ${id}`);
     }
 
-    const response = await fetch(url, {
-      method: "GET",
-      headers,
-      cache: 'no-store',
+    console.log(`[fetchOrder] Fetching from URL: ${url}`, { 
+      hasToken: !!authToken,
+      backendUrl,
+      timestamp: new Date().toISOString()
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Failed to fetch order");
-    }
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
-    return await response.json();
+    try {
+      const response = await fetch(url, {
+        method: "GET",
+        headers,
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      console.log(`[fetchOrder] Response status: ${response.status}`, {
+        ok: response.ok,
+        statusText: response.statusText
+      });
+
+      if (!response.ok) {
+        let errorMessage = "Failed to fetch order";
+        try {
+          const error = await response.json();
+          errorMessage = error.message || error.error || errorMessage;
+        } catch {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      console.log(`[fetchOrder] Successfully fetched order: ${id}`);
+      return data;
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        throw new Error('Request timeout - the server took too long to respond');
+      }
+      throw fetchError;
+    }
   } catch (error) {
-    console.error("Fetch order error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Fetch order error:", {
+      error: errorMessage,
+      errorType: error instanceof Error ? error.constructor.name : typeof error,
+      url,
+      backendUrl: getBackendUrl(),
+      hasToken: !!authToken,
+      timestamp: new Date().toISOString()
+    });
     throw error;
   }
 }

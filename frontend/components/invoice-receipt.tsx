@@ -250,6 +250,12 @@ const InvoiceReceipt = React.forwardRef<HTMLDivElement, InvoiceProps>(
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
+                  <span className="text-gray-700">Shipping fee:</span>
+                  <span className="font-semibold text-gray-800">
+                    GHS {shipping.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
                   <span className="text-gray-700">Discount:</span>
                   <span className="font-semibold text-gray-800">0.00%</span>
                 </div>

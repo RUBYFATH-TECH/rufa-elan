@@ -97,44 +97,65 @@ export default function OrdersPage() {
           created_at: user.created_at || new Date().toISOString()
         });
 
-        // Fetch orders (mock data for now)
-        const mockOrders: Order[] = [
-          {
-            id: '1',
-            order_number: 'ORD-2024-001',
-            total_amount: 299.99,
-            status: 'delivered',
-            created_at: '2024-01-15T10:30:00Z',
-            items_count: 3,
-            delivery_address: '123 Main St, Lagos, Nigeria',
-            payment_method: 'Credit Card',
-            items: []
-          },
-          {
-            id: '2',
-            order_number: 'ORD-2024-002',
-            total_amount: 149.99,
-            status: 'shipped',
-            created_at: '2024-01-20T14:45:00Z',
-            items_count: 2,
-            delivery_address: '456 Oak Ave, Abuja, Nigeria',
-            payment_method: 'PayPal',
-            items: []
-          },
-          {
-            id: '3',
-            order_number: 'ORD-2024-003',
-            total_amount: 89.99,
-            status: 'processing',
-            created_at: '2024-01-25T09:15:00Z',
-            items_count: 1,
-            delivery_address: '789 Pine Rd, Port Harcourt, Nigeria',
-            payment_method: 'Bank Transfer',
-            items: []
+        // Fetch orders from backend API
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session?.access_token) {
+            console.log('No session, skipping orders fetch');
+            setOrders([]);
+            setIsLoading(false);
+            return;
           }
-        ];
 
-        setOrders(mockOrders);
+          const response = await fetch("/backend-api/orders", {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`
+            }
+          });
+
+          if (!response.ok) {
+            console.error('Failed to fetch orders:', response.status);
+            setOrders([]);
+            setIsLoading(false);
+            return;
+          }
+
+          const data = await response.json();
+          console.log('Fetched orders:', data);
+
+          // Map API response to Order type
+          const fetchedOrders: Order[] = (data.data || []).map((order: any) => {
+            const orderItems = order.order_items || order.items || [];
+            return {
+            id: order.id,
+            order_number: order.order_number,
+            total_amount: order.total_amount,
+            status: order.status || 'processing',
+            created_at: order.created_at,
+            items_count: orderItems.length,
+            delivery_address: order.shipping_address 
+              ? `${order.shipping_address.address}, ${order.shipping_address.city}`
+              : 'Not provided',
+            payment_method: order.payment_status === 'paid' ? 'Paystack (Paid)' : 'Pending',
+            items: orderItems.map((item: any) => ({
+              id: item.product_variant_id,
+              name: item.product_variants?.products?.name || item.name || 'Product',
+              quantity: item.quantity,
+              price: item.unit_price || 0,
+              image: item.product_variants?.products?.product_images?.[0]?.url || item.image || ''
+            }))
+          };
+          });
+
+          setOrders(fetchedOrders);
+          console.log('Orders set:', fetchedOrders);
+        } catch (error) {
+          console.error('Error fetching orders:', error);
+          setOrders([]);
+        }
+
         setIsLoading(false);
       } catch (error) {
         console.error('Authentication error:', error);
@@ -335,7 +356,7 @@ export default function OrdersPage() {
                           Track Order
                         </Link>
                         <Link
-                          href={`/account/orders/${order.id}`}
+                          href={`/account/orders/${order.id}?invoice=1`}
                           className="inline-flex items-center text-sm font-medium text-orange-600 hover:text-orange-700"
                         >
                           <Eye className="w-4 h-4 mr-1" />
@@ -344,7 +365,7 @@ export default function OrdersPage() {
                       </div>
                       <div className="flex space-x-3">
                         <Link
-                          href={`/account/orders/${order.id}`}
+                          href={`/account/orders/${order.id}?invoice=1`}
                           className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
                         >
                           <Download className="w-4 h-4 mr-1" />

@@ -482,10 +482,10 @@ export class NotificationService {
 
       return await this.createNotification({
         user_id: userId,
-        type: templateKey,
+        type: templateKey as any,
         title,
         message,
-        channel: options?.channel || 'in_app',
+        channel: (options?.channel || 'in_app') as any,
         priority: template.priority as any,
         order_id: options?.orderId,
         expires_at: options?.expiresAt,

@@ -161,6 +161,19 @@ export interface OrderItem {
   quantity: number;
   unit_price: number;
   total_price: number;
+  product_snapshot?: {
+    product_id: string;
+    product_name: string;
+    variant_name: string;
+    description?: string;
+    sku: string;
+    color: string;
+    image_url?: string;
+    all_images: Array<{
+      url: string;
+      position: number;
+    }>;
+  };
   created_at: string;
 }
 
@@ -462,26 +475,26 @@ export interface DatabaseOperationResult<T = any> {
   count?: number;
 }
 
-// Export all types as a namespace for easier imports
-export namespace DB {
-  export type Profile = Profile;
-  export type Category = Category;
-  export type Product = Product;
-  export type ProductImage = ProductImage;
-  export type ProductVariant = ProductVariant;
-  export type Inventory = Inventory;
-  export type CartItem = CartItem;
-  export type Wishlist = Wishlist;
-  export type Address = Address;
-  export type Order = Order;
-  export type OrderItem = OrderItem;
-  export type Payment = Payment;
-  export type DeliveryTracking = DeliveryTracking;
-  export type TrackingUpdate = TrackingUpdate;
-  export type Review = Review;
-  export type Coupon = Coupon;
-  export type CouponUsage = CouponUsage;
-  export type Notification = Notification;
-  export type AdminUser = AdminUser;
-  export type AuditLog = AuditLog;
-}
+// Type aliases for easier access if needed
+export type DatabaseTypes = {
+  Profile: Profile;
+  Category: Category;
+  Product: Product;
+  ProductImage: ProductImage;
+  ProductVariant: ProductVariant;
+  Inventory: Inventory;
+  CartItem: CartItem;
+  Wishlist: Wishlist;
+  Address: Address;
+  Order: Order;
+  OrderItem: OrderItem;
+  Payment: Payment;
+  DeliveryTracking: DeliveryTracking;
+  TrackingUpdate: TrackingUpdate;
+  Review: Review;
+  Coupon: Coupon;
+  CouponUsage: CouponUsage;
+  Notification: Notification;
+  AdminUser: AdminUser;
+  AuditLog: AuditLog;
+};
