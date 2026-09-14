@@ -54,84 +54,108 @@ export default function AccountPage() {
   const [orderSummary, setOrderSummary] = useState<OrderSummary | null>(null);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
 
-  useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        const { data } = await supabase.auth.getSession();
-        const sessionUser = data.session?.user;
-        
-        if (!sessionUser) {
-          setIsLoading(false);
+  const loadUserData = async () => {
+    try {
+      const { data } = await supabase.auth.getSession();
+      const sessionUser = data.session?.user;
+      
+      if (!sessionUser) {
+        setIsLoading(false);
+        return;
+      }
+
+      const email = sessionUser.email?.trim().toLowerCase();
+      if (email) {
+        // Check if user is admin and redirect
+        if (isKnownAdminEmail(email)) {
+          router.replace("/admin/dashboard");
           return;
         }
 
-        const email = sessionUser.email?.trim().toLowerCase();
-        if (email) {
-          // Check if user is admin and redirect
-          if (isKnownAdminEmail(email)) {
-            router.replace("/admin/dashboard");
-            return;
-          }
+        const { data: adminUser } = await supabase
+          .from("admin_users")
+          .select("id")
+          .ilike("email", email)
+          .maybeSingle();
 
-          const { data: adminUser } = await supabase
-            .from("admin_users")
-            .select("id")
-            .ilike("email", email)
-            .maybeSingle();
-
-          if (adminUser) {
-            router.replace("/admin/dashboard");
-            return;
-          }
+        if (adminUser) {
+          router.replace("/admin/dashboard");
+          return;
         }
-
-        // Set user profile
-        const profile: UserProfile = {
-          id: sessionUser.id,
-          email: sessionUser.email || '',
-          full_name: sessionUser.user_metadata?.full_name || sessionUser.user_metadata?.name || '',
-          phone: sessionUser.user_metadata?.phone || '',
-          avatar_url: sessionUser.user_metadata?.avatar_url || null,
-          created_at: sessionUser.created_at || new Date().toISOString()
-        };
-
-        setUserProfile(profile);
-
-        // Load mock data for now - replace with actual API calls
-        await loadMockData();
-        
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error loading user data:', error);
-        setIsLoading(false);
       }
-    };
 
-    const loadMockData = async () => {
-      // Mock order summary
-      const mockOrderSummary: OrderSummary = {
-        total_orders: 12,
-        total_spent: 2847.50,
-        pending_orders: 2,
-        completed_orders: 10
+      // Set user profile - include metadata to ensure latest avatar_url
+      const profile: UserProfile = {
+        id: sessionUser.id,
+        email: sessionUser.email || '',
+        full_name: sessionUser.user_metadata?.full_name || sessionUser.user_metadata?.name || '',
+        phone: sessionUser.user_metadata?.phone || '',
+        avatar_url: sessionUser.user_metadata?.avatar_url || null,
+        created_at: sessionUser.created_at || new Date().toISOString()
       };
 
-      // Mock recent orders
-      const mockRecentOrders: RecentOrder[] = [
-        { id: '1', order_number: 'ORD-001', total_amount: 299.99, status: 'delivered', created_at: '2024-01-10', items_count: 2 },
-        { id: '2', order_number: 'ORD-002', total_amount: 459.50, status: 'shipped', created_at: '2024-01-08', items_count: 3 },
-        { id: '3', order_number: 'ORD-003', total_amount: 199.00, status: 'processing', created_at: '2024-01-05', items_count: 1 },
-      ];
+      console.log('Account page loaded user profile:', profile.id, 'avatar_url:', profile.avatar_url);
+      setUserProfile(profile);
 
-      // Simulate loading delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Load mock data for now - replace with actual API calls
+      await loadMockData();
+      
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error loading user data:', error);
+      setIsLoading(false);
+    }
+  };
 
-      setOrderSummary(mockOrderSummary);
-      setRecentOrders(mockRecentOrders);
+  const loadMockData = async () => {
+    // Mock order summary
+    const mockOrderSummary: OrderSummary = {
+      total_orders: 12,
+      total_spent: 2847.50,
+      pending_orders: 2,
+      completed_orders: 10
     };
 
+    // Mock recent orders
+    const mockRecentOrders: RecentOrder[] = [
+      { id: '1', order_number: 'ORD-001', total_amount: 299.99, status: 'delivered', created_at: '2024-01-10', items_count: 2 },
+      { id: '2', order_number: 'ORD-002', total_amount: 459.50, status: 'shipped', created_at: '2024-01-08', items_count: 3 },
+      { id: '3', order_number: 'ORD-003', total_amount: 199.00, status: 'processing', created_at: '2024-01-05', items_count: 1 },
+    ];
+
+    // Simulate loading delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    setOrderSummary(mockOrderSummary);
+    setRecentOrders(mockRecentOrders);
+  };
+
+  useEffect(() => {
     loadUserData();
   }, [router, supabase]);
+
+  // Listen for auth state changes to refresh profile when avatar is updated
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'USER_UPDATED' && session?.user) {
+        console.log('Account page: USER_UPDATED event received');
+        const updatedProfile: UserProfile = {
+          id: session.user.id,
+          email: session.user.email || '',
+          full_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '',
+          phone: session.user.user_metadata?.phone || '',
+          avatar_url: session.user.user_metadata?.avatar_url || null,
+          created_at: session.user.created_at || new Date().toISOString()
+        };
+        console.log('Account page: Updating profile with avatar_url:', updatedProfile.avatar_url);
+        setUserProfile(updatedProfile);
+      }
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, [supabase]);
 
   const getStatusColor = (status: string) => {
     const colors = {

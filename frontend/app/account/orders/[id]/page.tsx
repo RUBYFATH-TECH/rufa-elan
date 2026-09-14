@@ -22,6 +22,12 @@ type OrderItem = {
   quantity: number;
   unit_price: number;
   total_price: number;
+  product_snapshot?: {
+    product_name?: string;
+    description?: string;
+    color?: string;
+    image_url?: string;
+  };
   product_variants?: {
     name?: string;
     value?: string;
@@ -45,6 +51,9 @@ type Order = {
   payment_reference?: string;
   created_at: string;
   shipping_address?: any;
+  // The current orders API returns this relationship as `items`; retain
+  // `order_items` for responses created by earlier API versions.
+  items?: OrderItem[];
   order_items?: OrderItem[];
   payments?: { reference: string }[];
 };
@@ -100,7 +109,7 @@ export default function OrderDetailPage() {
         // paid order but failed before inserting its items. Verification is
         // idempotent and never charges the customer again.
         if (
-          !response.data?.order_items?.length &&
+          !(response.data?.items || response.data?.order_items)?.length &&
           response.data?.payment_reference
         ) {
           const backendUrl =
@@ -113,7 +122,12 @@ export default function OrderDetailPage() {
           );
           if (repair.ok) response = await fetchOrder(id, session.access_token);
         }
-        setOrder(response.data);
+        // Normalize the API's `items` field with the legacy `order_items`
+        // field so the order screen and invoice always use the actual lines.
+        setOrder({
+          ...response.data,
+          order_items: response.data.items || response.data.order_items || [],
+        });
         setShowInvoice(searchParams.get("invoice") === "1");
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : "Order not found.";
@@ -169,18 +183,24 @@ export default function OrderDetailPage() {
     );
 
   const address = order.shipping_address || {};
-  const items = order.order_items || [];
-  const invoiceItems = items.map((item) => ({
-    id: item.id,
-    name: item.product_variants?.products?.name || "Product",
-    description:
-      item.product_variants?.products?.description ||
-      item.product_variants?.value,
-    quantity: item.quantity,
-    price: Number(item.unit_price),
-    total: Number(item.total_price),
-    image: item.product_variants?.products?.product_images?.[0]?.url,
-  }));
+  const items = order.items || order.order_items || [];
+  const invoiceItems = items.map((item) => {
+    // Use product_snapshot if available (stored at order time), otherwise fall back to product_variants
+    const snapshot = (item as any).product_snapshot;
+    const variant = item.product_variants;
+    const product = variant?.products;
+    
+    return {
+      id: item.id,
+      name: snapshot?.product_name || product?.name || "Product",
+      description: snapshot?.description || product?.description || variant?.value,
+      quantity: item.quantity,
+      price: Number(item.unit_price),
+      total: Number(item.total_price),
+      image: snapshot?.image_url || product?.product_images?.[0]?.url,
+      color: snapshot?.color || variant?.value || "Standard",
+    };
+  });
   const reference = order.payment_reference || order.payments?.[0]?.reference;
 
   return (
@@ -221,11 +241,16 @@ export default function OrderDetailPage() {
             </h2>
             <div className="space-y-4">
               {items.map((item) => {
+                // Use product_snapshot if available, otherwise fall back to product_variants
+                const snapshot = (item as any).product_snapshot;
                 const product = item.product_variants?.products;
-                const image = [...(product?.product_images || [])].sort(
+                const image = snapshot?.image_url || [...(product?.product_images || [])].sort(
                   (a, b) => (a.position || 0) - (b.position || 0),
                 )[0]?.url;
-                const color = item.product_variants?.value;
+                const color = snapshot?.color || item.product_variants?.value;
+                const name = snapshot?.product_name || product?.name;
+                const description = snapshot?.description || product?.description;
+                
                 return (
                   <div
                     key={item.id}
@@ -235,7 +260,7 @@ export default function OrderDetailPage() {
                       {image ? (
                         <Image
                           src={image}
-                          alt={product?.name || "Product"}
+                          alt={name || "Product"}
                           fill
                           sizes="80px"
                           className="object-cover"
@@ -246,19 +271,19 @@ export default function OrderDetailPage() {
                     </div>
                     <div className="flex-1">
                       <p className="font-semibold">
-                        {product?.name || "Product"}
+                        {name || "Product"}
                       </p>
-                      {product?.description && (
+                      {description && (
                         <p className="mt-0.5 line-clamp-2 text-sm text-slate-500">
-                          {product.description}
+                          {description}
                         </p>
                       )}
                       <p className="mt-1 text-sm text-slate-600">
                         <span className="font-medium text-slate-700">Color: </span>
                         {color || "Standard"}
                       </p>
-                      <p className="hidden text-sm text-slate-500">
-                        {item.product_variants?.value || "Standard"} · Qty{" "}
+                      <p className="mt-1 text-sm text-slate-600">
+                        <span className="font-medium text-slate-700">Qty: </span>
                         {item.quantity}
                       </p>
                       <p className="mt-1 text-sm">

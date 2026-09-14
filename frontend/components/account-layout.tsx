@@ -70,6 +70,7 @@ export default function AccountLayout({ children, requireAuth = true }: AccountL
             created_at: sessionUser.created_at || new Date().toISOString()
           };
 
+          console.log('Account layout loaded user profile:', profile.id, 'avatar_url:', profile.avatar_url);
           setUserProfile(profile);
         }
         
@@ -84,6 +85,29 @@ export default function AccountLayout({ children, requireAuth = true }: AccountL
     hydrateCart();
     setMounted(true);
   }, [router, supabase, requireAuth, hydrateCart]);
+
+  // Listen for auth state changes to refresh profile when avatar is updated
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'USER_UPDATED' && session?.user) {
+        console.log('Account layout: USER_UPDATED event received');
+        const updatedProfile: UserProfile = {
+          id: session.user.id,
+          email: session.user.email || '',
+          full_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '',
+          phone: session.user.user_metadata?.phone || '',
+          avatar_url: session.user.user_metadata?.avatar_url || null,
+          created_at: session.user.created_at || new Date().toISOString()
+        };
+        console.log('Account layout: Updating profile with avatar_url:', updatedProfile.avatar_url);
+        setUserProfile(updatedProfile);
+      }
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, [supabase]);
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();

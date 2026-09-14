@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { 
   User, 
   ShoppingBag, 
@@ -28,6 +29,7 @@ interface AccountNavigationProps {
 
 export default function AccountNavigation({ userProfile }: AccountNavigationProps) {
   const pathname = usePathname();
+  const [avatarError, setAvatarError] = useState<boolean>(false);
   
   const navigation = [
     { name: 'Overview', href: '/account', icon: User },
@@ -40,20 +42,26 @@ export default function AccountNavigation({ userProfile }: AccountNavigationProp
     { name: 'Settings', href: '/account/settings', icon: Settings },
   ];
 
+  const handleAvatarError = () => {
+    setAvatarError(true);
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full flex flex-col overflow-hidden">
       <div className="p-4 flex-1 overflow-hidden flex flex-col">
         {/* User Profile Section */}
         <div className="flex items-center mb-4 flex-shrink-0">
-          <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden flex-shrink-0">
-            {userProfile.avatar_url ? (
+          <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden flex-shrink-0 relative">
+            {userProfile.avatar_url && !avatarError ? (
               <img 
                 src={userProfile.avatar_url} 
                 alt="Profile" 
                 className="h-full w-full object-cover object-center" 
+                onError={handleAvatarError}
+                loading="lazy"
               />
             ) : (
-              <span className="text-orange-600 font-semibold">
+              <span className="text-orange-600 font-semibold text-sm">
                 {userProfile.full_name?.charAt(0) || userProfile.email.charAt(0).toUpperCase()}
               </span>
             )}

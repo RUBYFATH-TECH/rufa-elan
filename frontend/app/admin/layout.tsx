@@ -129,8 +129,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </button>
           </div>
           
-          <div className="flex flex-1 flex-col overflow-y-auto pt-5 pb-4">
-            <div className="flex flex-shrink-0 items-center px-4 mb-8">
+          <div className="flex flex-shrink-0 items-center px-4 py-5 border-b border-slate-200">
               <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 shadow-md bg-white flex items-center justify-center">
                 <img 
                   src="/images/logo.png" 
@@ -139,7 +138,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 />
               </div>
               <span className="ml-3 text-lg font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">RUFA ELAN</span>
-            </div>
+          </div>
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto py-4">
             <nav className="flex-1 space-y-1 px-2">
               {navigation.map((item) => {
                 const isActive = pathname === item.href;
@@ -194,7 +194,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-72 lg:flex-col bg-gradient-to-b from-white to-slate-50 border-r border-slate-200/50 backdrop-blur-sm shadow-xl">
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         <div className="flex items-center gap-3 px-6 py-8 border-b border-slate-200/50 bg-gradient-to-r from-white to-slate-50/50">
             <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 shadow-lg bg-white flex items-center justify-center">
               <img 
@@ -209,6 +208,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
           </div>
           
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           <nav className="flex-1 space-y-1 px-4 py-8">
             {navigation.map((item) => {
               const isActive = pathname === item.href;

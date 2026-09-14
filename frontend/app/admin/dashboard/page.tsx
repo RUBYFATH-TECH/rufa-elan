@@ -9,7 +9,7 @@ import {
   Package,
   ShoppingCart,
   Users,
-  DollarSign,
+  Banknote,
   Clock,
   CheckCircle,
   Eye,
@@ -59,6 +59,15 @@ type FastDeal = {
   end_time: string;
   status: string;
 };
+
+const formatGhs = (value: number) =>
+  new Intl.NumberFormat("en-GH", {
+    style: "currency",
+    currency: "GHS",
+    currencyDisplay: "narrowSymbol",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(value) || 0);
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -126,8 +135,8 @@ export default function AdminDashboardPage() {
 
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-md border-b border-slate-200/50 sticky top-0 z-10 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex items-center justify-between">
-          <div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-white shadow-md overflow-hidden w-10 h-10 flex items-center justify-center">
                 <img 
@@ -137,17 +146,17 @@ export default function AdminDashboardPage() {
                 />
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">Dashboard</h1>
-                <p className="text-sm text-slate-500 mt-0.5">Welcome back! Here's your store performance at a glance.</p>
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">Dashboard</h1>
+                <p className="text-sm text-slate-500 mt-0.5 truncate">Welcome back! Here&apos;s your store performance at a glance.</p>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button className="inline-flex items-center px-4 py-2.5 border border-slate-300/50 rounded-xl text-sm font-medium text-slate-700 bg-white/80 hover:bg-white hover:shadow-md transition-all backdrop-blur-sm">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button className="inline-flex min-w-0 items-center px-3 sm:px-4 py-2.5 border border-slate-300/50 rounded-xl text-sm font-medium text-slate-700 bg-white/80 hover:bg-white hover:shadow-md transition-all backdrop-blur-sm whitespace-nowrap">
               <Calendar className="w-4 h-4 mr-2" />
               Last 30 days
             </button>
-            <button className="inline-flex items-center px-4 py-2.5 border border-slate-300/50 rounded-xl text-sm font-medium text-slate-700 bg-white/80 hover:bg-white hover:shadow-md transition-all backdrop-blur-sm">
+            <button className="inline-flex items-center px-3 sm:px-4 py-2.5 border border-slate-300/50 rounded-xl text-sm font-medium text-slate-700 bg-white/80 hover:bg-white hover:shadow-md transition-all backdrop-blur-sm whitespace-nowrap">
               <Download className="w-4 h-4 mr-2" />
               Export
             </button>
@@ -155,15 +164,15 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-0">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-8 relative z-0 overflow-hidden">
         {/* Key Metrics - 4 Column Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <StatCard
             title="Total Revenue"
-            value={loading ? "---" : `GHS ${(stats?.totalRevenue || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}`}
+            value={loading ? "---" : formatGhs(stats?.totalRevenue || 0)}
             subtitle="Last 30 days"
             trend={!loading ? { value: stats?.revenueGrowth || 0, isPositive: true } : undefined}
-            icon={DollarSign}
+            icon={Banknote}
             iconBgColor="bg-green-100"
           />
           <StatCard
@@ -191,44 +200,44 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Secondary Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/50 p-6 shadow-sm hover:shadow-xl hover:border-slate-200 transition-all group">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/50 p-5 sm:p-6 shadow-sm hover:shadow-xl hover:border-slate-200 transition-all group overflow-hidden">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-slate-900">Pending Orders</h3>
               <div className="p-2.5 bg-orange-100/80 rounded-lg group-hover:bg-orange-200 transition-colors">
                 <Clock className="w-5 h-5 text-orange-600" />
               </div>
             </div>
-            <p className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent mb-2">{loading ? "---" : stats?.pendingOrders}</p>
+            <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent mb-2">{loading ? "---" : stats?.pendingOrders}</p>
             <p className="text-sm text-slate-600 mb-4">Awaiting payment or processing</p>
             <Link href="/admin/orders" className="text-sm font-semibold text-orange-600 hover:text-orange-700 inline-flex items-center gap-2 hover:gap-3 transition-all">
               View details <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
 
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/50 p-6 shadow-sm hover:shadow-xl hover:border-slate-200 transition-all group">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/50 p-5 sm:p-6 shadow-sm hover:shadow-xl hover:border-slate-200 transition-all group overflow-hidden">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-slate-900">Delivered Orders</h3>
               <div className="p-2.5 bg-green-100/80 rounded-lg group-hover:bg-green-200 transition-colors">
                 <CheckCircle className="w-5 h-5 text-green-600" />
               </div>
             </div>
-            <p className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent mb-2">{loading ? "---" : stats?.completedOrders}</p>
+            <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent mb-2">{loading ? "---" : stats?.completedOrders}</p>
             <p className="text-sm text-slate-600 mb-4">Successfully delivered</p>
             <Link href="/admin/orders" className="text-sm font-semibold text-green-600 hover:text-green-700 inline-flex items-center gap-2 hover:gap-3 transition-all">
               View details <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
 
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/50 p-6 shadow-sm hover:shadow-xl hover:border-slate-200 transition-all group">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200/50 p-5 sm:p-6 shadow-sm hover:shadow-xl hover:border-slate-200 transition-all group overflow-hidden">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-slate-900">Avg Order Value</h3>
               <div className="p-2.5 bg-blue-100/80 rounded-lg group-hover:bg-blue-200 transition-colors">
                 <TrendingUp className="w-5 h-5 text-blue-600" />
               </div>
             </div>
-            <p className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent mb-2">
-              ${loading ? "---" : ((stats?.totalRevenue || 0) / (stats?.totalOrders || 1)).toLocaleString('en-US', { maximumFractionDigits: 2 })}
+            <p className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent mb-2 tabular-nums">
+              {loading ? "---" : formatGhs((stats?.totalRevenue || 0) / (stats?.totalOrders || 1))}
             </p>
             <p className="text-sm text-slate-600 mb-4">Per transaction</p>
             <div className="text-sm font-semibold text-blue-600">
@@ -239,9 +248,9 @@ export default function AdminDashboardPage() {
 
         {/* Fast Deals Section */}
         {fastDeals.length > 0 && (
-          <div className="bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-red-500/10 rounded-2xl border border-orange-200/50 backdrop-blur-sm shadow-lg overflow-hidden mb-8 hover:shadow-xl transition-all">
-            <div className="border-b border-orange-200/30 p-6 flex items-center justify-between">
-              <div className="flex items-center gap-3">
+          <div className="bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-red-500/10 rounded-2xl border border-orange-200/50 backdrop-blur-sm shadow-lg overflow-hidden mb-6 sm:mb-8 hover:shadow-xl transition-all">
+            <div className="border-b border-orange-200/30 p-4 sm:p-6 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
                 <div className="p-2 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg">
                   <Zap className="w-5 h-5 text-white" />
                 </div>
@@ -260,17 +269,17 @@ export default function AdminDashboardPage() {
             
             <div className="divide-y divide-orange-200/30">
               {fastDeals.map((deal) => (
-                <div key={deal.id} className="p-5 hover:bg-orange-50/40 transition-all flex items-center justify-between group">
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-slate-900 group-hover:text-orange-600 transition-colors">{deal.product_name}</p>
+                <div key={deal.id} className="p-4 sm:p-5 hover:bg-orange-50/40 transition-all flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between group">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-slate-900 group-hover:text-orange-600 transition-colors truncate">{deal.product_name}</p>
                     <div className="flex items-center gap-2 mt-2">
                       <span className="px-2.5 py-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs font-bold rounded-full">
                         {deal.discount_percentage}% OFF
                       </span>
-                      <span className="text-sm text-green-600 font-bold">${deal.deal_price.toFixed(2)}</span>
+                      <span className="text-sm text-green-700 font-bold tabular-nums">{formatGhs(deal.deal_price)}</span>
                     </div>
                   </div>
-                  <div className="ml-4">
+                  <div className="sm:ml-4 self-end sm:self-auto whitespace-nowrap">
                     <CountdownTimer
                       endTime={new Date(deal.end_time)}
                       compact={true}
@@ -310,7 +319,7 @@ export default function AdminDashboardPage() {
             ) : (
               <div className="divide-y divide-slate-200/50">
                 {recentOrders.map((order) => (
-                  <div key={order.id} className="p-5 hover:bg-slate-50/50 transition-all flex items-center justify-between group">
+                <div key={order.id} className="p-4 sm:p-5 hover:bg-slate-50/50 transition-all flex items-center justify-between gap-3 group">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3">
                         <div className="flex-1">
@@ -319,9 +328,9 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 ml-4">
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-slate-900">${order.total_amount.toFixed(2)}</p>
+                    <div className="flex shrink-0 items-center gap-2 sm:gap-4 ml-2">
+                      <div className="text-right min-w-0">
+                        <p className="text-sm font-bold text-slate-900 tabular-nums whitespace-nowrap">{formatGhs(order.total_amount)}</p>
                         <div className="mt-1.5">
                           <StatusBadge status={order.status} size="sm" />
                         </div>
@@ -365,7 +374,7 @@ export default function AdminDashboardPage() {
             ) : (
               <div className="divide-y divide-slate-200/50">
                 {topProducts.map((product, index) => (
-                  <div key={product.id} className="p-5 hover:bg-slate-50/50 transition-all group">
+                  <div key={product.id} className="p-4 sm:p-5 hover:bg-slate-50/50 transition-all group">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-200 to-purple-100 flex items-center justify-center flex-shrink-0 group-hover:shadow-md transition-all">
@@ -376,8 +385,8 @@ export default function AdminDashboardPage() {
                           <p className="text-xs text-slate-500 mt-1">{product.sales} units sold</p>
                         </div>
                       </div>
-                      <div className="text-right ml-4">
-                        <p className="text-sm font-bold text-slate-900">${product.revenue.toLocaleString('en-US', { maximumFractionDigits: 2 })}</p>
+                      <div className="text-right ml-3 sm:ml-4 shrink-0">
+                        <p className="text-sm font-bold text-slate-900 tabular-nums whitespace-nowrap">{formatGhs(product.revenue)}</p>
                         <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-purple-100/50 rounded-full">
                           <ArrowUpRight className="w-3 h-3 text-purple-600" />
                           <p className="text-xs text-purple-600 font-semibold">#{index + 1}</p>

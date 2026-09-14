@@ -5,13 +5,14 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../utils/logger';
-import { checkDatabaseConnection, supabase } from '../utils/database';
+import { checkDatabaseConnection, supabase as supabaseServiceClient } from '../utils/database';
+import { supabaseAdmin } from '../utils/supabase';
 
 // Extend Express Request interface to include database context
 declare global {
   namespace Express {
     interface Request {
-      db?: typeof supabase;
+      db?: any;
       userId?: string;
       isAdmin?: boolean;
     }
@@ -30,8 +31,8 @@ export const databaseMiddleware = (
   next: NextFunction
 ): void => {
   try {
-    // Add database instance to request
-    req.db = supabase;
+    // Add database instance to request (use service role client for full access)
+    req.db = supabaseServiceClient;
     
     // If database is unhealthy, return error (only checked on startup)
     if (!databaseHealthy) {
@@ -98,8 +99,8 @@ export const authMiddleware = async (
       return;
     }
 
-    // Verify token with Supabase
-    const { data: { user }, error } = await req.db.auth.getUser(token);
+    // Verify token with Supabase (use admin client)
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
     
     if (error || !user) {
       logger.warn('Invalid authentication token:', error?.message);
@@ -109,7 +110,7 @@ export const authMiddleware = async (
     }
 
     // Get user profile to verify they exist
-    const { data: profile, error: profileError } = await req.db
+    const { data: profile, error: profileError } = await supabaseServiceClient
       .from('profiles')
       .select('id')
       .eq('id', user.id)
@@ -124,7 +125,7 @@ export const authMiddleware = async (
     req.userId = user.id;
     
     // Check if user is an admin by looking up their email in admin_users table
-    const { data: adminUser, error: adminError } = await req.db
+    const { data: adminUser, error: adminError } = await supabaseServiceClient
       .from('admin_users')
       .select('id, email')
       .eq('email', user.email?.toLowerCase())
@@ -213,9 +214,9 @@ export const transactionMiddleware = (
   res: Response,
   next: NextFunction
 ): void => {
-  // For now, just pass through the regular database connection
+  // For now, just pass through the service role database connection
   // In a real implementation, this would start a database transaction
-  req.db = supabase;
+  req.db = supabaseServiceClient;
   
   // Add transaction helpers to request
   (req as any).transaction = {

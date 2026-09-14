@@ -12,6 +12,7 @@ interface InvoiceItem {
   price: number;
   total: number;
   image?: string;
+  color?: string;
 }
 
 interface CustomerInfo {
@@ -195,6 +196,9 @@ const InvoiceReceipt = React.forwardRef<HTMLDivElement, InvoiceProps>(
                         {/* Product Info */}
                         <div>
                           <p className="font-semibold text-gray-800 text-sm">{item.name}</p>
+                          {item.color && (
+                            <p className="text-xs text-gray-600">Color: {item.color}</p>
+                          )}
                           {item.description && (
                             <p className="text-xs text-gray-600">{item.description}</p>
                           )}

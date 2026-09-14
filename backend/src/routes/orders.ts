@@ -66,10 +66,10 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
       select: `
         *,
         order_items(
-          id, product_variant_id, quantity, unit_price, total_price,
+          id, product_variant_id, quantity, unit_price, total_price, product_snapshot,
           product_variants(
             id, name, value, sku,
-            products(id, name, description, product_images(url, position))
+            products(id, name, description, product_images(id, url, position))
           )
         ),
         payments(id, provider, reference, status, amount),
@@ -188,6 +188,8 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
 
     // Fetch the order with product information required by the customer detail,
     // tracking, and invoice screens.
+    // Include product_variants as fallback for orders that were created before
+    // the product_snapshot field was populated.
     const { data, error } = await req.db!
       .from('orders')
       .select(`
@@ -196,7 +198,7 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
           id, product_variant_id, quantity, unit_price, total_price, product_snapshot,
           product_variants(
             id, name, value, sku,
-            products(id, name, description, product_images(url, position))
+            products(id, name, description, product_images(id, url, position))
           )
         ),
         payments(id, provider, reference, status, amount),
@@ -499,11 +501,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       .select(`
         *,
         order_items(
-          id, product_variant_id, quantity, unit_price, total_price, product_snapshot,
-          product_variants(
-            id, name, value, sku,
-            products(id, name, description, product_images(url, position))
-          )
+          id, product_variant_id, quantity, unit_price, total_price, product_snapshot
         ),
         payments(id, provider, reference, status, amount),
         delivery_tracking(id, courier_name, tracking_number, current_status, estimated_delivery_date)
@@ -618,7 +616,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
       );
     }
 
-    // Fetch updated order details
+    // Fetch updated order details with product information
     const { data: updatedOrder } = await req.db!
       .from('orders')
       .select(`
@@ -627,7 +625,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
           id, product_variant_id, quantity, unit_price, total_price, product_snapshot,
           product_variants(
             id, name, value, sku,
-            products(id, name, description, product_images(url, position))
+            products(id, name, description, product_images(id, url, position))
           )
         ),
         payments(id, provider, reference, status, amount),
@@ -698,23 +696,30 @@ router.get('/:id/items', requireAuth, async (req: Request, res: Response) => {
       } as ApiResponse);
     }
 
-    // Get order items
-    const result = await db.orderItems.find({
-      filters: { order_id: id }
-    });
+    // Get order items with product details fallback
+    const { data: items, error: itemsError } = await req.db!
+      .from('order_items')
+      .select(`
+        id, product_variant_id, quantity, unit_price, total_price, product_snapshot,
+        product_variants(
+          id, name, value, sku,
+          products(id, name, description, product_images(id, url, position))
+        )
+      `)
+      .eq('order_id', id);
 
-    if (result.error) {
-      logger.error('Failed to fetch order items:', result.error);
+    if (itemsError) {
+      logger.error('Failed to fetch order items:', itemsError);
       return res.status(500).json({
         success: false,
         error: 'Failed to fetch order items',
-        message: result.error
+        message: itemsError.message
       } as ApiResponse);
     }
 
     res.json({
       success: true,
-      data: result.data || []
+      data: items || []
     } as ApiResponse<OrderItem[]>);
 
   } catch (error) {

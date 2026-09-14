@@ -72,6 +72,31 @@ export default function SettingsPage() {
     };
 
     loadUserData();
+
+    // Listen for auth state changes to refresh profile when avatar is updated
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'USER_UPDATED' && session?.user) {
+        console.log('Auth state changed, updating profile');
+        const updatedProfile: UserProfile = {
+          id: session.user.id,
+          email: session.user.email || '',
+          full_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || '',
+          phone: session.user.user_metadata?.phone || '',
+          avatar_url: session.user.user_metadata?.avatar_url || null,
+          created_at: session.user.created_at || new Date().toISOString()
+        };
+        setUserProfile(updatedProfile);
+        setFormData(prev => ({
+          ...prev,
+          full_name: updatedProfile.full_name || '',
+          phone: updatedProfile.phone || ''
+        }));
+      }
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, [supabase]);
 
   const handleInputChange = (field: string, value: string) => {
@@ -178,29 +203,46 @@ export default function SettingsPage() {
         const base64String = event.target?.result as string;
 
         try {
+          console.log('Starting avatar upload for user:', userProfile?.id);
+          
           const response = await fetch('/api/upload', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               image: base64String,
-              filename: `avatar-${userProfile?.id}-${Date.now()}.jpg`
+              isAvatar: true,
+              userId: userProfile?.id
             })
           });
 
           const data = await response.json();
+          
+          console.log('Upload response:', data);
 
           if (!response.ok) {
-            throw new Error(data.message || 'Upload failed');
+            throw new Error(data.error || data.message || 'Upload failed');
           }
 
+          // Verify we got a valid URL
+          if (!data.data?.url) {
+            throw new Error('No URL returned from upload');
+          }
+
+          console.log('Avatar URL received:', data.data.url);
+
+          // Update Supabase Auth user metadata with the avatar URL
           const { error } = await supabase.auth.updateUser({
             data: { avatar_url: data.data.url }
           });
 
           if (error) {
-            setMessage({ type: 'error', text: error.message });
+            console.error('Auth update error:', error);
+            setMessage({ type: 'error', text: `Failed to save avatar: ${error.message}` });
           } else {
+            console.log('Avatar saved to auth metadata');
             setMessage({ type: 'success', text: 'Avatar updated successfully!' });
+            
+            // Update local state immediately
             if (userProfile) {
               setUserProfile(prev => prev ? {
                 ...prev,
@@ -210,7 +252,8 @@ export default function SettingsPage() {
           }
         } catch (error) {
           console.error('Upload error:', error);
-          setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Failed to upload avatar.' });
+          const errorMessage = error instanceof Error ? error.message : 'Failed to upload avatar.';
+          setMessage({ type: 'error', text: errorMessage });
         } finally {
           setIsUploadingAvatar(false);
         }
@@ -257,9 +300,10 @@ export default function SettingsPage() {
         
         {/* Avatar Section */}
         <div className="flex items-center mb-6">
-          <div className="h-16 w-16 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden relative">
+          <div className="h-16 w-16 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden relative flex-shrink-0">
             {userProfile.avatar_url ? (
               <img 
+                key={userProfile.avatar_url}
                 src={userProfile.avatar_url} 
                 alt="Profile" 
                 className="h-full w-full object-cover" 
@@ -285,7 +329,7 @@ export default function SettingsPage() {
             </div>
           </div>
           <div className="ml-4">
-            <label className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer">
+            <label className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
               <Camera className="h-4 w-4 mr-2" />
               {isUploadingAvatar ? 'Uploading...' : 'Change Photo'}
               <input
