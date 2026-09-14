@@ -130,6 +130,7 @@ create table if not exists order_items (
   quantity integer default 1 not null,
   unit_price numeric(10,2) not null,
   total_price numeric(10,2) not null,
+  product_snapshot jsonb,
   created_at timestamptz default now() not null
 );
 

@@ -113,13 +113,20 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
       orders = orders.filter(o => o.total_amount <= parseFloat(max_amount));
     }
 
+    // Transform order_items to items for frontend compatibility
+    const transformedOrders = orders.map(order => ({
+      ...order,
+      items: order.order_items || [],
+      order_items: undefined
+    }));
+
     const pagination = dbUtils.calculatePagination(
-      orders.length,
+      transformedOrders.length,
       parseInt(page),
       parseInt(limit)
     );
 
-    logger.info(`Fetched ${orders.length} orders`, {
+    logger.info(`Fetched ${transformedOrders.length} orders`, {
       userId: req.userId,
       isAdmin: req.isAdmin,
       page,
@@ -128,7 +135,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      data: orders,
+      data: transformedOrders,
       pagination
     } as any);
 
@@ -165,7 +172,7 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
       .select(`
         *,
         order_items(
-          id, product_variant_id, quantity, unit_price, total_price,
+          id, product_variant_id, quantity, unit_price, total_price, product_snapshot,
           product_variants(
             id, name, value, sku,
             products(id, name, description, product_images(url, position))
@@ -195,11 +202,18 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
       } as ApiResponse);
     }
 
+    // Transform order_items to items for frontend compatibility
+    const transformedData = {
+      ...data,
+      items: data.order_items || [],
+      order_items: undefined
+    };
+
     logger.info(`Fetched order: ${id}`, { userId: req.userId });
 
     res.json({
       success: true,
-      data
+      data: transformedData
     } as ApiResponse<OrderDetails>);
 
   } catch (error) {
@@ -459,6 +473,13 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       .eq('id', orderId)
       .single();
 
+    // Transform order_items to items for frontend compatibility
+    const transformedOrder = createdOrder ? {
+      ...createdOrder,
+      items: createdOrder.order_items || [],
+      order_items: undefined
+    } : null;
+
     logger.info(`Created order: ${orderId}`, {
       userId: req.userId,
       orderNumber,
@@ -467,7 +488,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
 
     res.status(201).json({
       success: true,
-      data: createdOrder,
+      data: transformedOrder,
       message: 'Order created successfully'
     } as ApiResponse<OrderDetails>);
 
@@ -577,6 +598,13 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
       .eq('id', id)
       .single();
 
+    // Transform order_items to items for frontend compatibility
+    const transformedOrder = updatedOrder ? {
+      ...updatedOrder,
+      items: updatedOrder.order_items || [],
+      order_items: undefined
+    } : null;
+
     logger.info(`Updated order: ${id}`, {
       userId: req.userId,
       changes: updateData
@@ -584,7 +612,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      data: updatedOrder,
+      data: transformedOrder,
       message: 'Order updated successfully'
     } as ApiResponse<OrderDetails>);
 

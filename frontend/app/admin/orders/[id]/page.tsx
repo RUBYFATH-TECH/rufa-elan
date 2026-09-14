@@ -19,8 +19,31 @@ import {
   Phone,
   AlertCircle,
   Loader2,
-  Check
+  Check,
+  X,
+  ZoomIn
 } from "lucide-react";
+
+type OrderItem = {
+  id: string;
+  product_variant_id: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  product_snapshot?: {
+    product_id: string;
+    product_name: string;
+    variant_name: string;
+    description: string;
+    sku: string;
+    color: string;
+    image_url: string;
+    all_images: Array<{
+      url: string;
+      position: number;
+    }>;
+  };
+};
 
 type Order = {
   id: string;
@@ -36,13 +59,7 @@ type Order = {
   user_id: string;
   shipping_address: any;
   billing_address: any;
-  items: Array<{
-    id: string;
-    product_variant_id: string;
-    quantity: number;
-    unit_price: number;
-    total_price: number;
-  }>;
+  items: Array<OrderItem>;
   payments: Array<{
     id: string;
     provider: string;
@@ -87,6 +104,7 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string>("");
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
     loadOrder();
@@ -194,6 +212,30 @@ export default function OrderDetailPage() {
     );
   }
 
+  // Image Modal Component
+  const ImageModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between p-4 border-b border-slate-200">
+          <h2 className="text-lg font-semibold text-slate-900">Product Image</h2>
+          <button
+            onClick={() => setSelectedImage(null)}
+            className="p-1 hover:bg-slate-100 rounded-lg transition-colors"
+          >
+            <X className="w-6 h-6 text-slate-600" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-auto flex items-center justify-center p-4">
+          <img
+            src={selectedImage}
+            alt="Product"
+            className="max-w-full max-h-full object-contain"
+          />
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Notification Stack */}
@@ -201,6 +243,9 @@ export default function OrderDetailPage() {
         notifications={notifications} 
         onRemove={removeNotification} 
       />
+
+      {/* Image Modal */}
+      {selectedImage && <ImageModal />}
 
       {/* Header */}
       <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
@@ -329,16 +374,126 @@ export default function OrderDetailPage() {
               <p className="text-sm font-medium text-slate-900">{order.profiles?.phone || 'N/A'}</p>
             </div>
 
-            <div>
+            <div className="md:col-span-2">
               <div className="flex items-center gap-2 mb-2">
                 <MapPin className="w-4 h-4 text-slate-600" />
-                <span className="text-sm text-slate-600">Address</span>
+                <span className="text-sm text-slate-600">Shipping Address</span>
               </div>
-              <p className="text-sm font-medium text-slate-900">
-                {order.shipping_address?.city}, {order.shipping_address?.country}
-              </p>
+              <div className="text-sm font-medium text-slate-900 space-y-1">
+                {order.shipping_address?.full_name && (
+                  <p>{order.shipping_address.full_name}</p>
+                )}
+                {order.shipping_address?.address && (
+                  <p>{order.shipping_address.address}</p>
+                )}
+                {(order.shipping_address?.city || order.shipping_address?.country) && (
+                  <p>
+                    {order.shipping_address.city && `${order.shipping_address.city}`}
+                    {order.shipping_address.city && order.shipping_address.country && ', '}
+                    {order.shipping_address.country}
+                  </p>
+                )}
+                {order.shipping_address?.phone && (
+                  <p className="text-slate-600">{order.shipping_address.phone}</p>
+                )}
+              </div>
             </div>
           </div>
+        </div>
+
+        {/* Order Items */}
+        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm mb-6">
+          <h3 className="text-lg font-semibold text-slate-900 mb-4">Order Items</h3>
+          
+          {order.items && order.items.length > 0 ? (
+            <div className="space-y-4">
+              {order.items.map((item) => (
+                <div key={item.id} className="flex gap-4 border border-slate-200 rounded-lg p-4">
+                  {/* Product Image */}
+                  <div className="flex-shrink-0">
+                    {item.product_snapshot?.image_url ? (
+                      <div
+                        onClick={() => setSelectedImage(item.product_snapshot?.image_url || null)}
+                        className="cursor-pointer group relative"
+                        title="Click to view full image"
+                      >
+                        <img
+                          src={item.product_snapshot.image_url}
+                          alt={item.product_snapshot.product_name}
+                          className="w-20 h-20 object-cover rounded-lg group-hover:opacity-75 transition-opacity"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all">
+                          <ZoomIn className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-20 h-20 bg-slate-200 rounded-lg flex items-center justify-center">
+                        <Package className="w-8 h-8 text-slate-400" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Product Details */}
+                  <div className="flex-grow">
+                    <div>
+                      <h4 className="font-semibold text-slate-900">
+                        {item.product_snapshot?.product_name || 'Product'}
+                      </h4>
+                      {item.product_snapshot?.variant_name && (
+                        <p className="text-sm text-slate-600">
+                          Variant: {item.product_snapshot.variant_name}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Color and Description */}
+                    <div className="mt-2 space-y-1">
+                      {item.product_snapshot?.color && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-slate-600">Color:</span>
+                          <span className="text-sm font-medium text-slate-900 flex items-center gap-2">
+                            {item.product_snapshot.color}
+                            <div 
+                              className="w-4 h-4 rounded border border-slate-300"
+                              style={{
+                                backgroundColor: item.product_snapshot.color.toLowerCase() === 'black' ? '#000000' :
+                                               item.product_snapshot.color.toLowerCase() === 'white' ? '#ffffff' :
+                                               item.product_snapshot.color.toLowerCase() === 'red' ? '#ef4444' :
+                                               item.product_snapshot.color.toLowerCase() === 'blue' ? '#3b82f6' :
+                                               item.product_snapshot.color.toLowerCase() === 'green' ? '#10b981' :
+                                               item.product_snapshot.color.toLowerCase() === 'yellow' ? '#fbbf24' :
+                                               item.product_snapshot.color.toLowerCase() === 'gray' ? '#6b7280' :
+                                               item.product_snapshot.color.toLowerCase() === 'purple' ? '#8b5cf6' :
+                                               item.product_snapshot.color.toLowerCase() === 'orange' ? '#f97316' : 'transparent'
+                              }}
+                            />
+                          </span>
+                        </div>
+                      )}
+                      {item.product_snapshot?.description && (
+                        <div className="text-sm text-slate-600 mt-2">
+                          <span className="font-medium text-slate-900 block">Description:</span>
+                          <p className="text-slate-600">{item.product_snapshot.description}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Quantity and Price */}
+                  <div className="flex-shrink-0 text-right">
+                    <p className="text-sm text-slate-600">Qty: <span className="font-medium">{item.quantity}</span></p>
+                    <p className="text-sm text-slate-600 mt-1">Unit: <span className="font-medium">${item.unit_price.toFixed(2)}</span></p>
+                    <p className="text-base font-semibold text-slate-900 mt-2">${item.total_price.toFixed(2)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Package className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+              <p className="text-slate-600">No items in this order</p>
+            </div>
+          )}
         </div>
 
         {/* Order Breakdown */}

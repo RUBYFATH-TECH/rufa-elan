@@ -422,16 +422,16 @@ export default function OrderTrackingPage() {
               const variant = item.product_variants;
               const product = variant?.products;
               const images = product?.product_images || snapshot?.all_images || [];
-              const primaryImage = images.find((img: any) => img.position === 1) || images[0];
+              const primaryImageUrl = snapshot?.image_url || images.find((img: any) => img.position === 1)?.url || images[0]?.url;
 
               return (
                 <div key={item.id} className="border border-slate-200 rounded-lg overflow-hidden">
                   <div className="flex gap-4 p-4">
                     {/* Product Image */}
                     <div className="flex-shrink-0 w-24 h-24 bg-slate-100 rounded-lg overflow-hidden">
-                      {primaryImage?.url ? (
+                      {primaryImageUrl ? (
                         <img
-                          src={primaryImage.url}
+                          src={primaryImageUrl}
                           alt={snapshot?.product_name || variant?.products?.name || 'Product'}
                           className="w-full h-full object-cover"
                         />
