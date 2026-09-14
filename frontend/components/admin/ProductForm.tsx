@@ -21,9 +21,9 @@ export interface ProductFormData {
   name: string;
   description: string;
   category: string;
+  color?: string;
   regular_price: number;
   sale_price: number;
-  sku: string;
   is_in_stock: boolean;
   stock_quantity: number;
   is_fast_deal: boolean;
@@ -50,6 +50,29 @@ const DEFAULT_CATEGORIES = [
   { id: "accessories", name: "Accessories" },
 ];
 
+const COLORS = [
+  { id: "black", name: "Black" },
+  { id: "white", name: "White" },
+  { id: "red", name: "Red" },
+  { id: "blue", name: "Blue" },
+  { id: "green", name: "Green" },
+  { id: "yellow", name: "Yellow" },
+  { id: "pink", name: "Pink" },
+  { id: "purple", name: "Purple" },
+  { id: "orange", name: "Orange" },
+  { id: "brown", name: "Brown" },
+  { id: "gray", name: "Gray" },
+  { id: "navy", name: "Navy" },
+  { id: "gold", name: "Gold" },
+  { id: "silver", name: "Silver" },
+  { id: "beige", name: "Beige" },
+  { id: "cream", name: "Cream" },
+  { id: "turquoise", name: "Turquoise" },
+  { id: "maroon", name: "Maroon" },
+  { id: "olive", name: "Olive" },
+  { id: "burgundy", name: "Burgundy" },
+];
+
 export default function ProductForm({
   initialData,
   categories = DEFAULT_CATEGORIES,
@@ -70,9 +93,9 @@ export default function ProductForm({
     name: initialData?.name || "",
     description: initialData?.description || "",
     category: initialData?.category || "",
+    color: initialData?.color || "",
     regular_price: initialData?.regular_price || 0,
     sale_price: initialData?.sale_price || 0,
-    sku: initialData?.sku || "",
     is_in_stock: initialData?.is_in_stock ?? true,
     stock_quantity: initialData?.stock_quantity || 0,
     is_fast_deal: initialData?.is_fast_deal || false,
@@ -109,10 +132,6 @@ export default function ProductForm({
 
     if (!formData.category) {
       return "Please select a category";
-    }
-
-    if (!formData.sku.trim()) {
-      return "SKU is required";
     }
 
     if (formData.sale_price && formData.sale_price >= formData.regular_price) {
@@ -298,16 +317,20 @@ export default function ProductForm({
 
                 <div>
                   <label className="block text-sm font-medium text-slate-900 mb-2">
-                    SKU *
+                    Color
                   </label>
-                  <input
-                    type="text"
-                    value={formData.sku}
-                    onChange={(e) => handleChange("sku", e.target.value.toUpperCase())}
-                    required
+                  <select
+                    value={formData.color || ""}
+                    onChange={(e) => handleChange("color", e.target.value)}
                     className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    placeholder="e.g., BAG-LEATHER-001"
-                  />
+                  >
+                    <option value="">Select a color...</option>
+                    {COLORS.map((color) => (
+                      <option key={color.id} value={color.id}>
+                        {color.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>

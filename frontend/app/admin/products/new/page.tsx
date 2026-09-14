@@ -5,11 +5,12 @@ import ProductForm, { ProductFormData } from "@/components/admin/ProductForm";
 import { uploadProductImages } from "@/lib/api/products";
 
 const CATEGORIES = [
-  { id: "handbags", name: "Handbags" },
-  { id: "tote-bags", name: "Tote bags" },
-  { id: "crossbags", name: "Crossbags" },
-  { id: "purse", name: "Purse" },
-  { id: "wallet", name: "Wallet" },
+  { id: "ladies-bags", name: "Ladies bags" },
+  { id: "ladies-footwears", name: "Ladies Footwears" },
+  { id: "ladies-watches", name: "Ladies Watches" },
+  { id: "ladies-dresses", name: "Ladies dresses" },
+  { id: "ladies-cosmetics", name: "Ladies Cosmetics" },
+  { id: "ladies-glasses", name: "Ladies glasses" },
   { id: "accessories", name: "Accessories" },
 ];
 
@@ -35,9 +36,9 @@ export default function CreateProductPage() {
         name: data.name,
         description: data.description,
         category_id: data.category,
+        color: data.color || null,
         regular_price: data.regular_price,
         sale_price: data.sale_price || null,
-        sku: data.sku,
         featured: data.is_fast_deal,
         images: imageUrls.map((url, index) => ({
           url,

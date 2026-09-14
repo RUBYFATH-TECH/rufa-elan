@@ -113,11 +113,32 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
       orders = orders.filter(o => o.total_amount <= parseFloat(max_amount));
     }
 
-    // Transform order_items to items for frontend compatibility
-    const transformedOrders = orders.map(order => ({
-      ...order,
-      items: order.order_items || [],
-      order_items: undefined
+    // Transform order_items to items for frontend compatibility and enrich with user data
+    const transformedOrders = await Promise.all(orders.map(async (order) => {
+      const transformed = {
+        ...order,
+        items: order.order_items || [],
+        order_items: undefined
+      };
+
+      // Enrich with user data from auth.users
+      if (order.user_id) {
+        try {
+          const { data: { user }, error } = await req.db!.auth.admin.getUserById(order.user_id);
+          if (!error && user) {
+            transformed.profiles = {
+              id: user.id,
+              full_name: user.user_metadata?.full_name || user.user_metadata?.name || '',
+              email: user.email || '',
+              phone: user.user_metadata?.phone || ''
+            };
+          }
+        } catch (err) {
+          logger.warn(`Failed to fetch user data for order user ${order.user_id}:`, err);
+        }
+      }
+
+      return transformed;
     }));
 
     const pagination = dbUtils.calculatePagination(
@@ -202,12 +223,29 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
       } as ApiResponse);
     }
 
-    // Transform order_items to items for frontend compatibility
-    const transformedData = {
+    // Transform order_items to items for frontend compatibility and enrich with user data
+    let transformedData: any = {
       ...data,
       items: data.order_items || [],
       order_items: undefined
     };
+
+    // Enrich with user data from auth.users
+    if (data.user_id) {
+      try {
+        const { data: { user }, error } = await req.db!.auth.admin.getUserById(data.user_id);
+        if (!error && user) {
+          transformedData.profiles = {
+            id: user.id,
+            full_name: user.user_metadata?.full_name || user.user_metadata?.name || '',
+            email: user.email || '',
+            phone: user.user_metadata?.phone || ''
+          };
+        }
+      } catch (err) {
+        logger.warn(`Failed to fetch user data for order user ${data.user_id}:`, err);
+      }
+    }
 
     logger.info(`Fetched order: ${id}`, { userId: req.userId });
 

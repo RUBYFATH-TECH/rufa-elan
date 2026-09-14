@@ -9,11 +9,12 @@ import { UploadedImage } from "@/components/admin/ImageUpload";
 import { Loader2, Package } from "lucide-react";
 
 const CATEGORIES = [
-  { id: "handbags", name: "Handbags" },
-  { id: "tote-bags", name: "Tote bags" },
-  { id: "crossbags", name: "Crossbags" },
-  { id: "purse", name: "Purse" },
-  { id: "wallet", name: "Wallet" },
+  { id: "ladies-bags", name: "Ladies bags" },
+  { id: "ladies-footwears", name: "Ladies Footwears" },
+  { id: "ladies-watches", name: "Ladies Watches" },
+  { id: "ladies-dresses", name: "Ladies dresses" },
+  { id: "ladies-cosmetics", name: "Ladies Cosmetics" },
+  { id: "ladies-glasses", name: "Ladies glasses" },
   { id: "accessories", name: "Accessories" },
 ];
 
@@ -39,9 +40,9 @@ export default function EditProductPage() {
         name: data.data.name,
         description: data.data.description || "",
         category: data.data.category_id,
+        color: data.data.color || "",
         regular_price: data.data.regular_price,
         sale_price: data.data.sale_price || 0,
-        sku: data.data.sku,
         is_in_stock: data.data.is_in_stock ?? true,
         stock_quantity: data.data.stock_quantity || 0,
         is_fast_deal: data.data.featured || false,
@@ -105,9 +106,9 @@ export default function EditProductPage() {
         name: data.name,
         description: data.description,
         category_id: data.category,
+        color: data.color || null,
         regular_price: data.regular_price,
         sale_price: data.sale_price || null,
-        sku: data.sku,
         featured: data.is_fast_deal,
         images: allImages,
       };
