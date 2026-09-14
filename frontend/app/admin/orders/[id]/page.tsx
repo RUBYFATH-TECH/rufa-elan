@@ -323,7 +323,7 @@ export default function OrderDetailPage() {
               <DollarSign className="w-5 h-5 text-orange-600" />
               <span className="text-sm text-slate-600">Total Amount</span>
             </div>
-            <p className="text-2xl font-bold text-slate-900">${order.total_amount.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-slate-900">GHS {order.total_amount.toFixed(2)}</p>
           </div>
 
           <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
@@ -482,8 +482,8 @@ export default function OrderDetailPage() {
                   {/* Quantity and Price */}
                   <div className="flex-shrink-0 text-right">
                     <p className="text-sm text-slate-600">Qty: <span className="font-medium">{item.quantity}</span></p>
-                    <p className="text-sm text-slate-600 mt-1">Unit: <span className="font-medium">${item.unit_price.toFixed(2)}</span></p>
-                    <p className="text-base font-semibold text-slate-900 mt-2">${item.total_price.toFixed(2)}</p>
+                    <p className="text-sm text-slate-600 mt-1">Unit: <span className="font-medium">GHS {item.unit_price.toFixed(2)}</span></p>
+                    <p className="text-base font-semibold text-slate-900 mt-2">GHS {item.total_price.toFixed(2)}</p>
                   </div>
                 </div>
               ))}
@@ -503,26 +503,26 @@ export default function OrderDetailPage() {
           <div className="space-y-3">
             <div className="flex justify-between">
               <span className="text-sm text-slate-600">Subtotal</span>
-              <span className="text-sm font-medium text-slate-900">${order.subtotal?.toFixed(2) || '0.00'}</span>
+              <span className="text-sm font-medium text-slate-900">GHS {order.subtotal?.toFixed(2) || '0.00'}</span>
             </div>
             
             {order.shipping_fee > 0 && (
               <div className="flex justify-between">
                 <span className="text-sm text-slate-600">Shipping</span>
-                <span className="text-sm font-medium text-slate-900">${order.shipping_fee.toFixed(2)}</span>
+                <span className="text-sm font-medium text-slate-900">GHS {order.shipping_fee.toFixed(2)}</span>
               </div>
             )}
             
             {order.discount_amount > 0 && (
               <div className="flex justify-between">
                 <span className="text-sm text-slate-600">Discount</span>
-                <span className="text-sm font-medium text-green-600">-${order.discount_amount.toFixed(2)}</span>
+                <span className="text-sm font-medium text-green-600">-GHS {order.discount_amount.toFixed(2)}</span>
               </div>
             )}
 
             <div className="border-t border-slate-200 pt-3 flex justify-between">
               <span className="text-sm font-semibold text-slate-900">Total</span>
-              <span className="text-lg font-bold text-slate-900">${order.total_amount.toFixed(2)}</span>
+              <span className="text-lg font-bold text-slate-900">GHS {order.total_amount.toFixed(2)}</span>
             </div>
           </div>
         </div>

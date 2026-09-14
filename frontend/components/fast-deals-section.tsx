@@ -148,10 +148,10 @@ export default function FastDealsSection() {
                   {/* Price */}
                   <div className="mt-3 flex items-baseline gap-2">
                     <span className="text-lg font-bold text-orange-600">
-                      ${deal.deal_price.toFixed(2)}
+                      GHS {deal.deal_price.toFixed(2)}
                     </span>
                     <span className="text-sm text-slate-500 line-through">
-                      ${deal.products.regular_price.toFixed(2)}
+                      GHS {deal.products.regular_price.toFixed(2)}
                     </span>
                   </div>
 

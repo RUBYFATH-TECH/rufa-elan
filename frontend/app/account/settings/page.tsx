@@ -28,6 +28,7 @@ export default function SettingsPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   // Form states
@@ -154,6 +155,74 @@ export default function SettingsPage() {
     setIsSaving(false);
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setMessage({ type: 'error', text: 'Please select a valid image file.' });
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setMessage({ type: 'error', text: 'File size must be less than 2MB.' });
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    setMessage(null);
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64String = event.target?.result as string;
+
+        try {
+          const response = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              image: base64String,
+              filename: `avatar-${userProfile?.id}-${Date.now()}.jpg`
+            })
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.message || 'Upload failed');
+          }
+
+          const { error } = await supabase.auth.updateUser({
+            data: { avatar_url: data.data.url }
+          });
+
+          if (error) {
+            setMessage({ type: 'error', text: error.message });
+          } else {
+            setMessage({ type: 'success', text: 'Avatar updated successfully!' });
+            if (userProfile) {
+              setUserProfile(prev => prev ? {
+                ...prev,
+                avatar_url: data.data.url
+              } : null);
+            }
+          }
+        } catch (error) {
+          console.error('Upload error:', error);
+          setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Failed to upload avatar.' });
+        } finally {
+          setIsUploadingAvatar(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('File read error:', error);
+      setMessage({ type: 'error', text: 'Failed to process file.' });
+      setIsUploadingAvatar(false);
+    }
+  };
+
   if (!userProfile) {
     return (
       <AccountLayout>
@@ -188,20 +257,45 @@ export default function SettingsPage() {
         
         {/* Avatar Section */}
         <div className="flex items-center mb-6">
-          <div className="h-16 w-16 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden">
+          <div className="h-16 w-16 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden relative">
             {userProfile.avatar_url ? (
-              <img src={userProfile.avatar_url} alt="Profile" className="h-full w-full object-cover" />
-            ) : (
-              <span className="text-orange-600 font-semibold text-xl">
-                {userProfile.full_name?.charAt(0) || userProfile.email.charAt(0).toUpperCase()}
-              </span>
-            )}
+              <img 
+                src={userProfile.avatar_url} 
+                alt="Profile" 
+                className="h-full w-full object-cover" 
+                onError={(e) => {
+                  // Fallback if image fails to load
+                  const img = e.target as HTMLImageElement;
+                  img.style.display = 'none';
+                  const parent = img.parentElement;
+                  if (parent) {
+                    const fallback = parent.querySelector('[data-fallback]');
+                    if (fallback) {
+                      fallback.classList.remove('hidden');
+                    }
+                  }
+                }}
+              />
+            ) : null}
+            <div 
+              data-fallback
+              className={`absolute inset-0 bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-semibold text-xl ${userProfile.avatar_url ? 'hidden' : ''}`}
+            >
+              {userProfile.full_name?.charAt(0) || userProfile.email.charAt(0).toUpperCase()}
+            </div>
           </div>
           <div className="ml-4">
-            <button className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+            <label className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer">
               <Camera className="h-4 w-4 mr-2" />
-              Change Photo
-            </button>
+              {isUploadingAvatar ? 'Uploading...' : 'Change Photo'}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                disabled={isUploadingAvatar}
+                className="hidden"
+              />
+            </label>
             <p className="text-xs text-gray-500 mt-1">JPG, GIF or PNG. Max size of 2MB.</p>
           </div>
         </div>

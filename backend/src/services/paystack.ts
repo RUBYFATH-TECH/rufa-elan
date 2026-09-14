@@ -3,7 +3,7 @@ import { logger } from '../utils/logger';
 import { serviceConfig } from '../config/services';
 
 export interface PaystackInitializePaymentData {
-  amount: number; // Amount in kobo (multiply naira by 100)
+  amount: number; // Amount in pesewas (multiply cedis by 100)
   email: string;
   reference?: string;
   callback_url?: string;
@@ -223,14 +223,24 @@ class PaystackService {
     return `${prefix}_${timestamp}_${random}`;
   }
 
-  // Convert naira to kobo
-  nairaToKobo(naira: number): number {
-    return Math.round(naira * 100);
+  // Convert cedis to pesewas (smallest unit)
+  cedisToSmallestUnit(amount: number): number {
+    return Math.round(amount * 100);
   }
 
-  // Convert kobo to naira
+  // Convert pesewas to cedis
+  smallestUnitToCedis(amount: number): number {
+    return amount / 100;
+  }
+
+  // Alias for backward compatibility
+  nairaToKobo(naira: number): number {
+    return this.cedisToSmallestUnit(naira);
+  }
+
+  // Alias for backward compatibility
   koboToNaira(kobo: number): number {
-    return kobo / 100;
+    return this.smallestUnitToCedis(kobo);
   }
 }
 

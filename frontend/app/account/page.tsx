@@ -277,7 +277,7 @@ export default function AccountPage() {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Spent</p>
               <p className="text-2xl font-bold text-gray-900">
-                ${orderSummary?.total_spent.toFixed(2) || '0.00'}
+                GHS {orderSummary?.total_spent.toFixed(2) || '0.00'}
               </p>
             </div>
           </div>
@@ -404,7 +404,7 @@ export default function AccountPage() {
                   <span className={`px-3 py-1 text-xs font-medium rounded-full border ${getStatusColor(order.status)}`}>
                     {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                   </span>
-                  <span className="text-sm font-medium text-gray-900">${order.total_amount}</span>
+                  <span className="text-sm font-medium text-gray-900">GHS {order.total_amount}</span>
                   <Link 
                     href={`/account/orders/${order.id}`}
                     className="text-orange-600 hover:text-orange-700"
@@ -455,7 +455,7 @@ export default function AccountPage() {
             <span className="text-sm font-medium text-gray-900">Regular Customer</span>
           </div>
           <p className="text-sm text-gray-600 mb-4">
-            You've spent ${orderSummary?.total_spent.toFixed(2) || '0.00'} with us. Keep shopping to unlock exclusive benefits!
+            You've spent GHS {orderSummary?.total_spent.toFixed(2) || '0.00'} with us. Keep shopping to unlock exclusive benefits!
           </p>
           <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
             <div className="bg-orange-600 h-2 rounded-full" style={{ width: '45%' }}></div>

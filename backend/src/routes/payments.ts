@@ -189,7 +189,7 @@ router.post('/initialize', requireAuth, async (req: Request, res: Response) => {
 
     // Prepare payment data
     const paymentData = {
-      amount: paystackService.nairaToKobo(amount), // Convert to smallest unit (kobo for NGN, pesewas for GHS, etc.)
+      amount: paystackService.nairaToKobo(amount), // Convert to smallest unit (pesewas for GHS, etc.)
       email,
       reference,
       metadata: {
@@ -964,7 +964,7 @@ router.post('/webhook/paystack', async (req: Request, res: Response) => {
               user_id: payment.user_id,
               type: 'payment',
               title: 'Payment Successful',
-              message: `Your payment of ₦${paystackService.koboToNaira(paymentData.amount)} has been confirmed. Your order is now being processed.`,
+              message: `Your payment of GHS ${paystackService.koboToNaira(paymentData.amount)} has been confirmed. Your order is now being processed.`,
               data: {
                 order_id: payment.order_id,
                 payment_id: payment.id,

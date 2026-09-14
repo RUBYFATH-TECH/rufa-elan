@@ -193,20 +193,34 @@ export default function CustomerDetailPage() {
         <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm mb-6">
           <div className="flex items-start gap-6">
             {/* Avatar */}
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 relative">
               {customer.avatar_url ? (
                 <img
                   src={customer.avatar_url}
                   alt={customer.full_name || 'Customer'}
                   className="w-24 h-24 rounded-full object-cover border-4 border-orange-100"
+                  onError={(e) => {
+                    // Fallback if image fails to load
+                    const img = e.target as HTMLImageElement;
+                    img.style.display = 'none';
+                    const parent = img.parentElement;
+                    if (parent) {
+                      const fallback = parent.querySelector('[data-fallback]');
+                      if (fallback) {
+                        fallback.classList.remove('hidden');
+                      }
+                    }
+                  }}
                 />
-              ) : (
-                <div className="w-24 h-24 rounded-full bg-orange-100 flex items-center justify-center border-4 border-orange-100">
-                  <span className="text-3xl font-bold text-orange-600">
-                    {(customer.full_name || customer.email)?.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-              )}
+              ) : null}
+              <div 
+                data-fallback
+                className={`w-24 h-24 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center border-4 border-orange-100 text-white ${customer.avatar_url ? 'hidden' : ''}`}
+              >
+                <span className="text-3xl font-bold">
+                  {(customer.full_name || customer.email)?.charAt(0).toUpperCase()}
+                </span>
+              </div>
             </div>
 
             {/* Customer Info */}
@@ -284,7 +298,7 @@ export default function CustomerDetailPage() {
               <span className="text-sm font-medium text-slate-600">Total Spent</span>
               <DollarSign className="w-5 h-5 text-green-600" />
             </div>
-            <p className="text-3xl font-bold text-slate-900">${customerStats.total_spent?.toFixed(2) || '0.00'}</p>
+            <p className="text-3xl font-bold text-slate-900">GHS {customerStats.total_spent?.toFixed(2) || '0.00'}</p>
             <p className="text-xs text-slate-600 mt-1">Lifetime value</p>
           </div>
 

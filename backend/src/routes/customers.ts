@@ -329,12 +329,19 @@ router.get('/', async (req: Request, res: Response) => {
           const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(profile.id);
           
           if (!userError && user) {
+            // Generate a Gravatar URL or UI Avatar URL as fallback
+            const email = user.email || '';
+            const fullName = user.user_metadata?.full_name || user.user_metadata?.name || email?.split('@')[0] || 'User';
+            const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture || 
+              // Fallback to UI Avatar (generates nice placeholder avatars)
+              `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=random&color=fff&rounded=true`;
+            
             return {
               ...profile,
-              email: user.email || '',
-              full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+              email: email,
+              full_name: fullName,
               phone: user.user_metadata?.phone || '',
-              avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null
+              avatar_url: avatarUrl
             };
           }
           return profile;
@@ -399,12 +406,18 @@ router.get('/:id', async (req: Request, res: Response) => {
       const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(id);
       
       if (!userError && user) {
+        const email = user.email || '';
+        const fullName = user.user_metadata?.full_name || user.user_metadata?.name || email?.split('@')[0] || 'User';
+        const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture ||
+          // Fallback to UI Avatar
+          `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=random&color=fff&rounded=true`;
+        
         enrichedCustomer = {
           ...customer,
-          email: user.email || '',
-          full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+          email: email,
+          full_name: fullName,
           phone: user.user_metadata?.phone || '',
-          avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null
+          avatar_url: avatarUrl
         };
       }
     } catch (err) {

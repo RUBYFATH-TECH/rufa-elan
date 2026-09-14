@@ -144,7 +144,7 @@ export default function CustomersPage() {
               <span className="text-sm font-medium text-slate-600">Total Revenue</span>
               <DollarSign className="w-5 h-5 text-blue-600" />
             </div>
-            <p className="text-3xl font-bold text-slate-900">${totalRevenue.toFixed(2)}</p>
+            <p className="text-3xl font-bold text-slate-900">GHS {totalRevenue.toFixed(2)}</p>
             <p className="text-xs text-slate-600 mt-1">From all customers</p>
           </div>
 
@@ -153,7 +153,7 @@ export default function CustomersPage() {
               <span className="text-sm font-medium text-slate-600">Avg Order Value</span>
               <ShoppingBag className="w-5 h-5 text-purple-600" />
             </div>
-            <p className="text-3xl font-bold text-slate-900">${avgOrderValue.toFixed(2)}</p>
+            <p className="text-3xl font-bold text-slate-900">GHS {avgOrderValue.toFixed(2)}</p>
             <p className="text-xs text-slate-600 mt-1">Per transaction</p>
           </div>
         </div>
@@ -215,14 +215,30 @@ export default function CustomersPage() {
                           src={customer.avatar_url}
                           alt={customer.full_name || 'Customer'}
                           className="w-12 h-12 rounded-full object-cover border border-slate-200"
+                          onError={(e) => {
+                            // Fallback if image fails to load
+                            const img = e.target as HTMLImageElement;
+                            const name = customer.full_name || customer.email || 'User';
+                            img.style.display = 'none';
+                            // Show the fallback element
+                            const parent = img.parentElement;
+                            if (parent) {
+                              const fallback = parent.querySelector('[data-fallback]');
+                              if (fallback) {
+                                fallback.classList.remove('hidden');
+                              }
+                            }
+                          }}
                         />
-                      ) : (
-                        <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center border border-slate-200">
-                          <span className="text-sm font-semibold text-orange-600">
-                            {(customer.full_name || customer.email)?.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                      )}
+                      ) : null}
+                      <div 
+                        data-fallback
+                        className={`w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center border border-slate-200 text-white ${customer.avatar_url ? 'hidden' : ''}`}
+                      >
+                        <span className="text-sm font-semibold">
+                          {(customer.full_name || customer.email)?.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Customer Info */}
@@ -265,7 +281,7 @@ export default function CustomersPage() {
                       </div>
                       <div>
                         <p className="text-xs text-slate-600">Spent</p>
-                        <p className="text-lg font-bold text-slate-900">${(customer.total_spent || 0).toFixed(2)}</p>
+                        <p className="text-lg font-bold text-slate-900">GHS {(customer.total_spent || 0).toFixed(2)}</p>
                       </div>
                       <div>
                         <p className="text-xs text-slate-600">Joined</p>

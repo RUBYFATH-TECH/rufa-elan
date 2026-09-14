@@ -108,7 +108,7 @@ export default function AdminOrdersPage() {
       render: (value) => (
         <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
           <DollarSign className="w-4 h-4 text-slate-400" />
-          ${value.toFixed(2)}
+          GHS {value.toFixed(2)}
         </div>
       ),
     },

@@ -111,7 +111,7 @@ export default function InvoiceDemo() {
               </li>
               <li className="flex items-start">
                 <span className="text-teal-600 font-bold mr-3">✓</span>
-                <span>Nigerian Naira (₦) currency formatting</span>
+                <span>Ghana Cedis (GHS ₵) currency formatting</span>
               </li>
               <li className="flex items-start">
                 <span className="text-teal-600 font-bold mr-3">✓</span>

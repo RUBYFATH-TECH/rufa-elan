@@ -62,7 +62,7 @@ export default function AdminAnalyticsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
             title="Total Revenue"
-            value="$45,670.50"
+            value="GHS 45,670.50"
             subtitle="All time high"
             trend={{ value: 12.5, isPositive: true }}
             icon={DollarSign}
@@ -78,7 +78,7 @@ export default function AdminAnalyticsPage() {
           />
           <StatCard
             title="Avg Order Value"
-            value="$133.45"
+            value="GHS 133.45"
             subtitle="Per transaction"
             icon={TrendingUp}
             iconBgColor="bg-purple-100"

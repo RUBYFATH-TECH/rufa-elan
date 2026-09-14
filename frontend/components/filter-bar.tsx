@@ -119,7 +119,7 @@ export default function FilterBar({
               <div>
                 <h4 className="mb-2 text-sm font-medium text-slate-900">Price Range</h4>
                 <div className="space-y-2">
-                  {["Under $10", "$10 - $25", "$25 - $50", "$50 - $100", "Over $100"].map((range) => (
+                  {["Under GHS 50", "GHS 50 - 100", "GHS 100 - 200", "GHS 200 - 500", "Over GHS 500"].map((range) => (
                     <label key={range} className="flex items-center gap-2 text-sm">
                       <input type="checkbox" className="rounded border-slate-300 text-rufaelan-primary focus:ring-rufaelan-primary" />
                       <span className="text-slate-700">{range}</span>

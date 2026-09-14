@@ -133,7 +133,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="flex flex-shrink-0 items-center px-4 mb-8">
               <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 shadow-md bg-white flex items-center justify-center">
                 <img 
-                  src="/logo.png" 
+                  src="/images/logo.png" 
                   alt="RUFA ELAN Logo" 
                   className="w-full h-full object-contain"
                 />
@@ -198,7 +198,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="flex items-center gap-3 px-6 py-8 border-b border-slate-200/50 bg-gradient-to-r from-white to-slate-50/50">
             <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 shadow-lg bg-white flex items-center justify-center">
               <img 
-                src="/logo.png" 
+                src="/images/logo.png" 
                 alt="RUFA ELAN Logo" 
                 className="w-full h-full object-contain"
               />
@@ -263,7 +263,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-slate-100 to-slate-50 rounded-xl border border-slate-200/50">
             <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 shadow-md bg-white flex items-center justify-center">
               <img 
-                src="/logo.png" 
+                src="/images/logo.png" 
                 alt="RUFA ELAN Logo" 
                 className="w-full h-full object-contain"
               />
@@ -291,7 +291,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-white shadow-md">
                 <img 
-                  src="/logo.png" 
+                  src="/images/logo.png" 
                   alt="RUFA ELAN Logo" 
                   className="w-full h-full object-contain"
                 />

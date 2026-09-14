@@ -131,7 +131,7 @@ export default function AdminDashboardPage() {
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-white shadow-md overflow-hidden w-10 h-10 flex items-center justify-center">
                 <img 
-                  src="/logo.png" 
+                  src="/images/logo.png" 
                   alt="RUFA ELAN Logo" 
                   className="w-full h-full object-contain"
                 />
@@ -160,7 +160,7 @@ export default function AdminDashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
             title="Total Revenue"
-            value={loading ? "---" : `$${(stats?.totalRevenue || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}`}
+            value={loading ? "---" : `GHS ${(stats?.totalRevenue || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })}`}
             subtitle="Last 30 days"
             trend={!loading ? { value: stats?.revenueGrowth || 0, isPositive: true } : undefined}
             icon={DollarSign}
