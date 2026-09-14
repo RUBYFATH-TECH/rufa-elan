@@ -8,27 +8,27 @@ import paystackService from '../src/services/paystack';
 
 describe('Paystack Service', () => {
   describe('Currency Conversion', () => {
-    it('should convert naira to kobo', () => {
-      const result = paystackService.nairaToKobo(100);
+    it('should convert cedis to pesewas', () => {
+      const result = paystackService.cedisToPesewas(100);
       expect(result).toBe(10000);
     });
 
-    it('should convert kobo to naira', () => {
-      const result = paystackService.koboToNaira(10000);
+    it('should convert pesewas to cedis', () => {
+      const result = paystackService.pesewasToCedis(10000);
       expect(result).toBe(100);
     });
 
     it('should handle decimal amounts', () => {
-      const kobo = paystackService.nairaToKobo(50.50);
-      expect(kobo).toBe(5050);
+      const pesewas = paystackService.cedisToPesewas(50.50);
+      expect(pesewas).toBe(5050);
 
-      const naira = paystackService.koboToNaira(5050);
-      expect(naira).toBe(50.50);
+      const cedis = paystackService.pesewasToCedis(5050);
+      expect(cedis).toBe(50.50);
     });
 
     it('should handle zero amounts', () => {
-      expect(paystackService.nairaToKobo(0)).toBe(0);
-      expect(paystackService.koboToNaira(0)).toBe(0);
+      expect(paystackService.cedisToPesewas(0)).toBe(0);
+      expect(paystackService.pesewasToCedis(0)).toBe(0);
     });
   });
 

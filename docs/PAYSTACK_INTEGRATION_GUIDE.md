@@ -114,8 +114,8 @@ const result = await paystackService.verifyPayment('reference_string');
 const ref = paystackService.generateReference('ORD');
 
 // Convert currency
-const kobo = paystackService.nairaToKobo(500); // 50000 kobo
-const naira = paystackService.koboToNaira(50000); // 500 naira
+const pesewas = paystackService.cedisToPesewas(500); // 50000 pesewas
+const cedis = paystackService.pesewasToCedis(50000); // 500 cedis
 ```
 
 ### 2. Payment Routes

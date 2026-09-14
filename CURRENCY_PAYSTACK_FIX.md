@@ -63,7 +63,7 @@ Modified `backend/src/routes/payments.ts` to:
 2. **Use dynamic currency** in payment initialization:
    ```typescript
    const paymentData = {
-     amount: paystackService.nairaToKobo(amount),
+     amount: paystackService.cedisToPesewas(amount),
      email,
      reference,
      metadata: { ... },

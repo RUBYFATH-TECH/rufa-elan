@@ -224,23 +224,13 @@ class PaystackService {
   }
 
   // Convert cedis to pesewas (smallest unit)
-  cedisToSmallestUnit(amount: number): number {
+  cedisToPesewas(amount: number): number {
     return Math.round(amount * 100);
   }
 
   // Convert pesewas to cedis
-  smallestUnitToCedis(amount: number): number {
+  pesewasToCedis(amount: number): number {
     return amount / 100;
-  }
-
-  // Alias for backward compatibility
-  nairaToKobo(naira: number): number {
-    return this.cedisToSmallestUnit(naira);
-  }
-
-  // Alias for backward compatibility
-  koboToNaira(kobo: number): number {
-    return this.smallestUnitToCedis(kobo);
   }
 }
 

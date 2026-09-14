@@ -189,7 +189,7 @@ router.post('/initialize', requireAuth, async (req: Request, res: Response) => {
 
     // Prepare payment data
     const paymentData = {
-      amount: paystackService.nairaToKobo(amount), // Convert to smallest unit (pesewas for GHS, etc.)
+      amount: paystackService.cedisToPesewas(amount), // Convert to smallest unit (pesewas for GHS)
       email,
       reference,
       metadata: {
@@ -463,7 +463,7 @@ router.get('/verify/:reference', requireAuth, async (req: Request, res: Response
           }
 
           // Calculate totals from payment metadata
-          const paidAmount = paystackService.koboToNaira(paymentData.amount);
+          const paidAmount = paystackService.pesewasToCedis(paymentData.amount);
           const subtotal = orderMetadata.subtotal_amount || (paidAmount - (orderMetadata.shipping_fee || 0));
           const shippingFee = orderMetadata.shipping_fee || 0;
           const discountAmount = orderMetadata.discount_amount || 0;
@@ -767,7 +767,7 @@ router.get('/verify/:reference', requireAuth, async (req: Request, res: Response
       data: {
         status: paymentStatus,
         reference,
-        amount: paystackService.koboToNaira(paymentData.amount),
+        amount: paystackService.pesewasToCedis(paymentData.amount),
         currency: paymentData.currency,
         paid_at: paymentData.paid_at,
         transaction_id: paymentData.id,
@@ -964,7 +964,7 @@ router.post('/webhook/paystack', async (req: Request, res: Response) => {
               user_id: payment.user_id,
               type: 'payment',
               title: 'Payment Successful',
-              message: `Your payment of GHS ${paystackService.koboToNaira(paymentData.amount)} has been confirmed. Your order is now being processed.`,
+              message: `Your payment of GHS ${paystackService.pesewasToCedis(paymentData.amount)} has been confirmed. Your order is now being processed.`,
               data: {
                 order_id: payment.order_id,
                 payment_id: payment.id,
@@ -1096,7 +1096,7 @@ router.post('/retry/:orderId', requireAuth, async (req: Request, res: Response) 
     const reference = paystackService.generateReference(`RETRY_${orderId.substring(0, 8)}`);
 
     const paymentData = {
-      amount: paystackService.nairaToKobo(order.total_amount),
+      amount: paystackService.cedisToPesewas(order.total_amount),
       email,
       reference,
       metadata: {
