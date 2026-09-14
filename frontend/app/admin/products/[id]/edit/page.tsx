@@ -84,8 +84,11 @@ export default function EditProductPage() {
         imageUrls = await uploadProductImages(newImages);
       }
 
-      // Combine existing and new image URLs
-      const allImages = data.images.map((img, index) => {
+      // Combine existing and new image URLs in the exact form order. Using
+      // the form index for new images breaks whenever existing and new images
+      // are interleaved.
+      let uploadedImageIndex = 0;
+      const allImages = data.images.map((img) => {
         if (img.url && !img.file) {
           return {
             url: img.url,
@@ -95,12 +98,15 @@ export default function EditProductPage() {
           };
         }
         return {
-          url: imageUrls[imageUrls.length - newImages.length + index],
+          url: imageUrls[uploadedImageIndex++],
           alt_text: img.alt_text || data.name,
           is_primary: img.is_primary,
-          position: index,
+          position: 0,
         };
-      });
+      })
+        .filter((image) => Boolean(image.url))
+        .sort((a, b) => Number(b.is_primary) - Number(a.is_primary))
+        .map((image, position) => ({ ...image, position }));
 
       const productPayload = {
         name: data.name,

@@ -20,6 +20,7 @@ async function uploadImageToStorage(
   filePath: string,
   contentType: string = 'image/jpeg'
 ) {
+  const mimeType = base64Image.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,/)?.[1] || contentType;
   // Convert base64 to buffer
   const base64String = base64Image.replace(/^data:image\/[a-z]+;base64,/, '');
   const buffer = Buffer.from(base64String, 'base64');
@@ -34,7 +35,7 @@ async function uploadImageToStorage(
   const { data, error } = await supabaseAdmin.storage
     .from(bucket)
     .upload(filePath, buffer, {
-      contentType,
+      contentType: mimeType,
       upsert: true, // Allow overwrite for avatars
     });
 
@@ -157,7 +158,9 @@ router.post('/', async (req: Request, res: Response) => {
     // Generate unique filename
     const timestamp = Date.now();
     const randomStr = Math.random().toString(36).substring(7);
-    const uploadFilename = filename || `product-${timestamp}-${randomStr}.jpg`;
+    const mimeType = image.match(/^data:image\/([a-zA-Z0-9.+-]+);base64,/)?.[1] || 'jpeg';
+    const extension = mimeType === 'jpeg' ? 'jpg' : mimeType;
+    const uploadFilename = filename || `product-${timestamp}-${randomStr}.${extension}`;
     const filePath = `products/${uploadFilename}`;
     const bucket = 'product-images';
 

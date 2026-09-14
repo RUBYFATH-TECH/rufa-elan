@@ -45,6 +45,7 @@ create table if not exists products (
   description text,
   regular_price numeric(10,2) not null,
   sale_price numeric(10,2),
+  color text,
   featured boolean default false not null,
   status text default 'active' not null,
   popularity integer default 0 not null,

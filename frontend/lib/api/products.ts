@@ -15,8 +15,9 @@ export async function uploadProductImages(images: UploadedImage[]): Promise<stri
 
     if (!image.file) continue;
 
-    // Convert file to base64
-    const base64 = await fileToBase64(image.file);
+    // Supabase Storage can enforce a much smaller per-object size than the
+    // browser form limit. Resize/compress large originals before sending them.
+    const base64 = await imageFileToUploadDataUrl(image.file);
 
     try {
       // Use the helper function to get the backend URL
@@ -31,8 +32,6 @@ export async function uploadProductImages(images: UploadedImage[]): Promise<stri
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           image: base64,
-          folder: "rufa_elan/products",
-          public_id: `product-${Date.now()}`,
         }),
       });
 
@@ -63,6 +62,62 @@ function fileToBase64(file: File): Promise<string> {
     reader.onload = () => resolve(reader.result as string);
     reader.onerror = (error) => reject(error);
   });
+}
+
+const MAX_STORAGE_IMAGE_BYTES = 900 * 1024;
+const MAX_IMAGE_DIMENSION = 1920;
+
+function dataUrlByteLength(dataUrl: string): number {
+  const encoded = dataUrl.split(",")[1] || "";
+  return Math.ceil((encoded.length * 3) / 4) - (encoded.endsWith("==") ? 2 : encoded.endsWith("=") ? 1 : 0);
+}
+
+async function imageFileToUploadDataUrl(file: File): Promise<string> {
+  if (file.size <= MAX_STORAGE_IMAGE_BYTES) {
+    return fileToBase64(file);
+  }
+
+  const sourceUrl = URL.createObjectURL(file);
+  try {
+    const source = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error("The selected image could not be processed"));
+      image.src = sourceUrl;
+    });
+
+    let width = Math.min(source.naturalWidth, MAX_IMAGE_DIMENSION);
+    let height = Math.round(source.naturalHeight * (width / source.naturalWidth));
+    let quality = 0.88;
+    let result = "";
+
+    // WebP keeps product photos sharp while staying beneath the bucket limit.
+    // If needed, reduce quality and then dimensions in small, controlled steps.
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Image compression is not supported in this browser");
+      context.drawImage(source, 0, 0, width, height);
+      result = canvas.toDataURL("image/webp", quality);
+
+      if (dataUrlByteLength(result) <= MAX_STORAGE_IMAGE_BYTES) return result;
+
+      if (quality > 0.55) quality -= 0.1;
+      else {
+        width = Math.max(640, Math.round(width * 0.8));
+        height = Math.max(640, Math.round(height * 0.8));
+      }
+    }
+
+    if (dataUrlByteLength(result) > MAX_STORAGE_IMAGE_BYTES) {
+      throw new Error("Image is too detailed to compress below the upload limit; choose a smaller image");
+    }
+    return result;
+  } finally {
+    URL.revokeObjectURL(sourceUrl);
+  }
 }
 
 /**

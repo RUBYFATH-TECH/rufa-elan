@@ -15,6 +15,15 @@ export interface UploadedImage {
   error?: string;
 }
 
+function readFilePreview(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error || new Error("Unable to read image"));
+    reader.readAsDataURL(file);
+  });
+}
+
 interface ImageUploadProps {
   images: UploadedImage[];
   onImagesChange: (images: UploadedImage[]) => void;
@@ -55,43 +64,37 @@ export default function ImageUpload({
   };
 
   const processFiles = useCallback(
-    (files: FileList) => {
+    async (files: FileList) => {
       if (images.length >= maxImages) {
         alert(`Maximum ${maxImages} images allowed`);
         return;
       }
 
-      const newImages: UploadedImage[] = [];
+      const filesToAdd = Array.from(files).slice(0, maxImages - images.length);
+      setUploading(true);
 
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        
-        if (images.length + newImages.length >= maxImages) {
-          break;
-        }
-
-        const error = validateFile(file);
-        const reader = new FileReader();
-
-        reader.onload = (e) => {
-          const newImage: UploadedImage = {
+      try {
+        // Read the complete batch before changing form state. Previously every
+        // FileReader callback used the same stale `images` value, meaning a
+        // multi-file selection could leave only the final image in the form.
+        const newImages = await Promise.all(
+          filesToAdd.map(async (file, index): Promise<UploadedImage> => ({
             file,
             url: "",
             alt_text: "",
-            is_primary: images.length === 0 && newImages.length === 0,
-            preview: e.target?.result as string,
+            is_primary: images.length === 0 && index === 0,
+            preview: await readFilePreview(file),
             uploading: false,
-            error: error || undefined,
-          };
+            error: validateFile(file) || undefined,
+          })),
+        );
 
-          setUploading(false);
-          onImagesChange([...images, ...newImages.filter(img => img !== newImage), newImage]);
-        };
-
-        reader.readAsDataURL(file);
+        onImagesChange([...images, ...newImages]);
+      } finally {
+        setUploading(false);
       }
     },
-    [images, maxImages, onImagesChange]
+    [acceptedFormats, images, maxFileSize, maxImages, onImagesChange]
   );
 
   const handleDrop = (e: React.DragEvent) => {
@@ -107,6 +110,8 @@ export default function ImageUpload({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       processFiles(e.target.files);
+      // Permit selecting the same image again after it has been removed.
+      e.target.value = "";
     }
   };
 

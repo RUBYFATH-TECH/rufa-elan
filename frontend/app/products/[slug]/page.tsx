@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Heart, Minus, Plus, ShoppingBag, Check, Truck, AlertCircle, Zap, ArrowLeft, Star } from "lucide-react";
 import { featuredProducts } from "@/lib/sample-data";
 import { useCartStore } from "@/store/cart-store";
 import { useWaitlistStore } from "@/store/waitlist-store";
 import { fetchProducts } from "@/lib/api/products";
+import ProductImageGallery from "@/components/ProductImageGallery";
 
 export default function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const router = useRouter();
@@ -40,6 +40,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
         
         if (foundProduct) {
           // Transform API data to match component expectations
+          const images = [...(foundProduct.product_images || [])].sort(
+            (a: any, b: any) => (a.position ?? 0) - (b.position ?? 0),
+          );
           const transformedProduct = {
             id: foundProduct.id,
             name: foundProduct.name,
@@ -47,7 +50,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             price: foundProduct.regular_price,
             salePrice: foundProduct.sale_price,
             rating: 4.5, // Default rating since API might not have it
-            image: foundProduct.product_images?.[0]?.url || "/images/placeholder.jpg",
+            image: images[0]?.url || "/images/placeholder.jpg",
+            images,
             slug: foundProduct.slug,
             badge: foundProduct.sale_price ? `${Math.round(((foundProduct.regular_price - foundProduct.sale_price) / foundProduct.regular_price) * 100)}% OFF` : undefined,
           };
@@ -165,36 +169,16 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
       <div className="grid gap-8 lg:grid-cols-[1.15fr,1fr] lg:gap-12">
         {/* Image Section */}
         <div className="space-y-4">
-          <div className="relative overflow-hidden rounded-2xl bg-slate-100 shadow-md">
-            <Image 
-              src={product.image} 
-              alt={product.name} 
-              width={900} 
-              height={900} 
-              className="h-full w-full object-cover"
-              priority
+          <div className="relative">
+            <ProductImageGallery
+              images={product.images?.length ? product.images : [{ url: product.image }]}
+              productName={product.name}
             />
             {discount > 0 && (
               <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold">
                 -{discount}%
               </div>
             )}
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            {[1, 2, 3].map((index) => (
-              <button
-                key={index}
-                className="group relative overflow-hidden rounded-xl bg-slate-100 ring-2 ring-slate-200 transition hover:ring-brand-500"
-              >
-                <Image 
-                  src={product.image} 
-                  alt={`${product.name} ${index}`} 
-                  width={300} 
-                  height={300} 
-                  className="h-20 w-full object-cover transition group-hover:scale-105"
-                />
-              </button>
-            ))}
           </div>
         </div>
 

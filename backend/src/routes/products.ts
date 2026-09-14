@@ -29,6 +29,41 @@ const productsRateLimit = rateLimitMiddleware({
 router.use(productsRateLimit);
 
 /**
+ * SKUs are stored as required unique database values, but admins should not
+ * have to type them for every product. This creates a readable, collision-safe
+ * identifier when the simplified admin form does not provide one.
+ */
+function generateProductSku(name: string): string {
+  const namePart = name
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 12) || 'PRODUCT';
+  const timestampPart = Date.now().toString(36).toUpperCase();
+  const randomPart = Math.random().toString(36).slice(2, 7).toUpperCase();
+  return `RE-${namePart}-${timestampPart}-${randomPart}`;
+}
+
+// These are the category slugs offered by the current admin product form.
+// Creating a product in one of these categories also repairs older databases
+// that were seeded before the ladies' catalogue categories were introduced.
+const ADMIN_CATEGORY_NAMES: Record<string, string> = {
+  'ladies-bags': 'Ladies bags',
+  'ladies-footwears': 'Ladies Footwears',
+  'ladies-watches': 'Ladies Watches',
+  'ladies-dresses': 'Ladies dresses',
+  'ladies-cosmetics': 'Ladies Cosmetics',
+  'ladies-glasses': 'Ladies glasses',
+  accessories: 'Accessories',
+  handbags: 'Handbags',
+  'tote-bags': 'Tote bags',
+  crossbags: 'Crossbags',
+  purse: 'Purse',
+  wallet: 'Wallet',
+};
+
+/**
  * GET /api/products
  * Get paginated list of products with filters
  */
@@ -273,20 +308,22 @@ router.post('/', requireAdmin, async (req: Request, res: Response) => {
     const productData: CreateProductRequest = req.body;
 
     // Validate required fields
-    if (!productData.name || !productData.category_id || !productData.sku || !productData.regular_price) {
+    if (!productData.name || !productData.category_id || !productData.regular_price) {
       return res.status(400).json({
         success: false,
         error: 'Missing required fields',
-        message: 'Name, category_id, sku, and regular_price are required'
+        message: 'Name, category_id, and regular_price are required'
       } as ApiResponse);
     }
+
+    const sku = productData.sku?.trim() || generateProductSku(productData.name);
 
     // Generate slug if not provided
     const slug = productData.name ? dbUtils.generateSlug(productData.name) : '';
 
     // Check if SKU already exists
     const existingSku = await db.products.find({
-      filters: { sku: productData.sku }
+      filters: { sku }
     });
 
     if (existingSku.data && existingSku.data.length > 0) {
@@ -315,15 +352,27 @@ router.post('/', requireAdmin, async (req: Request, res: Response) => {
       filters: { slug: productData.category_id }
     });
 
-    if (!categoryResult.data || categoryResult.data.length === 0) {
+    let category = categoryResult.data?.[0];
+    if (!category) {
+      const categoryName = ADMIN_CATEGORY_NAMES[productData.category_id];
+      if (categoryName) {
+        const createdCategory = await db.categories.create({
+          name: categoryName,
+          slug: productData.category_id,
+          description: `${categoryName} collection`,
+        });
+        category = createdCategory.data;
+      }
+    }
+
+    if (!category) {
       return res.status(400).json({
         success: false,
         error: 'Invalid category',
-        message: 'The specified category does not exist'
+        message: 'Select a category from the product form'
       } as ApiResponse);
     }
 
-    const category = categoryResult.data[0];
     const category_id = category.id; // Get the actual UUID from the category
 
     // Prepare product data with actual category UUID
@@ -333,10 +382,12 @@ router.post('/', requireAdmin, async (req: Request, res: Response) => {
     const newProduct = {
       ...productDataWithoutImages,
       category_id,  // Use the actual UUID, not the slug
+      sku,
       slug,
       status: productData.status || 'active',
       featured: productData.featured || false,
-      popularity: 0
+      popularity: 0,
+      color: productData.color || null  // Add color field
       // Don't include: images, total_stock, avg_rating, review_count, view_count
       // These either are in separate tables or don't exist in the products table
     };
@@ -383,17 +434,17 @@ router.post('/', requireAdmin, async (req: Request, res: Response) => {
 
       await Promise.all(variantPromises);
     } else {
-      // Create default variant
+      // Create default variant - use product color if available
       await db.productVariants.create({
         product_id: productId,
         name: 'Default',
-        value: 'Standard',
-        sku: `${productData.sku}-DEFAULT`,
+        value: productData.color || 'Standard',
+        sku: `${sku}-DEFAULT`,
         price: productData.regular_price,
         stock_quantity: 0,
         is_default: true,
         variant_type: 'standard',
-        attributes: {}
+        attributes: productData.color ? { color: productData.color } : {}
       });
     }
 

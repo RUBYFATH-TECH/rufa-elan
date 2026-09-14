@@ -32,6 +32,17 @@ export default function CreateProductPage() {
       const imageUrls = await uploadProductImages(data.images);
 
       // Prepare product data for API
+      // The selected primary image must be stored first because the public
+      // catalogue and product gallery use image position as their ordering.
+      const orderedImages = imageUrls
+        .map((url, index) => ({
+          url,
+          alt_text: data.images[index]?.alt_text || data.name,
+          is_primary: data.images[index]?.is_primary || false,
+        }))
+        .sort((a, b) => Number(b.is_primary) - Number(a.is_primary))
+        .map((image, position) => ({ ...image, position }));
+
       const productPayload = {
         name: data.name,
         description: data.description,
@@ -40,12 +51,7 @@ export default function CreateProductPage() {
         regular_price: data.regular_price,
         sale_price: data.sale_price || null,
         featured: data.is_fast_deal,
-        images: imageUrls.map((url, index) => ({
-          url,
-          alt_text: data.images[index]?.alt_text || data.name,
-          is_primary: index === 0,
-          position: index,
-        })),
+        images: orderedImages,
       };
 
       // Get backend URL

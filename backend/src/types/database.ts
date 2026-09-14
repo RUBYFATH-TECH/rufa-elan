@@ -42,6 +42,7 @@ export interface Product {
   brand?: string;
   regular_price: number;
   sale_price?: number;
+  color?: string;
   weight?: number;
   dimensions?: Record<string, any>;
   tags?: string[];
@@ -329,6 +330,7 @@ export interface CreateProductRequest {
   brand?: string;
   regular_price: number;
   sale_price?: number;
+  color?: string;
   weight?: number;
   dimensions?: Record<string, any>;
   tags?: string[];
