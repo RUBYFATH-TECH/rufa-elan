@@ -39,7 +39,9 @@ export default function EditProductPage() {
         id: data.data.id,
         name: data.data.name,
         description: data.data.description || "",
-        category: data.data.category_id,
+        // The selector uses slugs, whereas the stored product value is a UUID.
+        // Prefer the API's slug so the current category is visibly selected.
+        category: data.data.category_slug || data.data.category_id,
         color: data.data.color || "",
         regular_price: data.data.regular_price,
         sale_price: data.data.sale_price || 0,
@@ -88,22 +90,24 @@ export default function EditProductPage() {
       // the form index for new images breaks whenever existing and new images
       // are interleaved.
       let uploadedImageIndex = 0;
-      const allImages = data.images.map((img) => {
-        if (img.url && !img.file) {
+      const allImages = data.images
+        .map((img, index) => {
+          if (img.url && !img.file) {
+            return {
+              id: img.id,
+              url: img.url,
+              alt_text: img.alt_text || data.name,
+              is_primary: img.is_primary,
+              position: index,
+            };
+          }
           return {
-            url: img.url,
+            url: imageUrls[uploadedImageIndex++],
             alt_text: img.alt_text || data.name,
             is_primary: img.is_primary,
             position: index,
           };
-        }
-        return {
-          url: imageUrls[uploadedImageIndex++],
-          alt_text: img.alt_text || data.name,
-          is_primary: img.is_primary,
-          position: 0,
-        };
-      })
+        })
         .filter((image) => Boolean(image.url))
         .sort((a, b) => Number(b.is_primary) - Number(a.is_primary))
         .map((image, position) => ({ ...image, position }));

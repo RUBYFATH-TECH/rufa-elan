@@ -11,7 +11,8 @@
     "test:watch": "jest --watch",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
-    "migrate:color": "node run-color-migration.js"
+    "migrate:color": "node run-color-migration.js",
+    "fix:foreign-keys": "ts-node fix-foreign-keys.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.38.0",

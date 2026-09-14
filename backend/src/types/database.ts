@@ -338,7 +338,9 @@ export interface CreateProductRequest {
   status?: Product['status'];
   meta_title?: string;
   meta_description?: string;
-  images?: Omit<ProductImage, 'id' | 'product_id' | 'created_at'>[];
+  // Existing images keep their id when an admin edits a product. New images
+  // omit it, allowing the API to reconcile the submitted list with storage.
+  images?: Array<Omit<ProductImage, 'product_id' | 'created_at'> & { id?: string }>;
   variants?: Omit<ProductVariant, 'id' | 'product_id' | 'created_at' | 'updated_at'>[];
 }
 

@@ -560,14 +560,17 @@ router.put('/:id', requireAdmin, async (req: Request, res: Response) => {
       }
     }
 
-    // Verify category exists if being updated
-    if (updateData.category_id && updateData.category_id !== existingProduct.data.category_id) {
-      // Search by slug instead of UUID (frontend sends slugs)
-      const categoryResult = await db.categories.find({
-        filters: { slug: updateData.category_id }
-      });
+    // The admin form submits a category slug, while an unchanged product can
+    // still submit its persisted UUID. Resolve both forms before updating.
+    if (updateData.category_id) {
+      const categoryResult = dbUtils.isValidUUID(updateData.category_id)
+        ? await db.categories.findById(updateData.category_id)
+        : await db.categories.find({ filters: { slug: updateData.category_id } });
+      const category = Array.isArray(categoryResult.data)
+        ? categoryResult.data[0]
+        : categoryResult.data;
 
-      if (!categoryResult.data || categoryResult.data.length === 0) {
+      if (!category) {
         return res.status(400).json({
           success: false,
           error: 'Invalid category',
@@ -576,7 +579,7 @@ router.put('/:id', requireAdmin, async (req: Request, res: Response) => {
       }
 
       // Use the actual UUID from the category
-      updateData.category_id = categoryResult.data[0].id;
+      updateData.category_id = category.id;
     }
 
     // Extract images if provided (they're stored in separate table)
@@ -592,6 +595,71 @@ router.put('/:id', requireAdmin, async (req: Request, res: Response) => {
         error: 'Failed to update product',
         message: result.error
       } as ApiResponse);
+    }
+
+    // The form sends the complete desired image list. Reconcile it exactly so
+    // removed images cannot remain in the database and reappear on reload.
+    if (Array.isArray(images)) {
+      if (images.some((image) => !image.url?.trim())) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid image',
+          message: 'Every product image must have a URL'
+        } as ApiResponse);
+      }
+
+      const existingImagesResult = await db.productImages.find({
+        filters: { product_id: id }
+      });
+      if (existingImagesResult.error) {
+        throw new Error(`Unable to load existing product images: ${existingImagesResult.error}`);
+      }
+
+      const existingImages = existingImagesResult.data || [];
+      const existingImageIds = new Set(existingImages.map((image) => image.id));
+      const submittedExistingIds = new Set(
+        images.filter((image) => image.id).map((image) => image.id as string)
+      );
+
+      // An image id is only valid for this product. Rejecting foreign ids
+      // prevents an accidental edit from changing another product's image.
+      if ([...submittedExistingIds].some((imageId) => !existingImageIds.has(imageId))) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid image',
+          message: 'One or more images do not belong to this product'
+        } as ApiResponse);
+      }
+
+      // Create replacement images before deleting old ones. Every database
+      // result is checked; the endpoint never reports success on a failed
+      // image operation.
+      for (const image of images) {
+        const imageData = {
+          url: image.url,
+          alt_text: image.alt_text || '',
+          is_primary: Boolean(image.is_primary),
+          position: image.position ?? 0
+        };
+        const imageResult = image.id
+          ? await db.productImages.updateById(image.id, imageData)
+          : await db.productImages.create({ product_id: id, ...imageData });
+
+        if (imageResult.error) {
+          throw new Error(`Unable to save product image: ${imageResult.error}`);
+        }
+      }
+
+      // Remove only rows omitted from the submitted list, after all desired
+      // replacements have been stored successfully.
+      for (const existingImage of existingImages) {
+        if (!submittedExistingIds.has(existingImage.id)) {
+          const deleteResult = await db.productImages.deleteById(existingImage.id);
+          if (deleteResult.error) {
+            throw new Error(`Unable to remove product image: ${deleteResult.error}`);
+          }
+        }
+      }
     }
 
     // Fetch updated product details with all related data
@@ -648,6 +716,16 @@ router.put('/:id', requireAdmin, async (req: Request, res: Response) => {
 /**
  * DELETE /api/products/:id
  * Delete product (Admin only)
+ * 
+ * Note: Product deletion cascades to:
+ * - product_images (deleted automatically via ON DELETE CASCADE)
+ * - product_variants (deleted automatically via ON DELETE CASCADE)
+ * - reviews (deleted automatically via ON DELETE CASCADE)
+ * - wishlists (deleted automatically via ON DELETE CASCADE)
+ * 
+ * Data preserved for historical records:
+ * - order_items (product_variant_id set to NULL, keeping order history)
+ * - cart_items (product_variant_id set to NULL, cleaning up carts)
  */
 router.delete('/:id', requireAdmin, async (req: Request, res: Response) => {
   try {
@@ -671,25 +749,41 @@ router.delete('/:id', requireAdmin, async (req: Request, res: Response) => {
       } as ApiResponse);
     }
 
-    // Check if product is referenced in orders
-    const orderItems = await db.orderItems.find({
-      filters: { product_variant_id: id }
+    // Check if product has any orders
+    const variants = await db.productVariants.find({
+      filters: { product_id: id }
     });
 
-    if (orderItems.data && orderItems.data.length > 0) {
-      // Soft delete - set status to discontinued
-      await db.products.updateById(id, { status: 'discontinued' });
+    if (variants.data && variants.data.length > 0) {
+      const variantIds = variants.data.map((v: any) => v.id);
       
-      logger.info(`Soft deleted product: ${id}`, { userId: req.userId });
+      // Check if any variant is in an order
+      const orderItems = await db.orderItems.find({
+        filters: { product_variant_id: variantIds[0] } // Check first variant
+      });
 
-      return res.json({
-        success: true,
-        message: 'Product marked as discontinued due to existing orders'
-      } as ApiResponse);
+      if (orderItems.data && orderItems.data.length > 0) {
+        // Soft delete - set status to discontinued
+        // This preserves the product for order history but removes it from catalog
+        await db.products.updateById(id, { status: 'discontinued' });
+        
+        logger.info(`Soft deleted product: ${id}`, { userId: req.userId });
+
+        return res.json({
+          success: true,
+          message: 'Product marked as discontinued due to existing orders. Product history is preserved.',
+          data: { deletionType: 'soft' }
+        } as ApiResponse);
+      }
     }
 
-    // Hard delete - remove product and related data
-    // Note: This will cascade due to foreign key constraints
+    // Hard delete - remove product and all related data
+    // Foreign key constraints with ON DELETE CASCADE will automatically:
+    // - Delete all product_images
+    // - Delete all product_variants
+    // - Delete all reviews
+    // - Delete all wishlist entries
+    // - Set product_variant_id to NULL in cart_items and order_items
     const result = await db.products.deleteById(id);
 
     if (result.error) {
@@ -701,11 +795,12 @@ router.delete('/:id', requireAdmin, async (req: Request, res: Response) => {
       } as ApiResponse);
     }
 
-    logger.info(`Deleted product: ${id}`, { userId: req.userId });
+    logger.info(`Hard deleted product: ${id}`, { userId: req.userId });
 
     res.json({
       success: true,
-      message: 'Product deleted successfully'
+      message: 'Product and all related data deleted successfully',
+      data: { deletionType: 'hard' }
     } as ApiResponse);
 
   } catch (error) {
