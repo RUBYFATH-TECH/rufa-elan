@@ -42,7 +42,14 @@ export async function uploadProductImages(images: UploadedImage[]): Promise<stri
       }
 
       const data = await response.json();
-      uploadedUrls.push(data.url || data.secure_url || data.data?.url);
+      const uploadedUrl = data.url || data.secure_url || data.data?.url;
+      
+      if (!uploadedUrl) {
+        console.error("Upload response missing URL:", data);
+        throw new Error("Server did not return image URL");
+      }
+      
+      uploadedUrls.push(uploadedUrl);
     } catch (error) {
       console.error("Image upload error:", error);
       throw new Error(`Failed to upload image: ${image.file.name}`);

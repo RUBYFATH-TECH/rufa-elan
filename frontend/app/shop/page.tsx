@@ -15,7 +15,12 @@ interface Product {
   regular_price: number;
   sale_price?: number;
   category_id?: string;
+  category_name?: string;
+  category_slug?: string;
   product_images?: Array<{ url: string; is_primary?: boolean }>;
+  stock_quantity?: number;
+  in_stock?: boolean;
+  low_stock?: boolean;
 }
 
 const CATEGORY_MAP: Record<string, string> = {
@@ -29,11 +34,12 @@ const CATEGORY_MAP: Record<string, string> = {
 
 const categories = [
   { id: "all", name: "All Products" },
-  { id: "handbags", name: "Handbags" },
-  { id: "tote-bags", name: "Tote Bags" },
-  { id: "crossbags", name: "Crossbody Bags" },
-  { id: "purse", name: "Purses" },
-  { id: "wallet", name: "Wallets" },
+  { id: "ladies-bags", name: "Ladies bags" },
+  { id: "ladies-footwears", name: "Ladies Footwears" },
+  { id: "ladies-watches", name: "Ladies Watches" },
+  { id: "ladies-dresses", name: "Ladies dresses" },
+  { id: "ladies-cosmetics", name: "Ladies Cosmetics" },
+  { id: "ladies-glasses", name: "Ladies glasses" },
   { id: "accessories", name: "Accessories" },
 ];
 
@@ -63,6 +69,9 @@ export default function ShopPage() {
       setLoading(true);
       setError(null);
       const data = await fetchProducts({ limit: 100 });
+      
+      console.log('🔍 RAW API Response (first product):', data.data?.[0]);
+      
       const allProducts = (data.data || []).map((p: any) => ({
         id: p.id,
         name: p.name,
@@ -70,8 +79,15 @@ export default function ShopPage() {
         regular_price: p.regular_price,
         sale_price: p.sale_price,
         category_id: p.category_id,
+        category_name: p.categories?.name || "Uncategorized",
+        category_slug: p.categories?.slug || "",
         product_images: p.product_images || [],
+        stock_quantity: p.stock_quantity || 0,
+        in_stock: p.in_stock ?? false,
+        low_stock: p.low_stock ?? false,
       }));
+      
+      console.log('✅ MAPPED Products (first product):', allProducts[0]);
       
       setProducts(allProducts);
       
@@ -92,23 +108,33 @@ export default function ShopPage() {
   const filteredProducts = selectedCategory === "all" 
     ? products 
     : products.filter((product: Product) => 
-        product.category_id === selectedCategory
+        product.category_slug === selectedCategory
       );
 
   const getProductCard = (product: Product) => {
     const image = product.product_images?.[0]?.url || "/images/placeholder.jpg";
     
-    return {
+    const cardData = {
       id: product.id,
       name: product.name,
-      category: product.category_id || "Uncategorized",
+      category: product.category_name || "Uncategorized",
       price: product.regular_price,
       salePrice: product.sale_price,
       rating: 4.5, // Default rating
       image,
       slug: product.slug,
       badge: product.sale_price ? `${Math.round(((product.regular_price - product.sale_price) / product.regular_price) * 100)}% OFF` : undefined,
+      stock_quantity: product.stock_quantity,
+      in_stock: product.in_stock,
+      low_stock: product.low_stock,
     };
+    
+    console.log(`📦 Product "${product.name}" card data:`, {
+      category_name_from_api: product.category_name,
+      category_sent_to_card: cardData.category
+    });
+    
+    return cardData;
   };
 
   return (

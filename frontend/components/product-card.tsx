@@ -15,27 +15,54 @@ interface ProductCardProps {
     image: string;
     slug: string;
     badge?: string;
+    stock_quantity?: number;
+    in_stock?: boolean;
+    low_stock?: boolean;
   };
   layout?: "grid" | "list";
 }
 
 export default function ProductCard({ product, layout = "grid" }: ProductCardProps) {
   const addToCart = useCartStore((state) => state.addItem);
+  const cartError = useCartStore((state) => state.error);
+  const [showError, setShowError] = useState(false);
+  
+  // Debug: Log what category ProductCard received
+  console.log(`🎴 ProductCard rendering "${product.name}" with category:`, product.category);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Prevent adding out of stock items
+    if (!product.in_stock) {
+      return;
+    }
+    
     addToCart({
       id: product.id,
       name: product.name,
       price: product.salePrice ?? product.price,
       image: product.image,
-      quantity: 1
+      quantity: 1,
+      stock_quantity: product.stock_quantity
     });
+    
+    // Show error if there is one
+    if (cartError) {
+      setShowError(true);
+      setTimeout(() => setShowError(false), 3000);
+    }
   };
   if (layout === "list") {
     return (
-      <Link href={`/products/${product.slug}`} className="group flex gap-6 overflow-hidden rounded-lg border border-gray-200 bg-white p-6 transition-shadow hover:shadow-md">
+      <Link href={`/products/${product.slug}`} className="group flex gap-6 overflow-hidden rounded-lg border border-gray-200 bg-white p-6 transition-shadow hover:shadow-md relative">
+        {/* Error notification */}
+        {showError && cartError && (
+          <div className="absolute top-4 right-4 z-10 bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm shadow-lg">
+            {cartError}
+          </div>
+        )}
         <div className="h-32 w-32 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 relative">
           <img 
             src={product.image} 
@@ -57,6 +84,18 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
               {product.badge}
             </div>
           )}
+          {!product.in_stock && (
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+              <span className="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold">
+                OUT OF STOCK
+              </span>
+            </div>
+          )}
+          {product.in_stock && product.low_stock && (
+            <div className="absolute bottom-1 left-1 bg-yellow-500 text-white px-2 py-0.5 rounded text-xs font-bold">
+              Low Stock
+            </div>
+          )}
         </div>
         <div className="flex flex-1 flex-col justify-between">
           <div>
@@ -66,6 +105,11 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">{product.name}</h3>
             <p className="text-gray-600 text-sm">Premium quality handbag with elegant design and durable materials.</p>
+            {product.stock_quantity !== undefined && (
+              <p className="text-sm text-gray-600 mt-2">
+                <span className="font-medium">Available:</span> {product.stock_quantity} {product.stock_quantity === 1 ? 'unit' : 'units'}
+              </p>
+            )}
           </div>
           <div className="flex items-center justify-between mt-4">
             <div className="flex items-center gap-3">
@@ -76,9 +120,14 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
             </div>
             <button 
               onClick={handleAddToCart}
-              className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors"
+              disabled={!product.in_stock}
+              className={`px-4 py-2 rounded-md transition-colors ${
+                product.in_stock
+                  ? 'bg-orange-600 text-white hover:bg-orange-700'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
             >
-              Add to Cart
+              {product.in_stock ? 'Add to Cart' : 'Out of Stock'}
             </button>
           </div>
         </div>
@@ -87,7 +136,13 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
   }
 
   return (
-    <Link href={`/products/${product.slug}`} className="group overflow-hidden rounded-lg border border-gray-200 bg-white transition-shadow hover:shadow-md">
+    <Link href={`/products/${product.slug}`} className="group overflow-hidden rounded-lg border border-gray-200 bg-white transition-shadow hover:shadow-md relative">
+      {/* Error notification */}
+      {showError && cartError && (
+        <div className="absolute top-2 left-2 right-2 z-10 bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-xs shadow-lg">
+          {cartError}
+        </div>
+      )}
       <div className="aspect-[4/5] overflow-hidden bg-gray-100 relative">
         <img 
           src={product.image} 
@@ -111,6 +166,18 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
             {product.badge}
           </div>
         )}
+        {!product.in_stock && (
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+            <span className="bg-red-600 text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-lg">
+              OUT OF STOCK
+            </span>
+          </div>
+        )}
+        {product.in_stock && product.low_stock && (
+          <div className="absolute top-2 right-2 bg-yellow-500 text-white px-2 py-1 rounded text-xs font-bold shadow-sm">
+            Low Stock
+          </div>
+        )}
       </div>
       <div className="space-y-3 p-5">
         <div className="flex items-center justify-between text-sm text-gray-500">
@@ -118,6 +185,11 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
           <span>{product.rating.toFixed(1)} ★</span>
         </div>
         <h3 className="text-lg font-semibold text-gray-900">{product.name}</h3>
+        {product.stock_quantity !== undefined && (
+          <p className="text-xs text-gray-600">
+            <span className="font-medium">Stock:</span> {product.stock_quantity} available
+          </p>
+        )}
         <div className="flex items-center gap-3">
           <span className="text-base font-semibold text-gray-900">GHS {product.salePrice ?? product.price}</span>
           {product.salePrice && (
@@ -126,9 +198,14 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
         </div>
         <button 
           onClick={handleAddToCart}
-          className="w-full bg-orange-600 text-white py-2 rounded-md hover:bg-orange-700 transition-colors"
+          disabled={!product.in_stock}
+          className={`w-full py-2 rounded-md transition-colors font-medium ${
+            product.in_stock
+              ? 'bg-orange-600 text-white hover:bg-orange-700'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          }`}
         >
-          Add to Cart
+          {product.in_stock ? 'Add to Cart' : 'Out of Stock'}
         </button>
       </div>
     </Link>

@@ -18,7 +18,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState("Black");
   const [addedToCart, setAddedToCart] = useState(false);
+  const [stockError, setStockError] = useState<string | null>(null);
   const addItem = useCartStore((state) => state.addItem);
+  const cartError = useCartStore((state) => state.error);
   const addWaitlistItem = useWaitlistStore((state) => state.addItem);
   const hasInWaitlist = useWaitlistStore((state) => state.hasItem(product?.id));
 
@@ -46,7 +48,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
           const transformedProduct = {
             id: foundProduct.id,
             name: foundProduct.name,
-            category: foundProduct.category_id || "Uncategorized",
+            category: foundProduct.categories?.name || foundProduct.category_slug || foundProduct.category_id || "Uncategorized",
             price: foundProduct.regular_price,
             salePrice: foundProduct.sale_price,
             rating: 4.5, // Default rating since API might not have it
@@ -54,6 +56,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             images,
             slug: foundProduct.slug,
             badge: foundProduct.sale_price ? `${Math.round(((foundProduct.regular_price - foundProduct.sale_price) / foundProduct.regular_price) * 100)}% OFF` : undefined,
+            stock_quantity: foundProduct.stock_quantity || 0,
+            in_stock: foundProduct.in_stock ?? false,
+            low_stock: foundProduct.low_stock ?? false,
           };
           setProduct(transformedProduct);
         } else {
@@ -94,8 +99,27 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   );
 
   const handleAddToCart = () => {
-    if (!cartItem) return;
-    addItem(cartItem);
+    if (!cartItem || !product) return;
+    
+    // Check if product is in stock
+    if (!product.in_stock) {
+      setStockError('This product is currently out of stock');
+      setTimeout(() => setStockError(null), 3000);
+      return;
+    }
+    
+    // Check if quantity exceeds stock
+    if (product.stock_quantity && quantity > product.stock_quantity) {
+      setStockError(`Only ${product.stock_quantity} items available in stock`);
+      setTimeout(() => setStockError(null), 3000);
+      return;
+    }
+    
+    addItem({
+      ...cartItem,
+      stock_quantity: product.stock_quantity
+    });
+    
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
   };
@@ -177,6 +201,16 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             {discount > 0 && (
               <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold">
                 -{discount}%
+              </div>
+            )}
+            {!product.in_stock && (
+              <div className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-lg">
+                OUT OF STOCK
+              </div>
+            )}
+            {product.in_stock && product.low_stock && (
+              <div className="absolute top-4 left-4 bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-sm">
+                LOW STOCK
               </div>
             )}
           </div>
@@ -273,32 +307,61 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 <input
                   type="number"
                   min="1"
+                  max={product?.stock_quantity || 999}
                   value={quantity}
-                  onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 1;
+                    const maxQty = product?.stock_quantity || 999;
+                    setQuantity(Math.max(1, Math.min(value, maxQty)));
+                  }}
                   className="w-12 text-center font-bold text-slate-900 bg-transparent border-0 focus:ring-0"
                 />
                 <button 
                   type="button" 
-                  onClick={() => setQuantity(quantity + 1)} 
-                  className="p-2 hover:bg-white rounded-lg transition"
+                  onClick={() => {
+                    const maxQty = product?.stock_quantity || 999;
+                    setQuantity(Math.min(quantity + 1, maxQty));
+                  }} 
+                  disabled={product?.stock_quantity ? quantity >= product.stock_quantity : false}
+                  className="p-2 hover:bg-white rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Plus className="h-4 w-4 text-slate-600" />
                 </button>
               </div>
+              {product?.stock_quantity && (
+                <p className="text-xs text-gray-600 mt-2">
+                  Maximum available: {product.stock_quantity}
+                </p>
+              )}
             </div>
           </div>
 
           {/* Action Buttons */}
           <div className="space-y-3">
+            {/* Stock Error Message */}
+            {(stockError || cartError) && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                {stockError || cartError}
+              </div>
+            )}
+            
             <button 
               onClick={handleAddToCart} 
+              disabled={!product?.in_stock}
               className={`w-full flex items-center justify-center gap-2 rounded-xl py-4 font-bold text-lg transition-all transform duration-300 ${
-                addedToCart 
-                  ? "bg-green-500 text-white" 
-                  : "bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 shadow-lg hover:shadow-xl active:scale-95"
+                !product?.in_stock
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : addedToCart 
+                    ? "bg-green-500 text-white" 
+                    : "bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 shadow-lg hover:shadow-xl active:scale-95"
               }`}
             >
-              {addedToCart ? (
+              {!product?.in_stock ? (
+                <>
+                  <AlertCircle className="h-5 w-5" /> 
+                  Out of Stock
+                </>
+              ) : addedToCart ? (
                 <>
                   <Check className="h-5 w-5" /> 
                   Added to cart!
@@ -324,14 +387,50 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             </button>
           </div>
 
-          {/* Urgency Info */}
-          <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 flex gap-3 text-sm">
-            <AlertCircle className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div className="text-blue-900">
-              <p className="font-semibold">Only 12 items left in stock</p>
-              <p className="text-blue-800">29 people viewed this in the last hour</p>
+          {/* Stock Status Info */}
+          {product?.stock_quantity !== undefined && (
+            <div className={`rounded-xl border p-4 flex gap-3 text-sm ${
+              !product.in_stock 
+                ? 'bg-red-50 border-red-200'
+                : product.low_stock
+                  ? 'bg-yellow-50 border-yellow-200'
+                  : 'bg-blue-50 border-blue-200'
+            }`}>
+              <AlertCircle className={`h-4 w-4 flex-shrink-0 mt-0.5 ${
+                !product.in_stock
+                  ? 'text-red-600'
+                  : product.low_stock
+                    ? 'text-yellow-600'
+                    : 'text-blue-600'
+              }`} />
+              <div className={
+                !product.in_stock
+                  ? 'text-red-900'
+                  : product.low_stock
+                    ? 'text-yellow-900'
+                    : 'text-blue-900'
+              }>
+                {!product.in_stock ? (
+                  <>
+                    <p className="font-semibold">Currently Out of Stock</p>
+                    <p className={!product.in_stock ? 'text-red-800' : product.low_stock ? 'text-yellow-800' : 'text-blue-800'}>
+                      This item will be restocked soon. Add to wishlist to get notified.
+                    </p>
+                  </>
+                ) : product.low_stock ? (
+                  <>
+                    <p className="font-semibold">Only {product.stock_quantity} items left in stock!</p>
+                    <p className="text-yellow-800">Hurry! This item is selling fast.</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-semibold">In Stock - {product.stock_quantity} available</p>
+                    <p className="text-blue-800">Ready to ship immediately</p>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 

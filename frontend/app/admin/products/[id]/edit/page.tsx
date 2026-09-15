@@ -92,6 +92,7 @@ export default function EditProductPage() {
       let uploadedImageIndex = 0;
       const allImages = data.images
         .map((img, index) => {
+          // For existing images (have url but no file)
           if (img.url && !img.file) {
             return {
               id: img.id,
@@ -101,16 +102,33 @@ export default function EditProductPage() {
               position: index,
             };
           }
-          return {
-            url: imageUrls[uploadedImageIndex++],
-            alt_text: img.alt_text || data.name,
-            is_primary: img.is_primary,
-            position: index,
-          };
+          
+          // For new images (have file property)
+          if (img.file) {
+            const uploadedUrl = imageUrls[uploadedImageIndex++];
+            if (!uploadedUrl) {
+              // This shouldn't happen if uploadProductImages succeeded, but guard against it
+              throw new Error("Image upload completed but URL is missing. Please try again.");
+            }
+            return {
+              url: uploadedUrl,
+              alt_text: img.alt_text || data.name,
+              is_primary: img.is_primary,
+              position: index,
+            };
+          }
+          
+          // Skip any images without url or file (safety check)
+          return null;
         })
-        .filter((image) => Boolean(image.url))
+        .filter((image): image is Exclude<typeof image, null> => image !== null && Boolean(image.url))
         .sort((a, b) => Number(b.is_primary) - Number(a.is_primary))
         .map((image, position) => ({ ...image, position }));
+
+      // Final validation - ensure we have at least one image
+      if (allImages.length === 0) {
+        throw new Error("No valid images to update. Please ensure all images have URLs.");
+      }
 
       const productPayload = {
         name: data.name,

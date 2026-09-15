@@ -103,8 +103,8 @@ router.get('/', async (req: Request, res: Response) => {
     const queryOptions = {
       select: `
         *,
-        categories!inner(name, slug),
-        product_images(id, url, position),
+        categories!inner(id, name, slug),
+        product_images(id, url, position, is_primary),
         product_variants(id, name, value, price, stock_quantity)
       `,
       filters,
@@ -144,6 +144,29 @@ router.get('/', async (req: Request, res: Response) => {
     }
 
     let products = result.data || [];
+
+    // Calculate total stock quantity from variants for each product
+    const productsWithStock = await Promise.all(
+      products.map(async (product) => {
+        const variantsResult = await db.productVariants.find({
+          filters: { product_id: product.id }
+        });
+        
+        const totalStock = (variantsResult.data || []).reduce(
+          (sum, variant: any) => sum + (variant.stock_quantity || 0),
+          0
+        );
+        
+        return {
+          ...product,
+          stock_quantity: totalStock,
+          in_stock: totalStock > 0,
+          low_stock: totalStock > 0 && totalStock < 20
+        };
+      })
+    );
+
+    products = productsWithStock;
 
     // Apply additional filters that can't be done at database level
     if (min_price || max_price) {
@@ -257,6 +280,12 @@ router.get('/:id', async (req: Request, res: Response) => {
       ]
     });
 
+    // Calculate total stock quantity from variants
+    const totalStock = (variantsResult.data || []).reduce(
+      (sum, variant: any) => sum + (variant.stock_quantity || 0),
+      0
+    );
+
     // Fetch category details
     let categoryData = null;
     if (product.category_id) {
@@ -279,7 +308,10 @@ router.get('/:id', async (req: Request, res: Response) => {
       category_name: categoryData?.name || null,
       category_slug: categoryData?.slug || null,
       product_images: imagesResult.data || [],
-      product_variants: variantsResult.data || []
+      product_variants: variantsResult.data || [],
+      stock_quantity: totalStock,
+      in_stock: totalStock > 0,
+      low_stock: totalStock > 0 && totalStock < 20
     };
 
     logger.info(`Fetched product: ${id}`, { userId: req.userId });
@@ -600,65 +632,81 @@ router.put('/:id', requireAdmin, async (req: Request, res: Response) => {
     // The form sends the complete desired image list. Reconcile it exactly so
     // removed images cannot remain in the database and reappear on reload.
     if (Array.isArray(images)) {
-      if (images.some((image) => !image.url?.trim())) {
+      // Validate all images have URLs
+      const invalidImages = images.filter((image) => !image.url?.trim());
+      if (invalidImages.length > 0) {
+        logger.warn(`Image validation failed for product ${id}:`, {
+          invalidCount: invalidImages.length,
+          totalImages: images.length
+        });
         return res.status(400).json({
           success: false,
           error: 'Invalid image',
-          message: 'Every product image must have a URL'
+          message: `Every product image must have a URL. Found ${invalidImages.length} images without URLs.`
         } as ApiResponse);
       }
 
-      const existingImagesResult = await db.productImages.find({
-        filters: { product_id: id }
-      });
-      if (existingImagesResult.error) {
-        throw new Error(`Unable to load existing product images: ${existingImagesResult.error}`);
-      }
-
-      const existingImages = existingImagesResult.data || [];
-      const existingImageIds = new Set(existingImages.map((image) => image.id));
-      const submittedExistingIds = new Set(
-        images.filter((image) => image.id).map((image) => image.id as string)
-      );
-
-      // An image id is only valid for this product. Rejecting foreign ids
-      // prevents an accidental edit from changing another product's image.
-      if ([...submittedExistingIds].some((imageId) => !existingImageIds.has(imageId))) {
-        return res.status(400).json({
-          success: false,
-          error: 'Invalid image',
-          message: 'One or more images do not belong to this product'
-        } as ApiResponse);
-      }
-
-      // Create replacement images before deleting old ones. Every database
-      // result is checked; the endpoint never reports success on a failed
-      // image operation.
-      for (const image of images) {
-        const imageData = {
-          url: image.url,
-          alt_text: image.alt_text || '',
-          is_primary: Boolean(image.is_primary),
-          position: image.position ?? 0
-        };
-        const imageResult = image.id
-          ? await db.productImages.updateById(image.id, imageData)
-          : await db.productImages.create({ product_id: id, ...imageData });
-
-        if (imageResult.error) {
-          throw new Error(`Unable to save product image: ${imageResult.error}`);
+      try {
+        const existingImagesResult = await db.productImages.find({
+          filters: { product_id: id }
+        });
+        if (existingImagesResult.error) {
+          throw new Error(`Unable to load existing product images: ${existingImagesResult.error}`);
         }
-      }
 
-      // Remove only rows omitted from the submitted list, after all desired
-      // replacements have been stored successfully.
-      for (const existingImage of existingImages) {
-        if (!submittedExistingIds.has(existingImage.id)) {
-          const deleteResult = await db.productImages.deleteById(existingImage.id);
-          if (deleteResult.error) {
-            throw new Error(`Unable to remove product image: ${deleteResult.error}`);
+        const existingImages = existingImagesResult.data || [];
+        const existingImageIds = new Set(existingImages.map((image) => image.id));
+        const submittedExistingIds = new Set(
+          images.filter((image) => image.id).map((image) => image.id as string)
+        );
+
+        // An image id is only valid for this product. Rejecting foreign ids
+        // prevents an accidental edit from changing another product's image.
+        if ([...submittedExistingIds].some((imageId) => !existingImageIds.has(imageId))) {
+          logger.warn(`Invalid image IDs submitted for product ${id}`);
+          return res.status(400).json({
+            success: false,
+            error: 'Invalid image',
+            message: 'One or more images do not belong to this product'
+          } as ApiResponse);
+        }
+
+        // Create replacement images before deleting old ones. Every database
+        // result is checked; the endpoint never reports success on a failed
+        // image operation.
+        for (const image of images) {
+          const imageData = {
+            url: image.url,
+            alt_text: image.alt_text || '',
+            is_primary: Boolean(image.is_primary),
+            position: image.position ?? 0
+          };
+          const imageResult = image.id
+            ? await db.productImages.updateById(image.id, imageData)
+            : await db.productImages.create({ product_id: id, ...imageData });
+
+          if (imageResult.error) {
+            throw new Error(`Unable to save product image: ${imageResult.error}`);
           }
         }
+
+        // Remove only rows omitted from the submitted list, after all desired
+        // replacements have been stored successfully.
+        for (const existingImage of existingImages) {
+          if (!submittedExistingIds.has(existingImage.id)) {
+            const deleteResult = await db.productImages.deleteById(existingImage.id);
+            if (deleteResult.error) {
+              throw new Error(`Unable to remove product image: ${deleteResult.error}`);
+            }
+          }
+        }
+      } catch (imageError) {
+        logger.error(`Image reconciliation failed for product ${id}:`, imageError);
+        return res.status(500).json({
+          success: false,
+          error: 'Image update failed',
+          message: imageError instanceof Error ? imageError.message : 'Failed to update product images'
+        } as ApiResponse);
       }
     }
 
