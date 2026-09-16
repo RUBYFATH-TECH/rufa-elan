@@ -37,8 +37,6 @@ export const useCartStore = create<CartState>((set, get) => ({
       set({ 
         error: `Cannot add more than ${item.stock_quantity} items. Only ${item.stock_quantity} in stock.` 
       });
-      // Clear error after 3 seconds
-      setTimeout(() => set({ error: null }), 3000);
       return;
     }
     
@@ -60,8 +58,6 @@ export const useCartStore = create<CartState>((set, get) => ({
       set({ 
         error: `Cannot exceed stock limit. Only ${cartItem.stock_quantity} available.` 
       });
-      // Clear error after 3 seconds
-      setTimeout(() => set({ error: null }), 3000);
       return;
     }
     

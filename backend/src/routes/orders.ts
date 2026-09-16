@@ -464,6 +464,30 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
         total_price: item.total_price,
         product_snapshot: item.product_snapshot || null
       });
+
+      // Deduct stock quantity for the ordered product variant
+      const { data: currentVariant, error: fetchError } = await req.db!
+        .from('product_variants')
+        .select('stock_quantity')
+        .eq('id', item.product_variant_id)
+        .single();
+
+      if (fetchError) {
+        logger.error(`Failed to fetch variant stock for deduction: ${item.product_variant_id}`, fetchError);
+      } else if (currentVariant) {
+        const newStockQuantity = currentVariant.stock_quantity - item.quantity;
+        
+        const { error: updateError } = await req.db!
+          .from('product_variants')
+          .update({ stock_quantity: newStockQuantity })
+          .eq('id', item.product_variant_id);
+
+        if (updateError) {
+          logger.error(`Failed to update stock for variant ${item.product_variant_id}:`, updateError);
+        } else {
+          logger.info(`Stock deducted for variant ${item.product_variant_id}: ${currentVariant.stock_quantity} -> ${newStockQuantity}`);
+        }
+      }
     }
 
     // Create delivery tracking record
@@ -606,6 +630,42 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
         error: 'Failed to update order',
         message: result.error
       } as ApiResponse);
+    }
+
+    // If order is cancelled, restore stock quantities
+    if (updateData.status === 'cancelled' && existingOrder.data.status !== 'cancelled') {
+      // Fetch order items
+      const { data: orderItems, error: itemsError } = await req.db!
+        .from('order_items')
+        .select('product_variant_id, quantity')
+        .eq('order_id', id);
+
+      if (!itemsError && orderItems) {
+        for (const item of orderItems) {
+          const { data: currentVariant, error: fetchError } = await req.db!
+            .from('product_variants')
+            .select('stock_quantity')
+            .eq('id', item.product_variant_id)
+            .single();
+
+          if (fetchError) {
+            logger.error(`Failed to fetch variant stock for restoration: ${item.product_variant_id}`, fetchError);
+          } else if (currentVariant) {
+            const newStockQuantity = currentVariant.stock_quantity + item.quantity;
+            
+            const { error: updateError } = await req.db!
+              .from('product_variants')
+              .update({ stock_quantity: newStockQuantity })
+              .eq('id', item.product_variant_id);
+
+            if (updateError) {
+              logger.error(`Failed to restore stock for variant ${item.product_variant_id}:`, updateError);
+            } else {
+              logger.info(`Stock restored for variant ${item.product_variant_id}: ${currentVariant.stock_quantity} -> ${newStockQuantity}`);
+            }
+          }
+        }
+      }
     }
 
     // Update delivery tracking status if order status changed

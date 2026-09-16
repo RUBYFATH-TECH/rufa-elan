@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/cart-store";
-import { CircleUserRound, ShoppingBag, Trash2, X, Minus, Plus, Truck, Shield, RotateCcw } from "lucide-react";
+import { CircleUserRound, ShoppingBag, Trash2, X, Minus, Plus, Truck, Shield, RotateCcw, AlertTriangle } from "lucide-react";
 import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
 
 export default function CartPage() {
@@ -12,6 +12,7 @@ export default function CartPage() {
   const items = useCartStore((state) => state.items);
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
+  const error = useCartStore((state) => state.error);
   const total = useMemo(() => items.reduce((sum, item) => sum + item.price * item.quantity, 0), [items]);
   const subtotal = total;
   const shippingEstimate = 25;
@@ -105,6 +106,26 @@ export default function CartPage() {
                   <h3 className="text-sm font-bold text-slate-900 truncate">{item.name}</h3>
                   <p className="mt-1 text-sm text-slate-600">{item.variant ?? "Standard"}</p>
                   
+                  {/* Stock Information */}
+                  {item.stock_quantity !== undefined && (
+                    <div className="mt-1">
+                      {item.stock_quantity > 0 ? (
+                        <p className={`text-xs font-medium ${
+                          item.stock_quantity <= 5 
+                            ? 'text-orange-600' 
+                            : 'text-green-600'
+                        }`}>
+                          {item.stock_quantity <= 5 
+                            ? `Only ${item.stock_quantity} left in stock!` 
+                            : `${item.stock_quantity} available`
+                          }
+                        </p>
+                      ) : (
+                        <p className="text-xs font-medium text-red-600">Out of stock</p>
+                      )}
+                    </div>
+                  )}
+                  
                   {/* Price and Quantity */}
                   <div className="mt-4 flex items-center justify-between">
                     <p className="text-lg font-bold text-slate-950">GHS {(item.price * item.quantity).toFixed(2)}</p>
@@ -147,6 +168,17 @@ export default function CartPage() {
           >
             ← Continue Shopping
           </Link>
+
+          {/* Stock Warning Message */}
+          {error && (
+            <div className="mt-4 flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+              <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-amber-900">Stock Limit Reached</p>
+                <p className="mt-1 text-sm text-amber-800">{error}</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Order Summary Sidebar */}

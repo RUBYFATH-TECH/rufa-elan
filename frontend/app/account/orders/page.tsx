@@ -323,7 +323,7 @@ export default function OrdersPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold text-gray-900">${order.total_amount}</p>
+                    <p className="text-lg font-bold text-gray-900">₵{order.total_amount.toFixed(2)}</p>
                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(order.status)}`}>
                       {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                     </span>
