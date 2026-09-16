@@ -168,7 +168,7 @@ export default function MyOrdersPage() {
                     <div>
                       <span className="text-xs text-slate-600">Amount</span>
                       <p className="text-lg font-bold text-slate-900">
-                        ${order.total_amount.toFixed(2)}
+                        ₵{order.total_amount.toFixed(2)}
                       </p>
                     </div>
                     <div>

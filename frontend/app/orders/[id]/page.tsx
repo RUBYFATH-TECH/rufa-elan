@@ -487,8 +487,8 @@ export default function OrderTrackingPage() {
                           <p className="font-semibold text-slate-900">{item.quantity}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm text-slate-600">Unit Price: ${item.unit_price.toFixed(2)}</p>
-                          <p className="text-base font-semibold text-orange-600">${item.total_price.toFixed(2)}</p>
+                          <p className="text-sm text-slate-600">Unit Price: ₵{item.unit_price.toFixed(2)}</p>
+                          <p className="text-base font-semibold text-orange-600">₵{item.total_price.toFixed(2)}</p>
                         </div>
                       </div>
                     </div>
@@ -544,26 +544,26 @@ export default function OrderTrackingPage() {
           <div className="space-y-3">
             <div className="flex justify-between text-sm">
               <span className="text-slate-600">Subtotal</span>
-              <span className="font-medium text-slate-900">${order.subtotal?.toFixed(2) || '0.00'}</span>
+              <span className="font-medium text-slate-900">₵{order.subtotal?.toFixed(2) || '0.00'}</span>
             </div>
 
             {order.shipping_fee > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-slate-600">Shipping</span>
-                <span className="font-medium text-slate-900">${order.shipping_fee.toFixed(2)}</span>
+                <span className="font-medium text-slate-900">₵{order.shipping_fee.toFixed(2)}</span>
               </div>
             )}
 
             {order.discount_amount > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-slate-600">Discount</span>
-                <span className="font-medium text-green-600">-${order.discount_amount.toFixed(2)}</span>
+                <span className="font-medium text-green-600">-₵{order.discount_amount.toFixed(2)}</span>
               </div>
             )}
 
             <div className="border-t border-slate-200 pt-3 flex justify-between">
               <span className="font-semibold text-slate-900">Total</span>
-              <span className="text-lg font-bold text-orange-600">${order.total_amount.toFixed(2)}</span>
+              <span className="text-lg font-bold text-orange-600">₵{order.total_amount.toFixed(2)}</span>
             </div>
           </div>
         </div>

@@ -79,41 +79,76 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
-        const mockStats: DashboardStats = {
-          totalRevenue: 45670.50,
-          totalOrders: 342,
-          totalProducts: 128,
-          totalCustomers: 1247,
-          pendingOrders: 23,
-          completedOrders: 289,
-          revenueGrowth: 12.5,
-          ordersGrowth: 8.3
+        setLoading(true);
+
+        // Get auth session token
+        const { createClientComponentSupabaseClient } = await import('@/lib/supabase-client');
+        const supabase = createClientComponentSupabaseClient();
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session?.access_token) {
+          console.error('No authentication session found');
+          setLoading(false);
+          return;
+        }
+
+        // Fetch dashboard stats from backend API with auth headers
+        const headers = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         };
 
-        const mockRecentOrders: RecentOrder[] = [
-          { id: '1', order_number: 'ORD-001', customer_name: 'Sarah Johnson', total_amount: 299.99, status: 'pending_payment', created_at: '2024-01-15T10:30:00Z' },
-          { id: '2', order_number: 'ORD-002', customer_name: 'Michael Chen', total_amount: 459.50, status: 'processing', created_at: '2024-01-15T09:15:00Z' },
-          { id: '3', order_number: 'ORD-003', customer_name: 'Emily Davis', total_amount: 199.00, status: 'delivered', created_at: '2024-01-14T16:45:00Z' },
-          { id: '4', order_number: 'ORD-004', customer_name: 'James Wilson', total_amount: 350.75, status: 'shipped', created_at: '2024-01-14T14:20:00Z' },
-        ];
+        const [statsRes, ordersRes, productsRes, dealsRes] = await Promise.all([
+          fetch('/backend-api/dashboard/stats', { headers }),
+          fetch('/backend-api/dashboard/recent-orders?limit=4', { headers }),
+          fetch('/backend-api/dashboard/top-products?limit=4', { headers }),
+          fetch('/backend-api/dashboard/fast-deals', { headers })
+        ]);
 
-        const mockTopProducts: TopProduct[] = [
-          { id: '1', name: 'Premium Leather Handbag', sales: 45, revenue: 13500.00 },
-          { id: '2', name: 'Designer Crossbody Bag', sales: 38, revenue: 11400.00 },
-          { id: '3', name: 'Vintage Shoulder Bag', sales: 32, revenue: 9600.00 },
-          { id: '4', name: 'Modern Tote Bag', sales: 28, revenue: 8400.00 },
-        ];
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          if (statsData.success) {
+            setStats(statsData.data);
+          } else {
+            console.error('Stats fetch failed:', statsData);
+          }
+        } else {
+          console.error('Stats request failed:', await statsRes.text());
+        }
 
-        const mockFastDeals: FastDeal[] = [
-          { id: 'deal-001', product_name: 'Premium Leather Handbag', deal_price: 199.99, discount_percentage: 33, end_time: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), status: 'active' },
-          { id: 'deal-002', product_name: 'Designer Crossbody Bag', deal_price: 149.99, discount_percentage: 40, end_time: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(), status: 'active' },
-        ];
+        if (ordersRes.ok) {
+          const ordersData = await ordersRes.json();
+          if (ordersData.success) {
+            setRecentOrders(ordersData.data);
+          } else {
+            console.error('Orders fetch failed:', ordersData);
+          }
+        } else {
+          console.error('Orders request failed:', await ordersRes.text());
+        }
 
-        await new Promise(resolve => setTimeout(resolve, 600));
-        setStats(mockStats);
-        setRecentOrders(mockRecentOrders);
-        setTopProducts(mockTopProducts);
-        setFastDeals(mockFastDeals);
+        if (productsRes.ok) {
+          const productsData = await productsRes.json();
+          if (productsData.success) {
+            setTopProducts(productsData.data);
+          } else {
+            console.error('Products fetch failed:', productsData);
+          }
+        } else {
+          console.error('Products request failed:', await productsRes.text());
+        }
+
+        if (dealsRes.ok) {
+          const dealsData = await dealsRes.json();
+          if (dealsData.success) {
+            setFastDeals(dealsData.data);
+          } else {
+            console.error('Fast deals fetch failed:', dealsData);
+          }
+        } else {
+          console.error('Fast deals request failed:', await dealsRes.text());
+        }
+
         setLoading(false);
       } catch (error) {
         console.error('Failed to load dashboard data:', error);

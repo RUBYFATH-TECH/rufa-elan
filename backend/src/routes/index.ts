@@ -16,6 +16,7 @@ import uploadRouter from './upload';
 import fastDealsRouter from './fast-deals';
 import customersRouter from './customers';
 import storeSettingsRouter from './store-settings';
+import dashboardRouter from './dashboard';
 
 const router = express.Router();
 
@@ -75,6 +76,9 @@ router.use('/upload', uploadRouter);
 
 // Fast Deals routes
 router.use('/fast-deals', fastDealsRouter);
+
+// Dashboard routes (Admin only)
+router.use('/dashboard', dashboardRouter);
 
 // API documentation endpoint
 router.get('/', (req, res) => {

@@ -191,11 +191,11 @@ export default function AdminProductsPage() {
                       <p className="text-xs text-slate-600 mt-1">{product.category_name}</p>
                       <div className="flex items-center gap-3 mt-2">
                         <span className="text-sm font-semibold text-slate-900">
-                          ${product.regular_price.toFixed(2)}
+                          ₵{product.regular_price.toFixed(2)}
                         </span>
                         {product.sale_price && (
                           <span className="text-sm text-green-600">
-                            Sale: ${product.sale_price.toFixed(2)}
+                            Sale: ₵{product.sale_price.toFixed(2)}
                           </span>
                         )}
                       </div>
