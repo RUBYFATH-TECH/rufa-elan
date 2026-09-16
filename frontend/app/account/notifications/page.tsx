@@ -1,274 +1,300 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { 
-  Mail,
-  Smartphone,
-  CheckCircle,
-  Package,
-  Truck,
-  Star,
-  Bell
-} from "lucide-react";
+import { Bell, Check, X, Trash2, Settings } from "lucide-react";
 import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
 import AccountLayout from "@/components/account-layout";
+import Link from "next/link";
 
-type UserProfile = {
+type Notification = {
   id: string;
-  email: string;
-  full_name?: string;
-  phone?: string;
-  avatar_url?: string;
-  created_at: string;
-};
-
-type NotificationPreference = {
-  id: string;
-  category: string;
+  type: string;
   title: string;
-  description: string;
-  email_enabled: boolean;
-  sms_enabled: boolean;
-  push_enabled: boolean;
+  message: string;
+  read_at: string | null;
+  created_at: string;
+  data?: any;
 };
 
 export default function NotificationsPage() {
   const supabase = createClientComponentSupabaseClient();
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [preferences, setPreferences] = useState<NotificationPreference[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadUserData = async () => {
+    const loadNotifications = async () => {
       try {
-        const { data } = await supabase.auth.getSession();
-        const sessionUser = data.session?.user;
+        const { data: { session } } = await supabase.auth.getSession();
         
-        if (sessionUser) {
-          // Set user profile
-          const profile: UserProfile = {
-            id: sessionUser.id,
-            email: sessionUser.email || '',
-            full_name: sessionUser.user_metadata?.full_name || sessionUser.user_metadata?.name || '',
-            phone: sessionUser.user_metadata?.phone || '',
-            avatar_url: sessionUser.user_metadata?.avatar_url || null,
-            created_at: sessionUser.created_at || new Date().toISOString()
-          };
+        if (!session?.user) {
+          setLoading(false);
+          return;
+        }
 
-          setUserProfile(profile);
+        setUserId(session.user.id);
 
-          // Load notification preferences
-          const mockPreferences: NotificationPreference[] = [
-            {
-              id: '1',
-              category: 'Order Updates',
-              title: 'Order confirmations',
-              description: 'Get notified when your order is confirmed and being processed',
-              email_enabled: true,
-              sms_enabled: true,
-              push_enabled: true
-            },
-            {
-              id: '2',
-              category: 'Order Updates',
-              title: 'Shipping updates',
-              description: 'Track your package with real-time shipping notifications',
-              email_enabled: true,
-              sms_enabled: true,
-              push_enabled: false
-            },
-            {
-              id: '3',
-              category: 'Order Updates',
-              title: 'Delivery confirmations',
-              description: 'Know when your order has been delivered',
-              email_enabled: true,
-              sms_enabled: false,
-              push_enabled: true
-            },
-            {
-              id: '4',
-              category: 'Marketing',
-              title: 'New arrivals',
-              description: 'Be the first to know about new products and collections',
-              email_enabled: true,
-              sms_enabled: false,
-              push_enabled: false
-            },
-            {
-              id: '5',
-              category: 'Marketing',
-              title: 'Sales & promotions',
-              description: 'Get exclusive access to sales, discounts, and special offers',
-              email_enabled: true,
-              sms_enabled: false,
-              push_enabled: true
-            },
-            {
-              id: '6',
-              category: 'Account',
-              title: 'Security alerts',
-              description: 'Important security updates and login notifications',
-              email_enabled: true,
-              sms_enabled: true,
-              push_enabled: true
-            },
-            {
-              id: '7',
-              category: 'Reviews',
-              title: 'Review reminders',
-              description: 'Reminders to leave reviews for your purchases',
-              email_enabled: false,
-              sms_enabled: false,
-              push_enabled: true
+        // Fetch notifications from API
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/notifications?user_id=${session.user.id}&limit=50`,
+          {
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`
             }
-          ];
+          }
+        );
 
-          setPreferences(mockPreferences);
+        const data = await response.json();
+        
+        if (data.success) {
+          setNotifications(data.data || []);
         }
       } catch (error) {
-        console.error('Error loading user data:', error);
+        console.error('Error loading notifications:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
-    loadUserData();
+    loadNotifications();
   }, [supabase]);
 
-  const togglePreference = (preferenceId: string, channel: 'email' | 'sms' | 'push') => {
-    setPreferences(prev => 
-      prev.map(pref => 
-        pref.id === preferenceId 
-          ? { ...pref, [`${channel}_enabled`]: !pref[`${channel}_enabled`] }
-          : pref
-      )
-    );
+  const markAsRead = async (notificationId: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) return;
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/notifications/${notificationId}/read`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        }
+      );
+
+      if (response.ok) {
+        setNotifications(prev =>
+          prev.map(notif =>
+            notif.id === notificationId
+              ? { ...notif, read_at: new Date().toISOString() }
+              : notif
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error marking as read:', error);
+    }
   };
 
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'Order Updates':
-        return Package;
-      case 'Marketing':
-        return Star;
-      case 'Account':
-        return CheckCircle;
-      case 'Reviews':
-        return Star;
+  const deleteNotification = async (notificationId: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) return;
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/notifications/${notificationId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        }
+      );
+
+      if (response.ok) {
+        setNotifications(prev => prev.filter(notif => notif.id !== notificationId));
+      }
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session || !userId) return;
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/notifications/user/${userId}/read-all`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        }
+      );
+
+      if (response.ok) {
+        setNotifications(prev =>
+          prev.map(notif => ({
+            ...notif,
+            read_at: new Date().toISOString()
+          }))
+        );
+      }
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+    }
+  };
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'order_delivered':
+        return '📦';
+      case 'order_shipped':
+        return '🚚';
+      case 'order_confirmed':
+        return '✅';
+      case 'payment_success':
+        return '💳';
+      case 'fast_deal':
+        return '⚡';
       default:
-        return Bell;
+        return '🔔';
     }
   };
 
-  const groupedPreferences = preferences.reduce((acc, pref) => {
-    if (!acc[pref.category]) {
-      acc[pref.category] = [];
-    }
-    acc[pref.category].push(pref);
-    return acc;
-  }, {} as Record<string, NotificationPreference[]>);
+  const unreadCount = notifications.filter(n => !n.read_at).length;
 
   return (
     <AccountLayout>
       {/* Page Header */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Notification Preferences</h1>
-        <p className="text-gray-600 mt-1">
-          Choose how you'd like to receive notifications about your orders and account
-        </p>
-      </div>
-
-      {/* Contact Info */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Contact Information</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex items-center p-3 bg-gray-50 rounded-lg">
-            <Mail className="h-5 w-5 text-gray-400 mr-3" />
-            <div>
-              <p className="text-sm font-medium text-gray-900">Email</p>
-              <p className="text-sm text-gray-600">{userProfile?.email}</p>
-            </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
+            <p className="text-gray-600 mt-1">
+              {unreadCount > 0
+                ? `You have ${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}`
+                : 'All caught up! No new notifications'}
+            </p>
           </div>
-          <div className="flex items-center p-3 bg-gray-50 rounded-lg">
-            <Smartphone className="h-5 w-5 text-gray-400 mr-3" />
-            <div>
-              <p className="text-sm font-medium text-gray-900">Phone</p>
-              <p className="text-sm text-gray-600">
-                {userProfile?.phone || 'Not provided'}
-              </p>
-            </div>
-          </div>
+          <Link
+            href="/account/settings/notifications"
+            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Notification Settings
+          </Link>
         </div>
       </div>
 
-      {/* Notification Categories */}
-      <div className="space-y-6">
-        {Object.entries(groupedPreferences).map(([category, prefs]) => {
-          const CategoryIcon = getCategoryIcon(category);
-          return (
-            <div key={category} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center mb-4">
-                <CategoryIcon className="h-5 w-5 text-gray-400 mr-3" />
-                <h2 className="text-lg font-semibold text-gray-900">{category}</h2>
-              </div>
-              
-              <div className="space-y-4">
-                {prefs.map((pref) => (
-                  <div key={pref.id} className="border-b border-gray-200 pb-4 last:border-b-0 last:pb-0">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">{pref.title}</p>
-                        <p className="text-sm text-gray-600 mt-1">{pref.description}</p>
-                      </div>
+      {/* Actions Bar */}
+      {notifications.length > 0 && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+          <button
+            onClick={markAllAsRead}
+            disabled={unreadCount === 0}
+            className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Check className="h-4 w-4 mr-2" />
+            Mark all as read
+          </button>
+        </div>
+      )}
+
+      {/* Notifications List */}
+      {loading ? (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+          <p className="text-sm text-gray-600 mt-4">Loading notifications...</p>
+        </div>
+      ) : notifications.length === 0 ? (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+          <Bell className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No notifications yet</h3>
+          <p className="text-gray-600 mb-6">
+            When you have notifications, they'll appear here
+          </p>
+          <Link
+            href="/account/settings/notifications"
+            className="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 text-sm font-medium"
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Manage Notification Settings
+          </Link>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {notifications.map((notification) => (
+            <div
+              key={notification.id}
+              className={`bg-white rounded-lg shadow-sm border p-4 transition-all ${
+                notification.read_at
+                  ? 'border-gray-200 bg-white'
+                  : 'border-orange-200 bg-orange-50'
+              }`}
+            >
+              <div className="flex items-start gap-4">
+                {/* Icon */}
+                <div className="text-3xl flex-shrink-0">
+                  {getNotificationIcon(notification.type)}
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="text-sm font-semibold text-gray-900 mb-1">
+                        {notification.title}
+                      </h3>
+                      <p className="text-sm text-gray-700 mb-2">
+                        {notification.message}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(notification.created_at).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
                     </div>
-                    
-                    <div className="mt-3 flex items-center space-x-6">
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={pref.email_enabled}
-                          onChange={() => togglePreference(pref.id, 'email')}
-                          className="h-4 w-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-                        />
-                        <Mail className="h-4 w-4 text-gray-400 ml-2 mr-1" />
-                        <span className="text-sm text-gray-700">Email</span>
-                      </label>
-                      
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={pref.sms_enabled}
-                          onChange={() => togglePreference(pref.id, 'sms')}
-                          className="h-4 w-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-                          disabled={!userProfile?.phone}
-                        />
-                        <Smartphone className="h-4 w-4 text-gray-400 ml-2 mr-1" />
-                        <span className="text-sm text-gray-700">SMS</span>
-                      </label>
-                      
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={pref.push_enabled}
-                          onChange={() => togglePreference(pref.id, 'push')}
-                          className="h-4 w-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-                        />
-                        <Bell className="h-4 w-4 text-gray-400 ml-2 mr-1" />
-                        <span className="text-sm text-gray-700">Push</span>
-                      </label>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 ml-4">
+                      {!notification.read_at && (
+                        <button
+                          onClick={() => markAsRead(notification.id)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition"
+                          title="Mark as read"
+                        >
+                          <Check className="h-4 w-4" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => deleteNotification(notification.id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-md transition"
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
-                ))}
+
+                  {/* Action Button */}
+                  {notification.data?.action_url && (
+                    <Link
+                      href={notification.data.action_url}
+                      className="inline-flex items-center mt-3 px-3 py-1.5 bg-orange-600 text-white text-sm rounded-md hover:bg-orange-700 transition"
+                    >
+                      {notification.data.action === 'review_products' && 'Write Review'}
+                      {notification.data.action === 'view_order' && 'View Order'}
+                      {notification.data.action === 'view_deal' && 'View Deal'}
+                    </Link>
+                  )}
+                </div>
               </div>
             </div>
-          );
-        })}
-      </div>
-
-      {/* Save Button */}
-      <div className="mt-8">
-        <button className="w-full md:w-auto px-6 py-3 bg-orange-600 text-white font-medium rounded-md hover:bg-orange-700 transition-colors">
-          Save Preferences
-        </button>
-      </div>
+          ))}
+        </div>
+      )}
     </AccountLayout>
   );
 }

@@ -17,6 +17,8 @@ import fastDealsRouter from './fast-deals';
 import customersRouter from './customers';
 import storeSettingsRouter from './store-settings';
 import dashboardRouter from './dashboard';
+import reviewsRouter from './reviews';
+import notificationPreferencesRouter from './notification-preferences';
 
 const router = express.Router();
 
@@ -79,6 +81,12 @@ router.use('/fast-deals', fastDealsRouter);
 
 // Dashboard routes (Admin only)
 router.use('/dashboard', dashboardRouter);
+
+// Review routes
+router.use('/reviews', reviewsRouter);
+
+// Notification Preferences routes
+router.use('/notification-preferences', notificationPreferencesRouter);
 
 // API documentation endpoint
 router.get('/', (req, res) => {
@@ -177,6 +185,19 @@ router.get('/', (req, res) => {
           'Promotional and system notifications'
         ]
       },
+      reviews: {
+        base: '/api/reviews',
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+        features: [
+          'Product reviews and ratings',
+          'Review creation and management',
+          'Review filtering and pagination',
+          'Review moderation (Admin)',
+          'Helpful vote system',
+          'Order-based review eligibility',
+          'Automatic notification on order delivery'
+        ]
+      },
       users: '/api/users - Coming Soon',
       admin: '/api/admin - Coming Soon',
       auth: '/api/auth - Coming Soon',
@@ -215,6 +236,18 @@ router.get('/', (req, res) => {
         'GET /notifications/user/:userId/unread-count': 'Get unread notification count',
         'GET /notifications/user/:userId/stats': 'Get notification statistics',
         'POST /notifications/cleanup-expired': 'Clean up expired notifications'
+      },
+      reviews: {
+        'GET /reviews': 'List all reviews with filters',
+        'GET /reviews/:id': 'Get single review',
+        'GET /reviews/product/:productId': 'Get reviews for a product with statistics',
+        'GET /reviews/order/:orderId/items': 'Get reviewable items from an order',
+        'GET /reviews/user/reviewable': 'Get all reviewable items for user',
+        'POST /reviews': 'Create new review',
+        'PUT /reviews/:id': 'Update review',
+        'DELETE /reviews/:id': 'Delete review',
+        'PUT /reviews/:id/helpful': 'Mark review as helpful',
+        'PUT /reviews/:id/moderate': 'Moderate review (Admin)'
       }
     }
   });
