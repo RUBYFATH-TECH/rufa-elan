@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
+import { createClientComponentSupabaseClient } from '@/lib/supabase-client';
+
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
 
 interface ReviewFormProps {
   productId: string;
@@ -19,6 +22,7 @@ export default function ReviewForm({
   onSuccess,
   onCancel
 }: ReviewFormProps) {
+  const supabase = createClientComponentSupabaseClient();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [title, setTitle] = useState('');
@@ -35,6 +39,11 @@ export default function ReviewForm({
     setError('');
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Please sign in before uploading review photos.');
+      }
+
       const uploadedUrls: string[] = [];
 
       for (let i = 0; i < Math.min(files.length, 5); i++) {
@@ -45,10 +54,10 @@ export default function ReviewForm({
         formData.append('file', file);
 
         // Upload to your backend
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/upload`, {
+        const response = await fetch(`${apiUrl}/api/upload`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${session.access_token}`
           },
           body: formData
         });
@@ -85,11 +94,16 @@ export default function ReviewForm({
     setError('');
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reviews`, {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Please sign in before submitting a review.');
+      }
+
+      const response = await fetch(`${apiUrl}/api/reviews`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
           product_id: productId,

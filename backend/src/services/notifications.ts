@@ -3,7 +3,10 @@
  * Handles all notification-related business logic
  */
 
-import { supabase } from '../utils/supabase';
+// Notifications are created by trusted server-side workflows (for example, an
+// admin marking an order as delivered).  Use the service client so the insert
+// is not blocked by the customer-facing RLS policy.
+import { supabaseAdmin as supabase } from '../utils/supabase';
 import { logger } from '../utils/logger';
 import {
   CreateNotificationRequest,
@@ -557,7 +560,12 @@ export class NotificationService {
       title: template.title,
       message: template.message,
       priority: template.priority as any,
-      metadata,
+      metadata: {
+        status,
+        action: 'view_order',
+        action_url: `/account/orders/${orderId}`,
+        ...metadata,
+      },
     });
   }
 

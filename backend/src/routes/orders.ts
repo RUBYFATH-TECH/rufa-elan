@@ -8,6 +8,7 @@ import { Request, Response } from 'express';
 import { db, dbUtils } from '../utils/database';
 import { requireAuth, requireAdmin, rateLimitMiddleware } from '../middleware/database';
 import { logger } from '../utils/logger';
+import { NotificationService } from '../services/notifications';
 import {
   Order,
   OrderDetails,
@@ -674,6 +675,27 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
         { order_id: id },
         { current_status: updateData.status }
       );
+    }
+
+    // Send notification when order status changes to delivered
+    if (updateData.status === 'delivered' && existingOrder.data.status !== 'delivered') {
+      try {
+        await NotificationService.notifyOrderStatus(
+          existingOrder.data.user_id,
+          id,
+          existingOrder.data.order_number,
+          'delivered',
+          {
+            previousStatus: existingOrder.data.status,
+            updatedBy: req.userId,
+            updatedAt: new Date().toISOString()
+          }
+        );
+        logger.info(`Delivery notification sent for order ${id} to user ${existingOrder.data.user_id}`);
+      } catch (notifError) {
+        // Log error but don't fail the order update
+        logger.error(`Failed to send delivery notification for order ${id}:`, notifError);
+      }
     }
 
     // Fetch updated order details with product information
