@@ -7,16 +7,16 @@ import {
   ArrowRight,
   Crown,
   Footprints,
-  Gem,
-  Heart,
+  Glasses,
   ShoppingBag,
   ShoppingCart,
   Sparkles,
   Star,
-  Shirt,
+  Watch,
   Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/language-context";
 
 interface Deal {
   id: string;
@@ -114,14 +114,13 @@ const lightningDeals: Deal[] = [
 ];
 
 const ladiesCategories = [
-  { name: "Dresses", count: "Explore styles", href: "/shop/dresses", icon: Crown, color: "bg-[#7c3aed]", iconColor: "bg-white/20" },
-  { name: "Tops & Blouses", count: "New arrivals", href: "/shop/tops-blouses", icon: Shirt, color: "bg-[#db2777]", iconColor: "bg-white/20" },
-  { name: "Shoes", count: "Step in style", href: "/shop/womens-shoes", icon: Footprints, color: "bg-[#0f766e]", iconColor: "bg-white/20" },
-  { name: "Handbags", count: "Everyday favourites", href: "/shop/handbags", icon: ShoppingBag, color: "bg-[#c2410c]", iconColor: "bg-white/20" },
-  { name: "Jewellery", count: "Finishing touches", href: "/shop/jewellery", icon: Gem, color: "bg-[#a16207]", iconColor: "bg-white/20" },
-  { name: "Beauty", count: "Glow essentials", href: "/shop/beauty", icon: Sparkles, color: "bg-[#be185d]", iconColor: "bg-white/20" },
-  { name: "Lingerie & Sleepwear", count: "Feel your best", href: "/shop/lingerie-sleepwear", icon: Heart, color: "bg-[#e11d48]", iconColor: "bg-white/20" },
-  { name: "Accessories", count: "Complete the look", href: "/shop/accessories", icon: Sparkles, color: "bg-[#4338ca]", iconColor: "bg-white/20" },
+  { name: { en: "Ladies bags", tr: "Kadın çantaları", ar: "حقائب نسائية" }, count: { en: "Everyday favourites", tr: "Günlük favoriler", ar: "المفضلات اليومية" }, href: "/shop/ladies-bags", icon: ShoppingBag, color: "bg-[#7c3aed]", iconColor: "bg-white/20" },
+  { name: { en: "Ladies Footwears", tr: "Kadın ayakkabıları", ar: "أحذية نسائية" }, count: { en: "Step in style", tr: "Şıklığa adım atın", ar: "خطوات أنيقة" }, href: "/shop/ladies-footwears", icon: Footprints, color: "bg-[#db2777]", iconColor: "bg-white/20" },
+  { name: { en: "Ladies Watches", tr: "Kadın saatleri", ar: "ساعات نسائية" }, count: { en: "Timeless style", tr: "Zamansız stil", ar: "أناقة خالدة" }, href: "/shop/ladies-watches", icon: Watch, color: "bg-[#0f766e]", iconColor: "bg-white/20" },
+  { name: { en: "Ladies dresses", tr: "Kadın elbiseleri", ar: "فساتين نسائية" }, count: { en: "Explore styles", tr: "Stilleri keşfedin", ar: "اكتشفي الأناقة" }, href: "/shop/ladies-dresses", icon: Crown, color: "bg-[#c2410c]", iconColor: "bg-white/20" },
+  { name: { en: "Ladies Cosmetics", tr: "Kadın kozmetikleri", ar: "مستحضرات تجميل" }, count: { en: "Glow essentials", tr: "Işıltı için gerekenler", ar: "أساسيات الإطلالة" }, href: "/shop/ladies-cosmetics", icon: Sparkles, color: "bg-[#a16207]", iconColor: "bg-white/20" },
+  { name: { en: "Ladies glasses", tr: "Kadın gözlükleri", ar: "نظارات نسائية" }, count: { en: "Complete the look", tr: "Görünümü tamamlayın", ar: "أكملي إطلالتك" }, href: "/shop/ladies-glasses", icon: Glasses, color: "bg-[#be185d]", iconColor: "bg-white/20" },
+  { name: { en: "Accessories", tr: "Aksesuarlar", ar: "إكسسوارات" }, count: { en: "Complete the look", tr: "Görünümü tamamlayın", ar: "أكملي إطلالتك" }, href: "/shop/accessories", icon: Sparkles, color: "bg-[#4338ca]", iconColor: "bg-white/20" },
 ];
 
 function FlashSaleCountdown({ seconds }: { seconds: number }) {
@@ -239,6 +238,8 @@ function DealCard({ deal, isLightning = false }: { deal: Deal; isLightning?: boo
 }
 
 export default function TemuDealsSection() {
+  const { language } = useLanguage();
+  const localized = (copy: { en: string; tr: string; ar: string }) => copy[language === "tr" || language === "ar" ? language : "en"];
   return (
     <div className="bg-gray-50 py-8">
       <div className="mx-auto max-w-7xl px-4">
@@ -250,16 +251,16 @@ export default function TemuDealsSection() {
                 <span className="flex h-6 w-6 items-center justify-center rounded-md bg-rose-500 text-white">
                   <Zap className="h-3.5 w-3.5 fill-current" />
                 </span>
-                <span className="text-xl font-extrabold">FLASH SALES</span>
+                <span className="text-xl font-extrabold">{localized({ en: "FLASH SALES", tr: "FIRSAT SATIŞLARI", ar: "عروض سريعة" })}</span>
               </div>
-              <span className="text-sm font-medium text-slate-600">Ends in</span>
+              <span className="text-sm font-medium text-slate-600">{localized({ en: "Ends in", tr: "Bitiş", ar: "ينتهي خلال" })}</span>
               <FlashSaleCountdown seconds={lightningDeals[0].timeLeft} />
             </div>
             <Link
               href="/deals/lightning"
               className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-rufaelan-primary hover:text-rufaelan-primary-dark"
             >
-              View all <ArrowRight className="h-4 w-4" />
+              {localized({ en: "View all", tr: "Tümünü gör", ar: "عرض الكل" })} <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
 
@@ -277,15 +278,15 @@ export default function TemuDealsSection() {
           <div className="mb-6 flex items-end justify-between gap-4">
             <div>
               <h2 id="ladies-fashion-heading" className="text-2xl font-bold tracking-tight text-slate-900">
-                Shop Ladies&apos; Fashion
+                {localized({ en: "Shop Ladies' Fashion", tr: "Kadın Modası", ar: "تسوّقي أزياء النساء" })}
               </h2>
-              <p className="mt-1 text-sm text-slate-600">Find a look made for you</p>
+              <p className="mt-1 text-sm text-slate-600">{localized({ en: "Find a look made for you", tr: "Size uygun bir görünüm bulun", ar: "اكتشفي إطلالة تناسبك" })}</p>
             </div>
             <Link
               href="/shop"
               className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-rufaelan-primary transition hover:text-rufaelan-primary-dark"
             >
-              All fashion <ArrowRight className="h-4 w-4" />
+              {localized({ en: "All fashion", tr: "Tüm moda", ar: "كل الأزياء" })} <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
 
@@ -295,15 +296,15 @@ export default function TemuDealsSection() {
 
               return (
                 <Link
-                  key={category.name}
+                  key={category.href}
                   href={category.href}
                   className={`group flex min-h-36 flex-col items-center justify-center rounded-2xl px-3 py-5 text-center text-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg ${category.color}`}
                 >
                   <span className={`mb-3 flex h-12 w-12 items-center justify-center rounded-xl ${category.iconColor}`}>
                     <Icon className="h-6 w-6" strokeWidth={2.2} />
                   </span>
-                  <span className="text-sm font-bold">{category.name}</span>
-                  <span className="mt-1 text-xs text-white/80">{category.count}</span>
+                  <span className="text-sm font-bold">{localized(category.name)}</span>
+                  <span className="mt-1 text-xs text-white/80">{localized(category.count)}</span>
                 </Link>
               );
             })}
@@ -313,11 +314,11 @@ export default function TemuDealsSection() {
         <div className="overflow-hidden rounded-3xl bg-[#2b1b17] text-white shadow-lg">
           <div className="grid min-h-[360px] lg:grid-cols-[1fr_1.05fr]">
             <div className="flex flex-col justify-center px-7 py-12 sm:px-12 lg:px-14">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#f3c2a7]">Curated for you</p>
-              <h2 className="mt-4 max-w-md text-3xl font-semibold leading-tight sm:text-4xl">Elevate the everyday.</h2>
-              <p className="mt-4 max-w-md text-sm leading-6 text-white/75 sm:text-base">Beautiful finishing pieces, selected to bring a refined touch to every look.</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#f3c2a7]">{localized({ en: "Curated for you", tr: "Sizin için seçildi", ar: "مختارات لك" })}</p>
+              <h2 className="mt-4 max-w-md text-3xl font-semibold leading-tight sm:text-4xl">{localized({ en: "Elevate the everyday.", tr: "Günlük stilinizi yükseltin.", ar: "ارتقي بإطلالتك اليومية." })}</h2>
+              <p className="mt-4 max-w-md text-sm leading-6 text-white/75 sm:text-base">{localized({ en: "Beautiful finishing pieces, selected to bring a refined touch to every look.", tr: "Her görünüme zarif bir dokunuş katmak için seçilen güzel tamamlayıcı parçalar.", ar: "قطع أنيقة مختارة لتضفي لمسة راقية على كل إطلالة." })}</p>
               <Link href="/shop" className="mt-8 inline-flex w-fit items-center rounded-full bg-[#e65100] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#d84315]">
-                Shop new arrivals
+                {localized({ en: "Shop new arrivals", tr: "Yeni ürünleri keşfet", ar: "تسوّقي الجديد" })}
               </Link>
             </div>
             <div className="grid grid-cols-3 gap-2 bg-[#f5e9e3] p-3 sm:gap-3 sm:p-5">

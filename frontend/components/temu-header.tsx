@@ -3,8 +3,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { Search, ShoppingCart, User, Headphones, Menu, X } from "lucide-react";
+import { Search, ShoppingCart, User, Languages, Menu, X } from "lucide-react";
 import { useCartStore } from "@/store/cart-store";
+import { Language, useLanguage } from "@/contexts/language-context";
 
 export default function TemuHeader() {
   const [mounted, setMounted] = useState(false);
@@ -13,6 +14,7 @@ export default function TemuHeader() {
   const cartItems = useCartStore((state) => state.items);
   const cartCount = cartItems.length;
   const hydrateCart = useCartStore((state) => state.hydrate);
+  const { language, setLanguage, t } = useLanguage();
 
   useEffect(() => {
     hydrateCart();
@@ -49,7 +51,7 @@ export default function TemuHeader() {
             <div className="relative">
               <input
                 type="text"
-                placeholder="ears pods"
+                placeholder={t("searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full rounded-full border border-gray-300 py-2 pl-4 pr-12 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none"
@@ -66,18 +68,30 @@ export default function TemuHeader() {
             <Link href="/auth/login" className="hidden items-center gap-2 text-sm text-gray-700 hover:text-gray-900 md:flex">
               <User className="h-5 w-5" />
               <div className="text-left">
-                <div className="text-xs text-gray-500">Orders &</div>
-                <div className="font-medium">Account</div>
+                <div className="text-xs text-gray-500">{t("orders")}</div>
+                <div className="font-medium">{t("account")}</div>
               </div>
             </Link>
 
-            {/* Support */}
-            <Link href="/support" className="hidden items-center gap-2 text-sm text-gray-700 hover:text-gray-900 md:flex">
-              <Headphones className="h-5 w-5" />
+            {/* Language selector */}
+            <label className="hidden items-center gap-2 text-sm text-gray-700 md:flex">
+              <Languages className="h-5 w-5" aria-hidden="true" />
               <div className="text-left">
-                <div className="font-medium">Support</div>
+                <span className="block text-xs text-gray-500">{t("language")}</span>
+                <select
+                  value={language}
+                  onChange={(event) => setLanguage(event.target.value as Language)}
+                  aria-label={t("language")}
+                  className="max-w-24 bg-transparent text-sm font-medium text-gray-700 outline-none"
+                >
+                  <option value="en">English</option>
+                  <option value="fr">Français</option>
+                  <option value="es">Español</option>
+                  <option value="tr">Türkçe</option>
+                  <option value="ar">العربية</option>
+                </select>
               </div>
-            </Link>
+            </label>
 
             {/* Cart */}
             <Link href="/cart" aria-label="Shopping cart" className="relative text-gray-700 hover:text-gray-900">
@@ -111,16 +125,27 @@ export default function TemuHeader() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <User className="h-5 w-5" />
-                Orders & Account
+                {t("orders")} {t("account")}
               </Link>
-              <Link 
-                href="/support" 
-                className="flex items-center gap-3 text-sm font-medium text-gray-700"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Headphones className="h-5 w-5" />
-                Support
-              </Link>
+              <label className="flex items-center gap-3 text-sm font-medium text-gray-700">
+                <Languages className="h-5 w-5" aria-hidden="true" />
+                <span>{t("language")}</span>
+                <select
+                  value={language}
+                  onChange={(event) => {
+                    setLanguage(event.target.value as Language);
+                    setMobileMenuOpen(false);
+                  }}
+                  aria-label={t("language")}
+                  className="ml-auto rounded border border-gray-300 bg-white px-2 py-1 text-sm"
+                >
+                  <option value="en">English</option>
+                  <option value="fr">Français</option>
+                  <option value="es">Español</option>
+                  <option value="tr">Türkçe</option>
+                  <option value="ar">العربية</option>
+                </select>
+              </label>
             </div>
           </div>
         </div>

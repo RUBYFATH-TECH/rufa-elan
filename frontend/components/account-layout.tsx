@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LogOut, ShoppingBag } from "lucide-react";
+import { LogOut, ShoppingBag, Bell } from "lucide-react";
 import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
 import { isKnownAdminEmail } from "@/lib/admin-common";
 import { useCartStore } from "@/store/cart-store";
+import { useNotificationCount } from "@/hooks/useNotificationCount";
 import AccountNavigation from "./account-navigation";
 
 type UserProfile = {
@@ -25,7 +26,9 @@ interface AccountLayoutProps {
 
 export default function AccountLayout({ children, requireAuth = true }: AccountLayoutProps) {
   const router = useRouter();
-  const supabase = createClientComponentSupabaseClient();
+  // Keep one client for this mounted layout. Recreating it on every render
+  // changes the useEffect dependency and repeatedly reloads the account.
+  const [supabase] = useState(() => createClientComponentSupabaseClient());
   const [isLoading, setIsLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -33,6 +36,7 @@ export default function AccountLayout({ children, requireAuth = true }: AccountL
   const cartItems = useCartStore((state) => state.items);
   const hydrateCart = useCartStore((state) => state.hydrate);
   const cartCount = cartItems.length;
+  const { count: notificationCount } = useNotificationCount();
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -46,6 +50,14 @@ export default function AccountLayout({ children, requireAuth = true }: AccountL
         }
 
         if (sessionUser) {
+          // Prefer the persisted profile avatar over session metadata. The
+          // latter can be stale immediately after an auth refresh or login.
+          const { data: savedProfile } = await supabase
+            .from('profiles')
+            .select('avatar_url')
+            .eq('id', sessionUser.id)
+            .maybeSingle();
+
           const email = sessionUser.email?.trim().toLowerCase();
           if (email && (isKnownAdminEmail(email))) {
             const { data: adminUser } = await supabase
@@ -66,7 +78,7 @@ export default function AccountLayout({ children, requireAuth = true }: AccountL
             email: sessionUser.email || '',
             full_name: sessionUser.user_metadata?.full_name || sessionUser.user_metadata?.name || '',
             phone: sessionUser.user_metadata?.phone || '',
-            avatar_url: sessionUser.user_metadata?.avatar_url || null,
+            avatar_url: savedProfile?.avatar_url || sessionUser.user_metadata?.avatar_url || null,
             created_at: sessionUser.created_at || new Date().toISOString()
           };
 
@@ -158,6 +170,18 @@ export default function AccountLayout({ children, requireAuth = true }: AccountL
               </Link>
             </div>
             <div className="flex items-center space-x-4">
+              <Link 
+                href="/account/notifications" 
+                className="relative rounded-full border border-slate-200 p-2 text-slate-600 transition hover:text-slate-900" 
+                aria-label="Notifications"
+              >
+                <Bell className="h-5 w-5" />
+                {mounted && notificationCount > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">
+                    {notificationCount > 9 ? '9+' : notificationCount}
+                  </span>
+                )}
+              </Link>
               <Link href="/cart" className="relative rounded-full border border-slate-200 p-2 text-slate-600 transition hover:text-slate-900" aria-label="Shopping cart">
                 <ShoppingBag className="h-5 w-5" />
                 {mounted && cartCount > 0 && (

@@ -13,6 +13,7 @@ export type CartItem = {
 
 type CartState = {
   items: CartItem[];
+  hasHydrated: boolean;
   addItem: (item: CartItem) => void;
   updateQuantity: (id: string, quantity: number) => void;
   removeItem: (id: string) => void;
@@ -26,6 +27,7 @@ const STORAGE_KEY = "rufa-cart";
 
 export const useCartStore = create<CartState>((set, get) => ({
   items: [],
+  hasHydrated: false,
   error: null,
   setError: (error) => set({ error }),
   addItem: (item) => {
@@ -83,10 +85,12 @@ export const useCartStore = create<CartState>((set, get) => ({
       const stored = window.localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const items = JSON.parse(stored) as CartItem[];
-        set({ items });
+        set({ items: Array.isArray(items) ? items : [], hasHydrated: true });
+        return;
       }
     } catch {
       // ignore parse errors
     }
+    set({ hasHydrated: true });
   }
 }));

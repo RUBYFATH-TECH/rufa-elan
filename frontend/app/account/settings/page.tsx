@@ -47,13 +47,21 @@ export default function SettingsPage() {
         const sessionUser = data.session?.user;
         
         if (sessionUser) {
+          // The profile table is the durable source for a customer avatar.
+          // Auth metadata is retained as a fallback for older accounts.
+          const { data: savedProfile } = await supabase
+            .from('profiles')
+            .select('avatar_url')
+            .eq('id', sessionUser.id)
+            .maybeSingle();
+
           // Set user profile
           const profile: UserProfile = {
             id: sessionUser.id,
             email: sessionUser.email || '',
             full_name: sessionUser.user_metadata?.full_name || sessionUser.user_metadata?.name || '',
             phone: sessionUser.user_metadata?.phone || '',
-            avatar_url: sessionUser.user_metadata?.avatar_url || null,
+            avatar_url: savedProfile?.avatar_url || sessionUser.user_metadata?.avatar_url || null,
             created_at: sessionUser.created_at || new Date().toISOString()
           };
 
@@ -112,7 +120,10 @@ export default function SettingsPage() {
       const { error } = await supabase.auth.updateUser({
         data: {
           full_name: formData.full_name,
-          phone: formData.phone
+          phone: formData.phone,
+          // Keep the current avatar when saving other profile fields.
+          // This also protects accounts whose auth provider replaces metadata.
+          ...(userProfile?.avatar_url ? { avatar_url: userProfile.avatar_url } : {})
         }
       });
 
@@ -204,6 +215,8 @@ export default function SettingsPage() {
 
         try {
           console.log('Starting avatar upload for user:', userProfile?.id);
+          const userId = userProfile?.id;
+          if (!userId) throw new Error('Unable to identify your account. Please sign in again.');
           
           const response = await fetch('/api/upload', {
             method: 'POST',
@@ -211,7 +224,7 @@ export default function SettingsPage() {
             body: JSON.stringify({
               image: base64String,
               isAvatar: true,
-              userId: userProfile?.id
+              userId
             })
           });
 
@@ -239,6 +252,19 @@ export default function SettingsPage() {
             console.error('Auth update error:', error);
             setMessage({ type: 'error', text: `Failed to save avatar: ${error.message}` });
           } else {
+            // Store the URL in profiles as well. Unlike the browser session,
+            // this remains the source of truth after signing out or back in.
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .update({ avatar_url: data.data.url })
+              .eq('id', userId);
+
+            if (profileError) {
+              console.error('Profile avatar save error:', profileError);
+              setMessage({ type: 'error', text: `Avatar uploaded but could not be saved permanently: ${profileError.message}` });
+              return;
+            }
+
             console.log('Avatar saved to auth metadata');
             setMessage({ type: 'success', text: 'Avatar updated successfully!' });
             

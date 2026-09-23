@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import ConditionalHeader from "@/components/conditional-header";
 import ConditionalFooter from "@/components/conditional-footer";
+import { ReviewFormProvider } from "@/contexts/review-form-context";
+import { LanguageProvider } from "@/contexts/language-context";
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
@@ -29,11 +31,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="min-h-screen bg-gray-50 text-slate-900 antialiased">
-        <ConditionalHeader />
-        <main className="relative">
-          {children}
-        </main>
-        <ConditionalFooter />
+        <LanguageProvider>
+          <ReviewFormProvider>
+            <ConditionalHeader />
+            <main className="relative">
+              {children}
+            </main>
+            <ConditionalFooter />
+          </ReviewFormProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

@@ -3,9 +3,11 @@
 import { usePathname } from "next/navigation";
 import Footer from "./footer";
 import WhatsappButton from "./whatsapp-button";
+import { useReviewForm } from "@/contexts/review-form-context";
 
 export default function ConditionalFooter() {
   const pathname = usePathname();
+  const { isReviewFormOpen } = useReviewForm();
   
   // Hide footer and WhatsApp button on these paths
   const hideFooterPaths = [
@@ -22,8 +24,11 @@ export default function ConditionalFooter() {
     pathname.startsWith(path)
   );
   
-  // Don't render footer components if they should be hidden
-  if (shouldHideFooter) {
+  // Also hide footer on order review pages
+  const isOrderReviewPage = /^\/orders\/[^\/]+\/review/.test(pathname);
+  
+  // Don't render footer components if they should be hidden, on review pages, or if review form is open
+  if (shouldHideFooter || isOrderReviewPage || isReviewFormOpen) {
     return null;
   }
   

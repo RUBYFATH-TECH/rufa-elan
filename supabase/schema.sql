@@ -171,6 +171,8 @@ create table if not exists reviews (
   id uuid primary key default gen_random_uuid(),
   product_id uuid references products(id) not null,
   user_id uuid references profiles(id) not null,
+  order_id uuid references orders(id) on delete set null,
+  order_item_id uuid references order_items(id) on delete set null,
   rating integer check (rating between 1 and 5) not null,
   title text,
   body text,
@@ -178,7 +180,14 @@ create table if not exists reviews (
   created_at timestamptz default now() not null
 );
 
-create unique index if not exists reviews_user_product_unique on reviews (user_id, product_id);
+-- A customer can review a product once per delivered order item. Standalone
+-- reviews remain limited to one per product.
+create unique index if not exists reviews_user_order_item_unique
+  on reviews (user_id, order_item_id)
+  where order_item_id is not null;
+create unique index if not exists reviews_user_product_without_order_unique
+  on reviews (user_id, product_id)
+  where order_item_id is null;
 
 create table if not exists coupons (
   id uuid primary key default gen_random_uuid(),

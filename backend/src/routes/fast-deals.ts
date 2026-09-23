@@ -142,7 +142,9 @@ router.get('/', async (req: Request, res: Response) => {
     const offset = (pageNum - 1) * limitNum;
 
     const queryOptions = {
-      select: '*,products(id,name,slug,regular_price,product_images(url))',
+      // Review summaries are maintained on products, so Fast Deals can show
+      // the same real rating data customers see on the product page.
+      select: '*,products(id,name,slug,regular_price,avg_rating,review_count,product_images(url))',
       limit: limitNum,
       offset: offset,
       orderBy: [{ column: 'created_at', ascending: false }]

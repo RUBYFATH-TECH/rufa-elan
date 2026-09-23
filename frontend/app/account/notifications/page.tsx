@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, Check, Trash2, Settings, ArrowRight, Package, Star, Truck } from "lucide-react";
+import { Bell, Check, Trash2, Settings, ArrowRight, Package, Truck, CheckCircle } from "lucide-react";
 import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
 import AccountLayout from "@/components/account-layout";
 import Link from "next/link";
+import ReviewModal from "@/components/ReviewModal";
 
 type Notification = {
   id: string;
@@ -33,11 +34,20 @@ const notificationOrderId = (notification: Notification) =>
   notification.order_id || notification.data?.order_id || notification.metadata?.order_id;
 
 export default function NotificationsPage() {
-  const supabase = createClientComponentSupabaseClient();
+  // A stable client prevents the notification loader from re-running after
+  // every state update and exhausting the orders API rate limit.
+  const [supabase] = useState(() => createClientComponentSupabaseClient());
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [orderPreviews, setOrderPreviews] = useState<Record<string, OrderPreview>>({});
+  const [confirmingOrderId, setConfirmingOrderId] = useState<string | null>(null);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewOrderData, setReviewOrderData] = useState<{
+    orderId: string;
+    orderNumber: string;
+    products: any[];
+  } | null>(null);
 
   useEffect(() => {
     const loadNotifications = async () => {
@@ -185,6 +195,96 @@ export default function NotificationsPage() {
 
   const unreadCount = notifications.filter(n => !n.read_at).length;
 
+  const handleConfirmDelivery = async (orderId: string, orderNumber: string) => {
+    try {
+      setConfirmingOrderId(orderId);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        alert("You must be logged in to confirm delivery");
+        return;
+      }
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/api/orders/${orderId}/confirm-delivery`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Refresh order preview to get updated status
+        const orderResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'}/api/orders/${orderId}`,
+          { 
+            headers: { Authorization: `Bearer ${session.access_token}` }, 
+            cache: 'no-store' 
+          }
+        );
+        
+        if (orderResponse.ok) {
+          const orderData = await orderResponse.json();
+          if (orderData.data) {
+            setOrderPreviews(prev => ({
+              ...prev,
+              [orderId]: orderData.data
+            }));
+
+            // Prepare products for review
+            const products = (orderData.data.items || []).map((item: any) => {
+              const productId = item.product_snapshot?.product_id || 
+                                item.product_variants?.products?.id ||
+                                item.product_variants?.product_id;
+              
+              console.log('Product data for review:', {
+                itemId: item.id,
+                productId,
+                product_snapshot: item.product_snapshot,
+                product_variants: item.product_variants
+              });
+              
+              return {
+                id: item.id, // order_item_id
+                product_variant_id: item.product_variant_id,
+                product_id: productId,
+                product_name: item.product_snapshot?.product_name || item.product_variants?.products?.name,
+                image_url: item.product_snapshot?.image_url || item.product_variants?.products?.product_images?.[0]?.url,
+                product_snapshot: item.product_snapshot
+              };
+            });
+
+            // Open review modal
+            setReviewOrderData({
+              orderId,
+              orderNumber,
+              products
+            });
+            setReviewModalOpen(true);
+          }
+        }
+      } else {
+        alert(data.message || "Failed to confirm delivery");
+      }
+    } catch (error) {
+      console.error('Error confirming delivery:', error);
+      alert("Failed to confirm delivery. Please try again.");
+    } finally {
+      setConfirmingOrderId(null);
+    }
+  };
+
+  const handleReviewSuccess = () => {
+    // Reload notifications to reflect any changes
+    window.location.reload();
+  };
+
   return (
     <AccountLayout>
       {/* Page Header */}
@@ -281,12 +381,44 @@ export default function NotificationsPage() {
               </div>}
 
               {isDelivery && orderId && <div className="flex flex-wrap gap-3 p-5">
-                <Link href={`/orders/${orderId}`} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3.5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">View order <ArrowRight className="h-4 w-4" /></Link>
-                <Link href={`/orders/${orderId}/review`} className="inline-flex items-center gap-2 rounded-lg bg-orange-600 px-3.5 py-2 text-sm font-semibold text-white hover:bg-orange-700"><Star className="h-4 w-4" /> Review products</Link>
+                <Link href={`/account/orders/${orderId}?from=notifications`} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3.5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">View order <ArrowRight className="h-4 w-4" /></Link>
+                
+                {/* Confirm Delivery Button - Only show if order is delivered and not yet confirmed */}
+                {order && order.status === 'delivered' && !order.delivery_confirmed_at && (
+                  <button
+                    onClick={() => handleConfirmDelivery(orderId, order.order_number)}
+                    disabled={confirmingOrderId === orderId}
+                    className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-3.5 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {confirmingOrderId === orderId ? (
+                      <>Processing...</>
+                    ) : (
+                      <>
+                        <CheckCircle className="h-4 w-4" /> Confirm Receipt
+                      </>
+                    )}
+                  </button>
+                )}
+                
               </div>}
             </article>;
           })}
         </div>
+      )}
+
+      {/* Review Modal */}
+      {reviewModalOpen && reviewOrderData && (
+        <ReviewModal
+          isOpen={reviewModalOpen}
+          onClose={() => {
+            setReviewModalOpen(false);
+            setReviewOrderData(null);
+          }}
+          orderId={reviewOrderData.orderId}
+          orderNumber={reviewOrderData.orderNumber}
+          products={reviewOrderData.products}
+          onSuccess={handleReviewSuccess}
+        />
       )}
     </AccountLayout>
   );

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/cart-store";
-import { CircleUserRound, ShoppingBag, Trash2, X, Minus, Plus, Truck, Shield, RotateCcw, AlertTriangle } from "lucide-react";
+import { ArrowLeft, CircleUserRound, ShoppingBag, Trash2, X, Minus, Plus, Truck, Shield, RotateCcw, AlertTriangle } from "lucide-react";
 import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
 
 export default function CartPage() {
@@ -17,6 +17,15 @@ export default function CartPage() {
   const subtotal = total;
   const shippingEstimate = 25;
   const [showAccountPrompt, setShowAccountPrompt] = useState(false);
+
+  const goBack = () => {
+    if (window.history.length > 1) {
+      router.back();
+      return;
+    }
+
+    router.push("/shop");
+  };
 
   const startCheckout = async () => {
     const supabase = createClientComponentSupabaseClient();
@@ -77,6 +86,15 @@ export default function CartPage() {
     <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="mb-8">
+        <button
+          type="button"
+          onClick={goBack}
+          className="mb-4 inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+          aria-label="Go back to the previous page"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          Back
+        </button>
         <h1 className="text-3xl font-bold text-slate-950">Shopping Cart</h1>
         <p className="mt-2 text-slate-600">{items.length} item{items.length !== 1 ? 's' : ''} in your cart</p>
       </div>

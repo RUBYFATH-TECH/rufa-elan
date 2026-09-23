@@ -7,6 +7,7 @@ import { Heart, Star, ShoppingCart, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/store/cart-store";
 import { useWishlistStore } from "@/store/wishlist-store";
+import { useLanguage } from "@/contexts/language-context";
 
 interface Product {
   id: string;
@@ -28,6 +29,7 @@ interface TemuProductCardProps {
 }
 
 export default function TemuProductCard({ product, className }: TemuProductCardProps) {
+  const { t } = useLanguage();
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
   const addToCart = useCartStore((state) => state.addItem);
@@ -65,8 +67,8 @@ export default function TemuProductCard({ product, className }: TemuProductCardP
   const productUrl = `/products/${product.slug || product.id}`;
 
   return (
-    <Link href={productUrl} className={cn("group block", className)}>
-      <div className="relative rounded-lg bg-white border border-slate-200 overflow-hidden hover:shadow-md transition-all duration-200">
+    <Link href={productUrl} className={cn("group block h-full", className)}>
+      <div className="relative flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white transition-all duration-200 hover:shadow-md">
         {/* Product Image */}
         <div className="relative aspect-square overflow-hidden bg-slate-100">
           <Image
@@ -124,7 +126,7 @@ export default function TemuProductCard({ product, className }: TemuProductCardP
         </div>
 
         {/* Product Info */}
-        <div className="p-3">
+        <div className="flex flex-1 flex-col p-3">
           {/* Title */}
           <h3 className="text-sm font-medium text-slate-900 line-clamp-2 mb-2 group-hover:text-rufaelan-primary transition-colors">
             {product.name}
@@ -177,9 +179,9 @@ export default function TemuProductCard({ product, className }: TemuProductCardP
           {/* Add to Cart Button */}
           <button
             onClick={handleAddToCart}
-            className="w-full rounded-md bg-rufaelan-primary px-3 py-2 text-sm font-medium text-white hover:bg-rufaelan-primary-dark transition-colors"
+            className="mt-auto w-full rounded-md bg-rufaelan-primary px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-rufaelan-primary-dark"
           >
-            Add to Cart
+            {t("addToCart")}
           </button>
         </div>
       </div>

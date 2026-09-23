@@ -8,8 +8,11 @@ import {
   Mail,
   Phone
 } from "lucide-react";
+import { useLanguage } from "@/contexts/language-context";
 
 export default function Footer() {
+  const { language } = useLanguage();
+  const localized = (copy: { en: string; tr: string; ar: string }) => copy[language === "tr" || language === "ar" ? language : "en"];
   return (
     <footer className="border-t border-slate-200 bg-slate-950 text-slate-300">
       {/* Main Footer Content */}
@@ -17,7 +20,7 @@ export default function Footer() {
         <div className="grid gap-8 lg:grid-cols-5">
           {/* Company Info */}
           <div className="lg:col-span-1">
-            <h3 className="text-sm font-semibold text-white mb-4">Company info</h3>
+            <h3 className="text-sm font-semibold text-white mb-4">{localized({ en: "Company info", tr: "Şirket bilgileri", ar: "معلومات الشركة" })}</h3>
             <div className="space-y-3 text-sm">
               <Link href="/about" className="block hover:text-white transition-colors">About RUFA ELAN</Link>
               <Link href="/contact" className="block hover:text-white transition-colors">Contact us</Link>
@@ -29,7 +32,7 @@ export default function Footer() {
 
           {/* Customer Service */}
           <div className="lg:col-span-1">
-            <h3 className="text-sm font-semibold text-white mb-4">Customer service</h3>
+            <h3 className="text-sm font-semibold text-white mb-4">{localized({ en: "Customer service", tr: "Müşteri hizmetleri", ar: "خدمة العملاء" })}</h3>
             <div className="space-y-3 text-sm">
               <Link href="/returns" className="block hover:text-white transition-colors">Return and refund policy</Link>
               <Link href="/intellectual-property" className="block hover:text-white transition-colors">Intellectual property policy</Link>
@@ -40,7 +43,7 @@ export default function Footer() {
 
           {/* Help */}
           <div className="lg:col-span-1">
-            <h3 className="text-sm font-semibold text-white mb-4">Help</h3>
+            <h3 className="text-sm font-semibold text-white mb-4">{localized({ en: "Help", tr: "Yardım", ar: "المساعدة" })}</h3>
             <div className="space-y-3 text-sm">
               <Link href="/faq" className="block hover:text-white transition-colors">Support center & FAQ</Link>
               <Link href="/safety" className="block hover:text-white transition-colors">Safety center</Link>
@@ -54,9 +57,9 @@ export default function Footer() {
           <div className="lg:col-span-2">
             {/* Contact Info */}
             <div className="mb-8">
-              <h3 className="text-sm font-semibold text-white mb-4">Contact</h3>
+              <h3 className="text-sm font-semibold text-white mb-4">{localized({ en: "Contact", tr: "İletişim", ar: "اتصل بنا" })}</h3>
               <div className="space-y-3 text-sm">
-                <p className="leading-7">Quality and affordable Ladies Fashion products designed for modern women. Nationwide delivery across Ghana with trusted payment and fast customer support.</p>
+                <p className="leading-7">{localized({ en: "Quality and affordable Ladies Fashion products designed for modern women. Nationwide delivery across Ghana with trusted payment and fast customer support.", tr: "Modern kadınlar için tasarlanmış kaliteli ve uygun fiyatlı kadın moda ürünleri. Güvenilir ödeme ve hızlı müşteri desteğiyle Gana genelinde teslimat.", ar: "منتجات أزياء نسائية عالية الجودة وبأسعار مناسبة للمرأة العصرية. توصيل في جميع أنحاء غانا مع دفع موثوق ودعم عملاء سريع." })}</p>
                 <div className="flex items-center space-x-2">
                   <Phone className="h-4 w-4" />
                   <span>+90 505 378 3510</span>
@@ -67,14 +70,14 @@ export default function Footer() {
                 </div>
                 <div className="flex items-center space-x-2">
                   <MessageCircle className="h-4 w-4" />
-                  <span>WhatsApp support available 24/7</span>
+                  <span>{localized({ en: "WhatsApp support available 24/7", tr: "WhatsApp desteği 7/24 hizmetinizde", ar: "دعم واتساب متاح على مدار الساعة" })}</span>
                 </div>
               </div>
             </div>
 
             {/* Connect with RUFA ELAN */}
             <div>
-              <h3 className="text-sm font-semibold text-white mb-4">Connect with RUFA ELAN</h3>
+              <h3 className="text-sm font-semibold text-white mb-4">{localized({ en: "Connect with RUFA ELAN", tr: "RUFA ELAN ile bağlantı kurun", ar: "تواصلي مع روفا إيلان" })}</h3>
               <div className="flex space-x-4">
                 <Link href="#" className="text-slate-400 hover:text-white transition-colors">
                   <Instagram className="h-6 w-6" />
@@ -105,7 +108,7 @@ export default function Footer() {
 
         {/* Payment Methods */}
         <div className="mt-12 pt-8 border-t border-slate-800">
-          <h3 className="text-sm font-semibold text-white mb-4">We accept</h3>
+          <h3 className="text-sm font-semibold text-white mb-4">{localized({ en: "We accept", tr: "Kabul ettiğimiz ödeme yöntemleri", ar: "طرق الدفع المقبولة" })}</h3>
           <div className="flex flex-wrap gap-3 items-center">
             {/* Visa */}
             <div className="bg-white rounded-md px-3 py-2 flex items-center justify-center">

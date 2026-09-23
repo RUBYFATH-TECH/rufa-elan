@@ -319,6 +319,32 @@ export class NotificationService {
   }
 
   /**
+   * Acknowledge outstanding order-status notifications after the customer
+   * confirms receipt of that order.
+   */
+  static async markOrderStatusNotificationsAsRead(userId: string, orderId: string): Promise<number> {
+    try {
+      const { error, count } = await supabase
+        .from('notifications')
+        .update({
+          read_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', userId)
+        .eq('order_id', orderId)
+        .in('type', ['order_status', 'order_delivered'])
+        .is('read_at', null);
+
+      if (error) throw error;
+
+      return count || 0;
+    } catch (error) {
+      logger.error('Error acknowledging order-status notifications', { error, userId, orderId });
+      throw error;
+    }
+  }
+
+  /**
    * Mark notification as delivered
    */
   static async markAsDelivered(id: string): Promise<Notification> {

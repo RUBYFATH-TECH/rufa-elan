@@ -977,6 +977,104 @@ router.post('/:id/tracking/update', requireAdmin, async (req: Request, res: Resp
 });
 
 /**
+ * POST /api/orders/:id/confirm-delivery
+ * Confirm order delivery (user confirms they received the product)
+ */
+router.post('/:id/confirm-delivery', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    if (!dbUtils.isValidUUID(id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid order ID',
+        message: 'Order ID must be a valid UUID'
+      } as ApiResponse);
+    }
+
+    // Check if order exists and belongs to user
+    const existingOrder = await db.orders.findById(id);
+    if (existingOrder.error || !existingOrder.data) {
+      return res.status(404).json({
+        success: false,
+        error: 'Order not found',
+        message: 'The requested order does not exist'
+      } as ApiResponse);
+    }
+
+    if (!req.isAdmin && existingOrder.data.user_id !== req.userId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'You do not have access to this order'
+      } as ApiResponse);
+    }
+
+    // Check if order is in delivered status
+    if (existingOrder.data.status !== 'delivered') {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot confirm delivery',
+        message: 'Order must be in delivered status to confirm receipt'
+      } as ApiResponse);
+    }
+
+    // Update order with confirmation
+    const result = await db.orders.updateById(id, {
+      delivery_confirmed_at: new Date().toISOString(),
+      delivery_confirmed_by: req.userId
+    });
+
+    if (result.error) {
+      logger.error('Failed to confirm delivery:', result.error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to confirm delivery',
+        message: result.error
+      } as ApiResponse);
+    }
+
+    // Update delivery tracking
+    await db.deliveryTracking.updateWhere(
+      { order_id: id },
+      { 
+        current_status: 'confirmed_by_customer',
+        updated_at: new Date().toISOString()
+      }
+    );
+
+    // The delivery notification no longer needs the customer's attention.
+    // Mark it as read so it is excluded from the unread badge count.
+    try {
+      await NotificationService.markOrderStatusNotificationsAsRead(existingOrder.data.user_id, id);
+    } catch (notifError) {
+      // Confirmation is already stored; do not fail the request if the
+      // notification acknowledgement cannot be persisted.
+      logger.error('Failed to acknowledge delivery notification:', notifError);
+    }
+
+    logger.info(`Order delivery confirmed: ${id}`, {
+      userId: req.userId,
+      orderNumber: existingOrder.data.order_number
+    });
+
+    res.json({
+      success: true,
+      data: result.data,
+      message: 'Delivery confirmed successfully. You can now review your products!'
+    } as ApiResponse);
+
+  } catch (error) {
+    logger.error('Error confirming delivery:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: 'Failed to confirm delivery'
+    } as ApiResponse);
+  }
+});
+
+/**
  * GET /api/orders/stats/user
  * Get user order statistics
  */

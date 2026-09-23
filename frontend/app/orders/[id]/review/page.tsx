@@ -62,8 +62,8 @@ export default function OrderReviewPage() {
   return (
     <AccountLayout>
       <div className="mx-auto max-w-5xl">
-        <Link href={`/orders/${orderId}`} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-orange-600">
-          <ArrowLeft className="h-4 w-4" /> Back to order
+        <Link href="/account/orders" className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-orange-600">
+          <ArrowLeft className="h-4 w-4" /> Back to orders
         </Link>
 
         <section className="overflow-hidden rounded-3xl bg-slate-950 px-6 py-8 text-white shadow-sm sm:px-9">

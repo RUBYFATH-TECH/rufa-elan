@@ -321,6 +321,11 @@ router.get('/:id', async (req: Request, res: Response) => {
  */
 router.post('/', requireAuth, async (req: Request, res: Response) => {
   try {
+      logger.info('Review creation request received', {
+        userId: req.userId,
+        body: req.body
+      });
+
       const {
         product_id,
         order_id,
@@ -332,11 +337,18 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       } = req.body;
 
     // Validate required fields
-    if (!product_id || !rating) {
+    if (!product_id || product_id.trim() === '' || !rating) {
+      logger.warn('Review creation failed: missing required fields', {
+        product_id: product_id || 'undefined',
+        product_id_length: product_id ? product_id.length : 0,
+        rating,
+        userId: req.userId,
+        fullBody: JSON.stringify(req.body)
+      });
       return res.status(400).json({
         success: false,
         error: 'Missing required fields',
-        message: 'product_id and rating are required',
+        message: `product_id (${product_id || 'missing'}) and rating (${rating || 'missing'}) are required`,
       } as ApiResponse);
     }
 
@@ -356,35 +368,56 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       } as ApiResponse);
     }
 
-    // Check if user has already reviewed this product
-    const { data: existingReview } = await req.db!
-      .from('reviews')
-      .select('id')
-      .eq('product_id', product_id)
-      .eq('user_id', req.userId)
-      .single();
+    // Check if user has already reviewed this product for this specific order
+    if (order_id && order_item_id) {
+      const { data: existingReview } = await req.db!
+        .from('reviews')
+        .select('id')
+        .eq('order_id', order_id)
+        .eq('order_item_id', order_item_id)
+        .eq('user_id', req.userId)
+        .single();
 
-    if (existingReview) {
-      return res.status(400).json({
-        success: false,
-        error: 'Review already exists',
-        message: 'You have already reviewed this product',
-      } as ApiResponse);
+      if (existingReview) {
+        return res.status(400).json({
+          success: false,
+          error: 'Review already exists',
+          message: 'You have already reviewed this product from this order',
+        } as ApiResponse);
+      }
+    } else {
+      // If no order context, check if user has reviewed this product at all
+      const { data: existingReview } = await req.db!
+        .from('reviews')
+        .select('id')
+        .eq('product_id', product_id)
+        .eq('user_id', req.userId)
+        .single();
+
+      if (existingReview) {
+        return res.status(400).json({
+          success: false,
+          error: 'Review already exists',
+          message: 'You have already reviewed this product',
+        } as ApiResponse);
+      }
     }
 
-    // Verify user purchased this product
-    const { data: canReview } = await req.db!
-      .rpc('user_can_review_product', {
-        p_user_id: req.userId,
-        p_product_id: product_id,
-      });
+    // Verify user purchased this product (skip if order context is provided)
+    if (!order_id || !order_item_id) {
+      const { data: canReview } = await req.db!
+        .rpc('user_can_review_product', {
+          p_user_id: req.userId,
+          p_product_id: product_id,
+        });
 
-    if (!canReview) {
-      return res.status(403).json({
-        success: false,
-        error: 'Cannot review product',
-        message: 'You can only review products you have purchased',
-      } as ApiResponse);
+      if (!canReview) {
+        return res.status(403).json({
+          success: false,
+          error: 'Cannot review product',
+          message: 'You can only review products you have purchased',
+        } as ApiResponse);
+      }
     }
 
     // Create review

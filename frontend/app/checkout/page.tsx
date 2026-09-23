@@ -36,6 +36,8 @@ type CheckoutPayload = {
 export default function CheckoutPage() {
   const items = useCartStore((state: any) => state.items) as CartItem[];
   const clearCart = useCartStore((state: any) => state.clearCart);
+  const hydrateCart = useCartStore((state: any) => state.hydrate);
+  const hasHydratedCart = useCartStore((state: any) => state.hasHydrated);
   const router = useRouter();
   const supabase = createClientComponentSupabaseClient();
   
@@ -135,6 +137,9 @@ export default function CheckoutPage() {
 
   // Load addresses on mount
   useEffect(() => {
+    // The header is intentionally hidden on checkout, so this route must load
+    // the guest cart itself. This preserves items added before sign-in.
+    hydrateCart();
     setHasMounted(true);
     
     const loadAddresses = async () => {
@@ -488,7 +493,7 @@ export default function CheckoutPage() {
     handler.openIframe();
   };
 
-  if (!hasMounted || isLoading) {
+  if (!hasMounted || !hasHydratedCart || isLoading) {
     return (
       <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-md">

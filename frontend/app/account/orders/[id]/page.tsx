@@ -15,6 +15,7 @@ import {
 import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
 import { fetchOrder } from "@/lib/api/orders";
 import InvoiceReceipt from "@/components/invoice-receipt";
+import AccountLayout from "@/components/account-layout";
 
 type OrderItem = {
   id: string;
@@ -67,6 +68,10 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [showInvoice, setShowInvoice] = useState(false);
+  const backHref =
+    searchParams.get("from") === "notifications"
+      ? "/account/notifications"
+      : "/account/orders";
 
   useEffect(() => {
     const load = async () => {
@@ -170,16 +175,20 @@ export default function OrderDetailPage() {
 
   if (loading)
     return (
+      <AccountLayout>
       <div className="p-12 text-center text-slate-600">Loading order…</div>
+      </AccountLayout>
     );
   if (!order)
     return (
+      <AccountLayout>
       <div className="mx-auto max-w-4xl p-8">
-        <Link href="/account/orders" className="text-orange-600">
+        <Link href={backHref} className="text-orange-600">
           ← Back to orders
         </Link>
         <p className="mt-6 rounded-lg bg-red-50 p-5 text-red-700">{message}</p>
       </div>
+      </AccountLayout>
     );
 
   const address = order.shipping_address || {};
@@ -204,9 +213,10 @@ export default function OrderDetailPage() {
   const reference = order.payment_reference || order.payments?.[0]?.reference;
 
   return (
+    <AccountLayout>
     <section className="mx-auto max-w-5xl px-4 py-8">
       <Link
-        href="/account/orders"
+        href={backHref}
         className="mb-6 inline-flex items-center gap-2 font-semibold text-orange-600"
       >
         <ArrowLeft className="h-4 w-4" /> Back to orders
@@ -388,5 +398,6 @@ export default function OrderDetailPage() {
         </div>
       )}
     </section>
+    </AccountLayout>
   );
 }
