@@ -44,6 +44,8 @@ type RecentOrder = {
   status: string;
   created_at: string;
   items_count: number;
+  image_url?: string;
+  product_name?: string;
 };
 
 export default function AccountPage() {
@@ -97,8 +99,7 @@ export default function AccountPage() {
       console.log('Account page loaded user profile:', profile.id, 'avatar_url:', profile.avatar_url);
       setUserProfile(profile);
 
-      // Load mock data for now - replace with actual API calls
-      await loadMockData();
+      await loadOrderData(data.session?.access_token);
       
       setIsLoading(false);
     } catch (error) {
@@ -107,27 +108,52 @@ export default function AccountPage() {
     }
   };
 
-  const loadMockData = async () => {
-    // Mock order summary
-    const mockOrderSummary: OrderSummary = {
-      total_orders: 12,
-      total_spent: 2847.50,
-      pending_orders: 2,
-      completed_orders: 10
-    };
+  const loadOrderData = async (accessToken?: string) => {
+    if (!accessToken) {
+      setOrderSummary({ total_orders: 0, total_spent: 0, pending_orders: 0, completed_orders: 0 });
+      setRecentOrders([]);
+      return;
+    }
 
-    // Mock recent orders
-    const mockRecentOrders: RecentOrder[] = [
-      { id: '1', order_number: 'ORD-001', total_amount: 299.99, status: 'delivered', created_at: '2024-01-10', items_count: 2 },
-      { id: '2', order_number: 'ORD-002', total_amount: 459.50, status: 'shipped', created_at: '2024-01-08', items_count: 3 },
-      { id: '3', order_number: 'ORD-003', total_amount: 199.00, status: 'processing', created_at: '2024-01-05', items_count: 1 },
-    ];
+    try {
+      const response = await fetch("/backend-api/orders?limit=100", {
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error(`Unable to load orders (${response.status})`);
 
-    // Simulate loading delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+      const data = await response.json();
+      const orders = data.data || [];
+      const mappedOrders: RecentOrder[] = orders.map((order: any) => {
+        const items = order.items || order.order_items || [];
+        const firstItem = items[0];
+        const product = firstItem?.product_variants?.products;
+        const productImages = [...(product?.product_images || [])].sort((a: any, b: any) => (a.position || 0) - (b.position || 0));
 
-    setOrderSummary(mockOrderSummary);
-    setRecentOrders(mockRecentOrders);
+        return {
+          id: order.id,
+          order_number: order.order_number,
+          total_amount: Number(order.total_amount || 0),
+          status: order.status || "pending",
+          created_at: order.created_at,
+          items_count: items.length,
+          image_url: firstItem?.product_snapshot?.image_url || firstItem?.image || productImages[0]?.url,
+          product_name: firstItem?.product_snapshot?.product_name || product?.name || firstItem?.name,
+        };
+      });
+
+      setOrderSummary({
+        total_orders: mappedOrders.length,
+        total_spent: mappedOrders.reduce((total, order) => total + order.total_amount, 0),
+        pending_orders: mappedOrders.filter((order) => ["pending", "processing", "shipped"].includes(order.status)).length,
+        completed_orders: mappedOrders.filter((order) => ["delivered", "confirmed"].includes(order.status)).length,
+      });
+      setRecentOrders(mappedOrders.slice(0, 3));
+    } catch (error) {
+      console.error("Error loading account orders:", error);
+      setOrderSummary({ total_orders: 0, total_spent: 0, pending_orders: 0, completed_orders: 0 });
+      setRecentOrders([]);
+    }
   };
 
   useEffect(() => {
@@ -413,9 +439,13 @@ export default function AccountPage() {
               <div key={order.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
                 <div className="flex items-center space-x-4">
                   <div className="flex-shrink-0">
-                    <div className="h-10 w-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                      <Package className="h-5 w-5 text-orange-600" />
-                    </div>
+                    {order.image_url ? (
+                      <img src={order.image_url} alt={order.product_name || `Order ${order.order_number}`} className="h-12 w-12 rounded-lg border border-gray-200 object-cover" />
+                    ) : (
+                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-orange-100">
+                        <Package className="h-5 w-5 text-orange-600" />
+                      </div>
+                    )}
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900">Order #{order.order_number}</p>
