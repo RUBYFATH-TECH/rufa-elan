@@ -16,12 +16,12 @@ export default function Footer() {
   return (
     <footer className="border-t border-slate-200 bg-slate-950 text-slate-300">
       {/* Main Footer Content */}
-      <div className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-12">
-        <div className="grid gap-8 lg:grid-cols-5">
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-12">
+        <div className="grid gap-6 sm:gap-8 sm:grid-cols-2 lg:grid-cols-5">
           {/* Company Info */}
           <div className="lg:col-span-1">
-            <h3 className="text-sm font-semibold text-white mb-4">{localized({ en: "Company info", tr: "Şirket bilgileri", ar: "معلومات الشركة" })}</h3>
-            <div className="space-y-3 text-sm">
+            <h3 className="text-sm font-semibold text-white mb-3 sm:mb-4">{localized({ en: "Company info", tr: "Şirket bilgileri", ar: "معلومات الشركة" })}</h3>
+            <div className="space-y-2 sm:space-y-3 text-sm">
               <Link href="/about" className="block hover:text-white transition-colors">About RUFA ELAN</Link>
               <Link href="/contact" className="block hover:text-white transition-colors">Contact us</Link>
               <Link href="/careers" className="block hover:text-white transition-colors">Careers</Link>
@@ -32,8 +32,8 @@ export default function Footer() {
 
           {/* Customer Service */}
           <div className="lg:col-span-1">
-            <h3 className="text-sm font-semibold text-white mb-4">{localized({ en: "Customer service", tr: "Müşteri hizmetleri", ar: "خدمة العملاء" })}</h3>
-            <div className="space-y-3 text-sm">
+            <h3 className="text-sm font-semibold text-white mb-3 sm:mb-4">{localized({ en: "Customer service", tr: "Müşteri hizmetleri", ar: "خدمة العملاء" })}</h3>
+            <div className="space-y-2 sm:space-y-3 text-sm">
               <Link href="/returns" className="block hover:text-white transition-colors">Return and refund policy</Link>
               <Link href="/intellectual-property" className="block hover:text-white transition-colors">Intellectual property policy</Link>
               <Link href="/delivery" className="block hover:text-white transition-colors">Shipping info</Link>
@@ -43,8 +43,8 @@ export default function Footer() {
 
           {/* Help */}
           <div className="lg:col-span-1">
-            <h3 className="text-sm font-semibold text-white mb-4">{localized({ en: "Help", tr: "Yardım", ar: "المساعدة" })}</h3>
-            <div className="space-y-3 text-sm">
+            <h3 className="text-sm font-semibold text-white mb-3 sm:mb-4">{localized({ en: "Help", tr: "Yardım", ar: "المساعدة" })}</h3>
+            <div className="space-y-2 sm:space-y-3 text-sm">
               <Link href="/faq" className="block hover:text-white transition-colors">Support center & FAQ</Link>
               <Link href="/safety" className="block hover:text-white transition-colors">Safety center</Link>
               <Link href="/purchase-protection" className="block hover:text-white transition-colors">RUFA ELAN purchase protection</Link>
@@ -54,31 +54,31 @@ export default function Footer() {
           </div>
 
           {/* Contact & Social */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 sm:col-span-2">
             {/* Contact Info */}
-            <div className="mb-8">
-              <h3 className="text-sm font-semibold text-white mb-4">{localized({ en: "Contact", tr: "İletişim", ar: "اتصل بنا" })}</h3>
-              <div className="space-y-3 text-sm">
-                <p className="leading-7">{localized({ en: "Quality and affordable Ladies Fashion products designed for modern women. Nationwide delivery across Ghana with trusted payment and fast customer support.", tr: "Modern kadınlar için tasarlanmış kaliteli ve uygun fiyatlı kadın moda ürünleri. Güvenilir ödeme ve hızlı müşteri desteğiyle Gana genelinde teslimat.", ar: "منتجات أزياء نسائية عالية الجودة وبأسعار مناسبة للمرأة العصرية. توصيل في جميع أنحاء غانا مع دفع موثوق ودعم عملاء سريع." })}</p>
-                <div className="flex items-center space-x-2">
-                  <Phone className="h-4 w-4" />
+            <div className="mb-6 sm:mb-8">
+              <h3 className="text-sm font-semibold text-white mb-3 sm:mb-4">{localized({ en: "Contact", tr: "İletişim", ar: "اتصل بنا" })}</h3>
+              <div className="space-y-2 sm:space-y-3 text-sm">
+                <p className="leading-relaxed">{localized({ en: "Quality and affordable Ladies Fashion products designed for modern women. Nationwide delivery across Ghana with trusted payment and fast customer support.", tr: "Modern kadınlar için tasarlanmış kaliteli ve uygun fiyatlı kadın moda ürünleri. Güvenilir ödeme ve hızlı müşteri desteğiyle Gana genelinde teslimat.", ar: "منتجات أزياء نسائية عالية الجودة وبأسعار مناسبة للمرأة العصرية. توصيل في جميع أنحاء غانا مع دفع موثوق ودعم عملاء سريع." })}</p>
+                <div className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 flex-shrink-0" />
                   <span>+90 505 378 3510</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Mail className="h-4 w-4" />
-                  <span>support@rufaelan.com</span>
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 flex-shrink-0" />
+                  <span className="break-all">support@rufaelan.com</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <MessageCircle className="h-4 w-4" />
-                  <span>{localized({ en: "WhatsApp support available 24/7", tr: "WhatsApp desteği 7/24 hizmetinizde", ar: "دعم واتساب متاح على مدار الساعة" })}</span>
+                <div className="flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm">{localized({ en: "WhatsApp support available 24/7", tr: "WhatsApp desteği 7/24 hizmetinizde", ar: "دعم واتساب متاح على مدار الساعة" })}</span>
                 </div>
               </div>
             </div>
 
             {/* Connect with RUFA ELAN */}
             <div>
-              <h3 className="text-sm font-semibold text-white mb-4">{localized({ en: "Connect with RUFA ELAN", tr: "RUFA ELAN ile bağlantı kurun", ar: "تواصلي مع روفا إيلان" })}</h3>
-              <div className="flex space-x-4">
+              <h3 className="text-sm font-semibold text-white mb-3 sm:mb-4">{localized({ en: "Connect with RUFA ELAN", tr: "RUFA ELAN ile bağlantı kurun", ar: "تواصلي مع روفا إيلان" })}</h3>
+              <div className="flex flex-wrap gap-3 sm:gap-4">
                 <Link href="#" className="text-slate-400 hover:text-white transition-colors">
                   <Instagram className="h-6 w-6" />
                 </Link>
@@ -107,9 +107,9 @@ export default function Footer() {
         </div>
 
         {/* Payment Methods */}
-        <div className="mt-12 pt-8 border-t border-slate-800">
-          <h3 className="text-sm font-semibold text-white mb-4">{localized({ en: "We accept", tr: "Kabul ettiğimiz ödeme yöntemleri", ar: "طرق الدفع المقبولة" })}</h3>
-          <div className="flex flex-wrap gap-3 items-center">
+        <div className="mt-8 pt-6 sm:mt-12 sm:pt-8 border-t border-slate-800">
+          <h3 className="text-sm font-semibold text-white mb-3 sm:mb-4">{localized({ en: "We accept", tr: "Kabul ettiğimiz ödeme yöntemleri", ar: "طرق الدفع المقبولة" })}</h3>
+          <div className="flex flex-wrap gap-2 sm:gap-3 items-center">
             {/* Visa */}
             <div className="bg-white rounded-md px-3 py-2 flex items-center justify-center">
               <svg className="h-6 w-10" viewBox="0 0 40 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -206,18 +206,18 @@ export default function Footer() {
       </div>
 
       {/* Footer Bottom */}
-      <div className="border-t border-slate-800 bg-slate-900 py-5">
-        <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
-          <div className="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0 text-sm text-slate-500">
-            <div className="flex flex-wrap items-center space-x-4">
+      <div className="border-t border-slate-800 bg-slate-900 py-4 sm:py-5">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-12">
+          <div className="flex flex-col sm:flex-row justify-between items-center space-y-3 sm:space-y-0 text-xs sm:text-sm text-slate-500">
+            <div className="flex flex-wrap justify-center sm:justify-start items-center gap-x-3 gap-y-2">
               <span>© {new Date().getFullYear()} RUFA ELAN Inc.</span>
               <Link href="/terms" className="hover:text-slate-300 transition-colors">Terms of use</Link>
               <Link href="/privacy" className="hover:text-slate-300 transition-colors">Privacy policy</Link>
               <Link href="/ad-choices" className="hover:text-slate-300 transition-colors">Ad Choices</Link>
             </div>
-            <div className="flex items-center space-x-2">
-              <span>Your privacy choices</span>
-              <div className="w-4 h-4 bg-blue-600 rounded-sm"></div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs sm:text-sm">Your privacy choices</span>
+              <div className="w-4 h-4 bg-blue-600 rounded-sm flex-shrink-0"></div>
             </div>
           </div>
         </div>

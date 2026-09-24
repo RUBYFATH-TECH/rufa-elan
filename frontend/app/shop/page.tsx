@@ -141,28 +141,29 @@ export default function ShopPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Simple Header with Back Button */}
       <div className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-4">
-            <div className="flex items-center">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+          <div className="flex items-center justify-between py-3 sm:py-4">
+            <div className="flex items-center gap-2 sm:gap-4 overflow-hidden">
               <Link 
                 href="/account" 
-                className="flex items-center text-gray-700 hover:text-gray-900 mr-6 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg transition-colors"
+                className="flex items-center text-gray-700 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs sm:text-sm whitespace-nowrap"
               >
-                <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
                 </svg>
-                Back to Dashboard
+                <span className="hidden sm:inline">Back to Dashboard</span>
+                <span className="sm:hidden">Back</span>
               </Link>
-              <div className="flex items-center">
-                <img src="/images/logo.png" alt="RUFA ELAN" className="h-8 w-8 rounded-full mr-3" />
-                <span className="text-lg font-semibold text-gray-900">RUFA ELAN</span>
+              <div className="flex items-center min-w-0">
+                <img src="/images/logo.png" alt="RUFA ELAN" className="h-6 w-6 sm:h-8 sm:w-8 rounded-full mr-2 sm:mr-3 flex-shrink-0" />
+                <span className="text-sm sm:text-lg font-semibold text-gray-900 truncate">RUFA ELAN</span>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <Link href="/cart" className="relative p-2 text-gray-700 hover:text-gray-900">
-                <ShoppingBag className="h-5 w-5" />
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <Link href="/cart" className="relative p-1.5 sm:p-2 text-gray-700 hover:text-gray-900">
+                <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5" />
                 {mounted && cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-orange-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold">{cartCount}</span>
+                  <span className="absolute -top-1 -right-1 bg-orange-600 text-white text-xs rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center font-semibold">{cartCount}</span>
                 )}
               </Link>
             </div>
@@ -172,23 +173,23 @@ export default function ShopPage() {
 
       {/* Page Title */}
       <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-6 sm:py-8">
           <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900">Shop All Products</h1>
-            <p className="mt-2 text-gray-600">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Shop All Products</h1>
+            <p className="mt-2 text-sm sm:text-base text-gray-600">
               Discover our premium collection of handbags, purses, and accessories
             </p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-6 sm:py-8">
         {/* Error State */}
         {error && !loading && (
-          <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <div className="mb-6 sm:mb-8 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2 sm:gap-3">
+            <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-red-900">{error}</p>
+              <p className="text-xs sm:text-sm font-medium text-red-900">{error}</p>
               <button
                 onClick={loadProducts}
                 className="text-xs text-red-600 hover:text-red-700 mt-2 underline"
@@ -201,10 +202,10 @@ export default function ShopPage() {
 
         {/* Loading State */}
         {loading && (
-          <div className="flex items-center justify-center py-12">
+          <div className="flex items-center justify-center py-8 sm:py-12">
             <div className="text-center">
-              <Loader2 className="w-12 h-12 text-orange-600 mx-auto mb-4 animate-spin" />
-              <p className="text-gray-600 font-medium">Loading products...</p>
+              <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 text-orange-600 mx-auto mb-3 sm:mb-4 animate-spin" />
+              <p className="text-gray-600 font-medium text-sm sm:text-base">Loading products...</p>
             </div>
           </div>
         )}
@@ -213,16 +214,16 @@ export default function ShopPage() {
           <>
             {/* Fast Deals Section */}
             {fastDeals.length > 0 && (
-              <div className="mb-12">
-                <div className="flex items-center justify-between mb-6">
+              <div className="mb-8 sm:mb-12">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-2">
                   <div className="flex items-center">
-                    <Clock className="h-6 w-6 text-red-500 mr-2" />
-                    <h2 className="text-2xl font-bold text-gray-900">Fast Deals</h2>
-                    <span className="ml-3 text-sm text-red-500 font-medium">Limited Time Only!</span>
+                    <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-red-500 mr-2" />
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Fast Deals</h2>
+                    <span className="ml-2 sm:ml-3 text-xs sm:text-sm text-red-500 font-medium">Limited Time Only!</span>
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
                   {fastDeals.map((deal) => {
                     const discount = Math.round(((deal.regular_price - deal.sale_price!) / deal.regular_price) * 100);
                     const image = deal.product_images?.[0]?.url || "/images/placeholder.jpg";
@@ -230,30 +231,30 @@ export default function ShopPage() {
                     return (
                       <div 
                         key={deal.id} 
-                        className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-shadow cursor-pointer"
+                        className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 hover:shadow-lg transition-shadow cursor-pointer"
                         onClick={() => router.push(`/products/${deal.slug}`)}
                       >
-                        <div className="relative mb-4">
+                        <div className="relative mb-3 sm:mb-4">
                           <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
                             {discount}% OFF
                           </div>
                           <img 
                             src={image} 
                             alt={deal.name}
-                            className="w-full h-48 object-cover rounded-lg hover:scale-105 transition-transform"
+                            className="w-full h-40 sm:h-48 object-cover rounded-lg hover:scale-105 transition-transform"
                           />
                         </div>
-                        <h3 className="font-semibold text-gray-900 mb-2 hover:text-orange-600 transition-colors line-clamp-2">{deal.name}</h3>
-                        <div className="flex items-center gap-2 mb-4">
-                          <span className="text-lg font-bold text-red-600">GHS {deal.sale_price?.toFixed(2)}</span>
-                          <span className="text-sm text-gray-500 line-through">GHS {deal.regular_price.toFixed(2)}</span>
+                        <h3 className="font-semibold text-gray-900 mb-2 hover:text-orange-600 transition-colors line-clamp-2 text-sm sm:text-base">{deal.name}</h3>
+                        <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                          <span className="text-base sm:text-lg font-bold text-red-600">GHS {deal.sale_price?.toFixed(2)}</span>
+                          <span className="text-xs sm:text-sm text-gray-500 line-through">GHS {deal.regular_price.toFixed(2)}</span>
                         </div>
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
                             router.push(`/products/${deal.slug}`);
                           }}
-                          className="w-full bg-orange-600 text-white px-4 py-2 rounded text-sm hover:bg-orange-700 transition-colors font-medium"
+                          className="w-full bg-orange-600 text-white px-3 sm:px-4 py-2 rounded text-xs sm:text-sm hover:bg-orange-700 transition-colors font-medium"
                         >
                           View Deal
                         </button>
@@ -264,12 +265,12 @@ export default function ShopPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
               {/* Categories Sidebar */}
               <div className="lg:col-span-1">
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-24">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Categories</h3>
-                  <div className="space-y-2">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 lg:sticky lg:top-24">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Categories</h3>
+                  <div className="space-y-1 sm:space-y-2">
                     {categories.map((category) => {
                       const count = selectedCategory === "all" 
                         ? filteredProducts.length 
@@ -279,7 +280,7 @@ export default function ShopPage() {
                         <button
                           key={category.id}
                           onClick={() => setSelectedCategory(category.id)}
-                          className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                          className={`w-full text-left px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm transition-colors ${
                             selectedCategory === category.id
                               ? 'bg-orange-100 text-orange-900 font-medium'
                               : 'text-gray-700 hover:bg-gray-100'
@@ -296,22 +297,22 @@ export default function ShopPage() {
               {/* Products Section */}
               <div className="lg:col-span-3">
                 {/* Controls */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-4">
                   <div className="flex items-center">
-                    <span className="text-sm text-gray-600">
+                    <span className="text-xs sm:text-sm text-gray-600">
                       Showing {filteredProducts.length} products
                       {selectedCategory !== "all" && (
-                        <span> in {categories.find(c => c.id === selectedCategory)?.name}</span>
+                        <span className="hidden sm:inline"> in {categories.find(c => c.id === selectedCategory)?.name}</span>
                       )}
                     </span>
                   </div>
                   
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
                     {/* Sort */}
                     <select 
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value)}
-                      className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+                      className="flex-1 sm:flex-initial border border-gray-300 rounded-md px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm"
                     >
                       <option value="newest">Newest</option>
                       <option value="price-low">Price: Low to High</option>
@@ -320,18 +321,18 @@ export default function ShopPage() {
                     </select>
 
                     {/* View Mode */}
-                    <div className="flex border border-gray-300 rounded-md">
+                    <div className="flex border border-gray-300 rounded-md flex-shrink-0">
                       <button
                         onClick={() => setViewMode("grid")}
-                        className={`p-2 ${viewMode === "grid" ? "bg-orange-100 text-orange-600" : "text-gray-500"}`}
+                        className={`p-1.5 sm:p-2 ${viewMode === "grid" ? "bg-orange-100 text-orange-600" : "text-gray-500"}`}
                       >
-                        <Grid className="h-4 w-4" />
+                        <Grid className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </button>
                       <button
                         onClick={() => setViewMode("list")}
-                        className={`p-2 border-l ${viewMode === "list" ? "bg-orange-100 text-orange-600" : "text-gray-500"}`}
+                        className={`p-1.5 sm:p-2 border-l ${viewMode === "list" ? "bg-orange-100 text-orange-600" : "text-gray-500"}`}
                       >
-                        <List className="h-4 w-4" />
+                        <List className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </button>
                     </div>
                   </div>
@@ -339,23 +340,23 @@ export default function ShopPage() {
 
                 {/* Products Grid/List */}
                 {filteredProducts.length === 0 ? (
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-                    <Filter className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-                    <p className="text-gray-600 mb-4">
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 sm:p-12 text-center">
+                    <Filter className="h-12 w-12 sm:h-16 sm:w-16 text-gray-300 mx-auto mb-3 sm:mb-4" />
+                    <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No products found</h3>
+                    <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">
                       Try selecting a different category or check back later.
                     </p>
                     <button
                       onClick={() => setSelectedCategory("all")}
-                      className="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors"
+                      className="inline-flex items-center px-3 sm:px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors text-sm"
                     >
                       View All Products
                     </button>
                   </div>
                 ) : (
-                  <div className={`grid gap-6 ${
+                  <div className={`grid gap-4 sm:gap-6 ${
                     viewMode === "grid" 
-                      ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" 
+                      ? "grid-cols-2 sm:grid-cols-2 lg:grid-cols-3" 
                       : "grid-cols-1"
                   }`}>
                     {filteredProducts.map((product) => (

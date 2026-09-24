@@ -11,6 +11,12 @@ export const metadata: Metadata = {
   title: "RUFA ELAN | Quality and Affordable Women's Fashion Accessories in Ghana",
   description: "RUFA ELAN is a premium ladies Fashion Accessories store in Ghana offering nationwide delivery, trusted checkout, and a luxury shopping experience.",
   metadataBase: new URL(appUrl),
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 5,
+    userScalable: true,
+  },
   openGraph: {
     title: "RUFA ELAN | Quality and Affordable Women's Fashion Accessories",
     description: "Shop premium ladies fashion accessories with nationwide delivery across Ghana.",

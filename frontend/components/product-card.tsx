@@ -56,14 +56,14 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
   };
   if (layout === "list") {
     return (
-      <Link href={`/products/${product.slug}`} className="group flex gap-6 overflow-hidden rounded-lg border border-gray-200 bg-white p-6 transition-shadow hover:shadow-md relative">
+      <Link href={`/products/${product.slug}`} className="group flex flex-col sm:flex-row gap-4 sm:gap-6 overflow-hidden rounded-lg border border-gray-200 bg-white p-4 sm:p-6 transition-shadow hover:shadow-md relative">
         {/* Error notification */}
         {showError && cartError && (
-          <div className="absolute top-4 right-4 z-10 bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-sm shadow-lg">
+          <div className="absolute top-2 sm:top-4 right-2 sm:right-4 z-10 bg-red-100 border border-red-400 text-red-700 px-2 sm:px-3 py-1.5 sm:py-2 rounded text-xs sm:text-sm shadow-lg">
             {cartError}
           </div>
         )}
-        <div className="h-32 w-32 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 relative">
+        <div className="h-40 w-full sm:h-32 sm:w-32 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 relative">
           <img 
             src={product.image} 
             alt={product.name} 
@@ -100,30 +100,30 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
         <div className="flex flex-1 flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-500">{product.category}</span>
-              <span className="text-sm text-gray-500">{product.rating.toFixed(1)} ★</span>
+              <span className="text-xs sm:text-sm text-gray-500">{product.category}</span>
+              <span className="text-xs sm:text-sm text-gray-500">{product.rating.toFixed(1)} ★</span>
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">{product.name}</h3>
-            <p className="text-gray-600 text-sm">Premium quality handbag with elegant design and durable materials.</p>
+            <h3 className="text-base sm:text-xl font-semibold text-gray-900 mb-2 line-clamp-2">{product.name}</h3>
+            <p className="text-gray-600 text-xs sm:text-sm hidden sm:block">Premium quality handbag with elegant design and durable materials.</p>
             {product.stock_quantity !== undefined && (
-              <p className="text-sm text-gray-600 mt-2">
+              <p className="text-xs sm:text-sm text-gray-600 mt-2">
                 <span className="font-medium">Available:</span> {product.stock_quantity} {product.stock_quantity === 1 ? 'unit' : 'units'}
               </p>
             )}
           </div>
-          <div className="flex items-center justify-between mt-4">
-            <div className="flex items-center gap-3">
-              <span className="text-lg font-semibold text-gray-900">GHS {product.salePrice ?? product.price}</span>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between mt-3 sm:mt-4 gap-2 sm:gap-0">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <span className="text-base sm:text-lg font-semibold text-gray-900">GHS {product.salePrice ?? product.price}</span>
               {product.salePrice && (
-                <span className="text-sm text-gray-500 line-through">GHS {product.price}</span>
+                <span className="text-xs sm:text-sm text-gray-500 line-through">GHS {product.price}</span>
               )}
             </div>
             <button 
               onClick={handleAddToCart}
               disabled={!product.in_stock}
-              className={`px-4 py-2 rounded-md transition-colors ${
+              className={`px-3 sm:px-4 py-2 rounded-md transition-colors text-xs sm:text-sm font-medium ${
                 product.in_stock
-                  ? 'bg-orange-600 text-white hover:bg-orange-700'
+                  ? 'bg-orange-600 text-white hover:bg-orange-700 active:bg-orange-800'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
             >
@@ -136,10 +136,10 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
   }
 
   return (
-    <Link href={`/products/${product.slug}`} className="group overflow-hidden rounded-lg border border-gray-200 bg-white transition-shadow hover:shadow-md relative">
+    <Link href={`/products/${product.slug}`} className="group overflow-hidden rounded-lg border border-gray-200 bg-white transition-shadow hover:shadow-md relative flex flex-col">
       {/* Error notification */}
       {showError && cartError && (
-        <div className="absolute top-2 left-2 right-2 z-10 bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-xs shadow-lg">
+        <div className="absolute top-2 left-2 right-2 z-10 bg-red-100 border border-red-400 text-red-700 px-2 sm:px-3 py-1.5 sm:py-2 rounded text-xs shadow-lg">
           {cartError}
         </div>
       )}
@@ -179,29 +179,29 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
           </div>
         )}
       </div>
-      <div className="space-y-3 p-5">
-        <div className="flex items-center justify-between text-sm text-gray-500">
-          <span>{product.category}</span>
-          <span>{product.rating.toFixed(1)} ★</span>
+      <div className="space-y-2 sm:space-y-3 p-3 sm:p-4 lg:p-5 flex-1 flex flex-col">
+        <div className="flex items-center justify-between text-xs sm:text-sm text-gray-500">
+          <span className="truncate mr-2">{product.category}</span>
+          <span className="flex-shrink-0">{product.rating.toFixed(1)} ★</span>
         </div>
-        <h3 className="text-lg font-semibold text-gray-900">{product.name}</h3>
+        <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 line-clamp-2 flex-grow">{product.name}</h3>
         {product.stock_quantity !== undefined && (
           <p className="text-xs text-gray-600">
             <span className="font-medium">Stock:</span> {product.stock_quantity} available
           </p>
         )}
-        <div className="flex items-center gap-3">
-          <span className="text-base font-semibold text-gray-900">GHS {product.salePrice ?? product.price}</span>
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <span className="text-sm sm:text-base font-semibold text-gray-900">GHS {product.salePrice ?? product.price}</span>
           {product.salePrice && (
-            <span className="text-sm text-gray-500 line-through">GHS {product.price}</span>
+            <span className="text-xs sm:text-sm text-gray-500 line-through">GHS {product.price}</span>
           )}
         </div>
         <button 
           onClick={handleAddToCart}
           disabled={!product.in_stock}
-          className={`w-full py-2 rounded-md transition-colors font-medium ${
+          className={`w-full py-1.5 sm:py-2 rounded-md transition-colors font-medium text-xs sm:text-sm ${
             product.in_stock
-              ? 'bg-orange-600 text-white hover:bg-orange-700'
+              ? 'bg-orange-600 text-white hover:bg-orange-700 active:bg-orange-800'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
         >

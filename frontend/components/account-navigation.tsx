@@ -11,7 +11,8 @@ import {
   CreditCard, 
   Bell, 
   Settings,
-  Store
+  Store,
+  LogOut
 } from "lucide-react";
 
 type UserProfile = {
@@ -25,9 +26,17 @@ type UserProfile = {
 
 interface AccountNavigationProps {
   userProfile: UserProfile;
+  onNavigate?: () => void;
+  variant?: "all" | "profile";
+  onSignOut?: () => void;
 }
 
-export default function AccountNavigation({ userProfile }: AccountNavigationProps) {
+export default function AccountNavigation({
+  userProfile,
+  onNavigate,
+  variant = "all",
+  onSignOut,
+}: AccountNavigationProps) {
   const pathname = usePathname();
   const [avatarError, setAvatarError] = useState<boolean>(false);
   
@@ -41,6 +50,14 @@ export default function AccountNavigation({ userProfile }: AccountNavigationProp
     { name: 'Notifications', href: '/account/notifications', icon: Bell },
     { name: 'Settings', href: '/account/settings', icon: Settings },
   ];
+  const visibleNavigation = variant === "profile"
+    ? navigation.filter((item) => [
+        "/account/addresses",
+        "/account/payments",
+        "/account/notifications",
+        "/account/settings",
+      ].includes(item.href))
+    : navigation;
 
   const handleAvatarError = () => {
     setAvatarError(true);
@@ -76,12 +93,13 @@ export default function AccountNavigation({ userProfile }: AccountNavigationProp
 
         {/* Navigation Menu */}
         <nav className="space-y-1 flex-1 overflow-y-auto pr-2">
-          {navigation.map((item) => {
+          {visibleNavigation.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
                 key={item.name}
                 href={item.href}
+                onClick={onNavigate}
                 className={`flex items-center px-3 py-3 text-sm font-medium rounded-md transition-colors w-full ${
                   isActive
                     ? 'bg-orange-100 text-orange-900'
@@ -93,6 +111,16 @@ export default function AccountNavigation({ userProfile }: AccountNavigationProp
               </Link>
             );
           })}
+          {variant === "profile" && onSignOut && (
+            <button
+              type="button"
+              onClick={onSignOut}
+              className="flex w-full items-center rounded-md px-3 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-900"
+            >
+              <LogOut className="mr-3 h-4 w-4 flex-shrink-0 text-gray-400" />
+              Sign Out
+            </button>
+          )}
         </nav>
       </div>
     </div>
