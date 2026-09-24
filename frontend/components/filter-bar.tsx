@@ -54,6 +54,21 @@ export default function FilterBar({
 
   useEffect(() => setDraftFilters(filters), [filters]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (showSortDropdown && !target.closest('.sort-dropdown-container')) {
+        setShowSortDropdown(false);
+      }
+    };
+
+    if (showSortDropdown) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [showSortDropdown]);
+
   const updateDraft = (updates: Partial<ProductFilters>) => {
     setDraftFilters((current) => ({ ...current, ...updates }));
   };
@@ -69,7 +84,7 @@ export default function FilterBar({
   };
 
   return (
-    <div className={cn("bg-white border-b border-slate-200 py-2 sm:py-3", className)}>
+    <div className={cn("bg-white border-b border-slate-200 py-2 sm:py-3 relative overflow-visible", className)}>
       <div className="mx-auto max-w-7xl px-3 sm:px-4">
         <div className="flex items-center justify-between gap-2 sm:gap-3">
           <div className="text-xs sm:text-sm text-slate-600">
@@ -77,25 +92,52 @@ export default function FilterBar({
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-3">
-            <div className="relative">
+            <div className="relative sort-dropdown-container">
               <button
                 type="button"
-                onClick={() => setShowSortDropdown((visible) => !visible)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('Sort button clicked, current state:', showSortDropdown);
+                  setShowSortDropdown((visible) => !visible);
+                }}
                 aria-expanded={showSortDropdown}
-                className="flex items-center gap-1 sm:gap-2 rounded-md border border-slate-300 bg-white px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 hover:bg-slate-50 active:bg-slate-100"
+                className="flex items-center gap-1 sm:gap-2 rounded-md border border-slate-300 bg-white px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-700 hover:bg-slate-50 active:bg-slate-100 touch-manipulation"
               >
                 <span className="hidden sm:inline">{sortOptions.find((option) => option.value === sort)?.label}</span>
                 <span className="sm:hidden">Sort</span>
-                <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4" />
+                <ChevronDown className={cn("h-3 w-3 sm:h-4 sm:w-4 transition-transform", showSortDropdown && "rotate-180")} />
               </button>
               {showSortDropdown && (
-                <div className="absolute right-0 top-full z-20 mt-1 w-40 sm:w-48 rounded-md border border-slate-200 bg-white shadow-lg">
-                  {sortOptions.map((option) => (
-                    <button key={option.value} type="button" onClick={() => { onSortChange?.(option.value); setShowSortDropdown(false); }} className={cn("w-full px-3 sm:px-4 py-2 text-left text-xs sm:text-sm hover:bg-slate-50", sort === option.value ? "bg-rufaelan-primary/10 text-rufaelan-primary font-medium" : "text-slate-700")}>
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
+                <>
+                  {/* Backdrop for mobile - closes dropdown when clicked */}
+                  <div 
+                    className="fixed inset-0 z-10 sm:hidden" 
+                    onClick={() => setShowSortDropdown(false)}
+                    aria-hidden="true"
+                  />
+                  <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-md border border-slate-200 bg-white shadow-xl">
+                    {sortOptions.map((option) => (
+                      <button 
+                        key={option.value} 
+                        type="button" 
+                        onClick={(e) => { 
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('Sort option clicked:', option.value);
+                          onSortChange?.(option.value); 
+                          setShowSortDropdown(false); 
+                        }} 
+                        className={cn(
+                          "w-full px-3 sm:px-4 py-2.5 sm:py-2 text-left text-xs sm:text-sm hover:bg-slate-50 active:bg-slate-100 touch-manipulation transition-colors",
+                          sort === option.value ? "bg-rufaelan-primary/10 text-rufaelan-primary font-medium" : "text-slate-700"
+                        )}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
 
