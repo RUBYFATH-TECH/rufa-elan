@@ -3,6 +3,7 @@
     "target": "ES2020",
     "module": "commonjs",
     "lib": ["ES2020"],
+    "types": ["node"],
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": false,
@@ -18,7 +19,8 @@
     "noImplicitReturns": false,
     "noImplicitThis": false,
     "noUnusedLocals": false,
-    "noUnusedParameters": false
+    "noUnusedParameters": false,
+    "moduleResolution": "node"
   },
   "include": [
     "src/**/*"
