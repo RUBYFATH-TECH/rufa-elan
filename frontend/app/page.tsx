@@ -38,7 +38,7 @@ interface LandingProduct {
   reviewCount?: number;
   popularity: number;
   createdAt: string;
-  badge?: string | null;
+  badge?: string;
 }
 
 export default function HomePage() {
@@ -75,7 +75,7 @@ export default function HomePage() {
         reviewCount: p.review_count && p.review_count > 0 ? p.review_count : undefined,
         popularity: Number(p.popularity || 0),
         createdAt: p.created_at || "",
-        badge: p.sale_price && p.sale_price > 0 ? `${Math.round(((p.regular_price - p.sale_price) / p.regular_price) * 100)}% OFF` : null,
+        badge: p.sale_price && p.sale_price > 0 ? `${Math.round(((p.regular_price - p.sale_price) / p.regular_price) * 100)}% OFF` : undefined,
         slug: p.slug,
       }));
       

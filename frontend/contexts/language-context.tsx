@@ -146,11 +146,11 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     window.localStorage.setItem("rufa-elan-language", language);
   }, [language]);
 
-  const t = (key: TranslationKey, values: Record<string, string | number> = {}) =>
+  const t = (key: TranslationKey, values: Record<string, string | number> = {}): string =>
     Object.entries(values).reduce(
       (text, [name, value]) => text.replace(`{${name}}`, String(value)),
-      translations[language][key]
-    );
+      translations[language][key] as string
+    ) as string;
 
   return <LanguageContext.Provider value={{ language, setLanguage, t }}>{children}</LanguageContext.Provider>;
 }

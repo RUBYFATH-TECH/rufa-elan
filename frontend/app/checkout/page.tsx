@@ -15,6 +15,12 @@ const DeliveryMap = dynamic(() => import("@/components/delivery-map"), {
   loading: () => <div className="w-full h-64 bg-slate-100 flex items-center justify-center rounded-lg">Loading map...</div>
 });
 
+// Kumasi office coordinates for distance calculation
+const KUMASI_OFFICE = {
+  lat: 6.6884,
+  lng: -1.6244
+};
+
 type CheckoutPayload = {
   orderId: string;
   email: string;
@@ -252,35 +258,41 @@ export default function CheckoutPage() {
       return;
     }
 
-    const orderId = `RUFA-${Math.floor(Date.now() / 1000)}`;
-    const orderPayload: CheckoutPayload = {
-      orderId,
-      email: selectedAddress.email,
-      amount: grandTotal,
-      subtotal: totalAmount,
-      shipping_fee: deliveryFee,
-      discount_amount: 0,
-      items,
-      shipping_address: {
-        full_name: selectedAddress.full_name,
-        email: selectedAddress.email,
-        phone: selectedAddress.phone,
-        address: selectedAddress.address,
-        city: selectedAddress.city,
-        deliveryOption
-      }
-    };
-
-    setPendingOrder(orderPayload);
-
     try {
-      // Get auth token
+      // Get auth token and user email
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        setMessage("Authentication required. Please log in.");
-        setPaymentStatus("failed");
+        setMessage("Please log in to continue");
+        router.push("/auth/login?redirect=/checkout");
         return;
       }
+
+      const userEmail = session.user.email || selectedAddress.email || '';
+      if (!userEmail) {
+        setMessage("Email is required for checkout");
+        return;
+      }
+
+      const orderId = `RUFA-${Math.floor(Date.now() / 1000)}`;
+      const orderPayload: CheckoutPayload = {
+        orderId,
+        email: userEmail,
+        amount: grandTotal,
+        subtotal: totalAmount,
+        shipping_fee: deliveryFee,
+        discount_amount: 0,
+        items,
+        shipping_address: {
+          full_name: selectedAddress.full_name,
+          email: userEmail,
+          phone: selectedAddress.phone,
+          address: selectedAddress.address,
+          city: selectedAddress.city,
+          deliveryOption
+        }
+      };
+
+      setPendingOrder(orderPayload);
 
       // Call backend payment initialization endpoint
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
@@ -293,14 +305,14 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           order_id: orderId,
           amount: grandTotal,
-          email: selectedAddress.email,
+          email: userEmail,
           metadata: {
             delivery_option: deliveryOption,
             address_id: selectedAddress.id,
             subtotal_amount: totalAmount,
             shipping_fee: deliveryFee,
             discount_amount: 0,
-            items: items.map(i => ({
+            items: items.map((i: CartItem) => ({
               product_variant_id: i.id,
               quantity: i.quantity,
               price: i.price
@@ -362,12 +374,12 @@ export default function CheckoutPage() {
       const paymentId = data.data?.payment_id;
       
       setPaymentUrl(authorizationUrl);
-      setPaymentDetails({ authorization_url: authorizationUrl, reference, amount: grandTotal, email: selectedAddress.email });
+      setPaymentDetails({ authorization_url: authorizationUrl, reference, amount: grandTotal, email: userEmail });
       setPaymentStatus("initialized");
       setMessage(null);
       
       // Open Paystack
-      openPaystackInline({ authorization_url: authorizationUrl, reference, amount: grandTotal, email: selectedAddress.email });
+      openPaystackInline({ authorization_url: authorizationUrl, reference, amount: grandTotal, email: userEmail });
     } catch (error) {
       console.error("Payment error:", error);
       setMessage("Failed to initialize payment. Please try again.");

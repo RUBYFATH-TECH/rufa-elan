@@ -6,11 +6,14 @@ import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
 
 interface ReviewFormProps {
   productId: string;
+  orderId?: string;
+  orderItemId?: string;
+  productName?: string;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
-export default function ReviewForm({ productId, onSuccess, onCancel }: ReviewFormProps) {
+export default function ReviewForm({ productId, orderId, orderItemId, productName, onSuccess, onCancel }: ReviewFormProps) {
   const supabase = createClientComponentSupabaseClient();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);

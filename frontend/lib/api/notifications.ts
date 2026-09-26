@@ -61,7 +61,7 @@ export async function getNotificationStats(
         },
       }
     );
-    return response.data.data;
+    return (response as any).data.data;
   } catch (error) {
     console.error('Failed to fetch notification stats:', error);
     return null;
@@ -96,7 +96,7 @@ export async function getNotifications(
       },
     });
 
-    return response.data.data;
+    return (response as any).data.data;
   } catch (error) {
     console.error('Failed to fetch notifications:', error);
     throw error;

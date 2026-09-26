@@ -62,8 +62,7 @@ const InvoiceReceipt = React.forwardRef<HTMLDivElement, InvoiceProps>(
     const printRef = ref || contentRef;
 
     const handlePrint = useReactToPrint({
-      contentElement: (printRef as React.RefObject<HTMLDivElement>)
-        .current,
+      contentRef: printRef as React.RefObject<HTMLDivElement>,
       documentTitle: `Invoice-${orderNumber}`,
     });
 

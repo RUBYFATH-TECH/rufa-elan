@@ -1,9 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { verifyPayment } from '@/lib/paystack';
 import { createClientComponentSupabaseClient } from '@/lib/supabase-client';
+
+// Force dynamic rendering for this page
+export const dynamic = 'force-dynamic';
 
 interface PaymentStatus {
   loading: boolean;
@@ -17,7 +20,7 @@ interface PaymentStatus {
  * Payment Callback Page
  * Handles payment verification after Paystack redirect
  */
-export default function PaymentCallbackPage() {
+function PaymentCallbackContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [status, setStatus] = useState<PaymentStatus>({
@@ -199,5 +202,25 @@ export default function PaymentCallbackPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function PaymentCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="flex justify-center mb-4">
+            <div className="relative w-16 h-16">
+              <div className="absolute inset-0 border-4 border-blue-200 rounded-full" />
+              <div className="absolute inset-0 border-4 border-transparent border-t-blue-600 rounded-full animate-spin" />
+            </div>
+          </div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <PaymentCallbackContent />
+    </Suspense>
   );
 }

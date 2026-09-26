@@ -131,19 +131,18 @@ export default function NotificationPreferences() {
   const togglePreference = (category: string, preference: string) => {
     if (!preferences) return;
 
+    const categoryPrefs = preferences.notifications[category as keyof typeof preferences.notifications];
+    const preferenceItem = (categoryPrefs as any)[preference] as NotificationPreference;
+    
     setPreferences({
       ...preferences,
       notifications: {
         ...preferences.notifications,
         [category]: {
-          ...preferences.notifications[category as keyof typeof preferences.notifications],
+          ...categoryPrefs,
           [preference]: {
-            ...preferences.notifications[category as keyof typeof preferences.notifications][
-              preference as keyof typeof preferences.notifications[keyof typeof preferences.notifications]
-            ],
-            enabled: !(preferences.notifications[category as keyof typeof preferences.notifications][
-              preference as keyof typeof preferences.notifications[keyof typeof preferences.notifications]
-            ] as NotificationPreference).enabled,
+            ...preferenceItem,
+            enabled: !preferenceItem.enabled,
           },
         },
       },
@@ -153,9 +152,9 @@ export default function NotificationPreferences() {
   const toggleChannel = (category: string, preference: string, channel: string) => {
     if (!preferences) return;
 
-    const currentChannels = (preferences.notifications[category as keyof typeof preferences.notifications][
-      preference as keyof typeof preferences.notifications[keyof typeof preferences.notifications]
-    ] as NotificationPreference).channels;
+    const categoryPrefs = preferences.notifications[category as keyof typeof preferences.notifications];
+    const preferenceItem = (categoryPrefs as any)[preference] as NotificationPreference;
+    const currentChannels = preferenceItem.channels;
 
     const newChannels = currentChannels.includes(channel)
       ? currentChannels.filter((c) => c !== channel)
@@ -166,11 +165,9 @@ export default function NotificationPreferences() {
       notifications: {
         ...preferences.notifications,
         [category]: {
-          ...preferences.notifications[category as keyof typeof preferences.notifications],
+          ...categoryPrefs,
           [preference]: {
-            ...preferences.notifications[category as keyof typeof preferences.notifications][
-              preference as keyof typeof preferences.notifications[keyof typeof preferences.notifications]
-            ],
+            ...preferenceItem,
             channels: newChannels,
           },
         },
@@ -181,7 +178,7 @@ export default function NotificationPreferences() {
   const renderPreferenceSection = (
     title: string,
     icon: string,
-    category: keyof typeof preferences.notifications,
+    category: string,
     items: Array<{ key: string; label: string; description: string }>
   ) => {
     if (!preferences) return null;
@@ -195,9 +192,8 @@ export default function NotificationPreferences() {
 
         <div className="space-y-6">
           {items.map((item) => {
-            const pref = preferences.notifications[category][
-              item.key as keyof typeof preferences.notifications[typeof category]
-            ] as NotificationPreference;
+            const categoryPrefs = preferences.notifications[category as keyof typeof preferences.notifications];
+            const pref = (categoryPrefs as any)[item.key] as NotificationPreference;
 
             return (
               <div key={item.key} className="border-b pb-6 last:border-b-0 last:pb-0">
