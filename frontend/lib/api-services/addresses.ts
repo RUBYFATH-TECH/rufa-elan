@@ -35,6 +35,8 @@ export interface Address {
   country: string;
   delivery_instructions?: string;
   is_default: boolean;
+  latitude?: number;
+  longitude?: number;
   created_at: string;
   updated_at: string;
 }
@@ -51,6 +53,8 @@ export interface CreateAddressInput {
   country: string;
   delivery_instructions?: string;
   is_default?: boolean;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface UpdateAddressInput extends Partial<CreateAddressInput> {}
