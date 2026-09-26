@@ -83,6 +83,7 @@ export default function AdminDashboardPage() {
 
         // Get auth session token
         const { createClientComponentSupabaseClient } = await import('@/lib/supabase-client');
+        const { getBackendUrl } = await import('@/lib/backend-url');
         const supabase = createClientComponentSupabaseClient();
         const { data: { session } } = await supabase.auth.getSession();
 
@@ -92,6 +93,10 @@ export default function AdminDashboardPage() {
           return;
         }
 
+        // Get backend URL
+        const backendUrl = getBackendUrl();
+        console.log('Dashboard: Using backend URL:', backendUrl);
+
         // Fetch dashboard stats from backend API with auth headers
         const headers = {
           'Content-Type': 'application/json',
@@ -99,10 +104,10 @@ export default function AdminDashboardPage() {
         };
 
         const [statsRes, ordersRes, productsRes, dealsRes] = await Promise.all([
-          fetch('/backend-api/dashboard/stats', { headers }),
-          fetch('/backend-api/dashboard/recent-orders?limit=4', { headers }),
-          fetch('/backend-api/dashboard/top-products?limit=4', { headers }),
-          fetch('/backend-api/dashboard/fast-deals', { headers })
+          fetch(`${backendUrl}/api/dashboard/stats`, { headers }),
+          fetch(`${backendUrl}/api/dashboard/recent-orders?limit=4`, { headers }),
+          fetch(`${backendUrl}/api/dashboard/top-products?limit=4`, { headers }),
+          fetch(`${backendUrl}/api/dashboard/fast-deals`, { headers })
         ]);
 
         if (statsRes.ok) {
