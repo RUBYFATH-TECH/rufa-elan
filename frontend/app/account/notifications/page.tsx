@@ -23,6 +23,7 @@ type OrderPreview = {
   id: string;
   order_number: string;
   status: string;
+  delivery_confirmed_at?: string | null;
   items?: Array<{
     id: string;
     product_snapshot?: { product_name?: string; image_url?: string; description?: string; color?: string };
