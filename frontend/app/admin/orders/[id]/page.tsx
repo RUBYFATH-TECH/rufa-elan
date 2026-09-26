@@ -227,7 +227,7 @@ export default function OrderDetailPage() {
         </div>
         <div className="flex-1 overflow-auto flex items-center justify-center p-4">
           <img
-            src={selectedImage}
+            src={selectedImage ?? undefined}
             alt="Product"
             className="max-w-full max-h-full object-contain"
           />
