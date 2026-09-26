@@ -142,7 +142,6 @@ export default function EditProductPage() {
       };
 
       await updateProduct(productId, productPayload, session.access_token);
-      return { success: true };
     } catch (error) {
       throw error;
     }
