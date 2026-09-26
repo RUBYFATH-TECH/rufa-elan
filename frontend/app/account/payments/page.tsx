@@ -157,6 +157,7 @@ export default function PaymentMethodsPage() {
       setFormData({
         provider: method.provider,
         method_type: method.method_type,
+        label: method.label,
         account_name: method.account_name,
         account_number: method.account_number,
         phone_number: method.phone_number || '',
@@ -171,6 +172,7 @@ export default function PaymentMethodsPage() {
       setFormData({
         provider: '',
         method_type: '',
+        label: '',
         account_name: userProfile?.full_name || '',
         account_number: '',
         phone_number: userProfile?.phone || '',
