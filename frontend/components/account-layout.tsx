@@ -297,8 +297,15 @@ export default function AccountLayout({ children, requireAuth = true }: AccountL
           <LayoutDashboard className="h-5 w-5" />
           Overview
         </Link>
-        <Link href="/cart" className="flex flex-col items-center gap-0.5 rounded-md py-1 text-[10px] font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900">
-          <ShoppingCart className="h-5 w-5" />
+        <Link href="/cart" className="relative flex flex-col items-center gap-0.5 rounded-md py-1 text-[10px] font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900">
+          <div className="relative">
+            <ShoppingCart className="h-5 w-5" />
+            {mounted && cartCount > 0 && (
+              <span className="absolute -right-2 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
+                {cartCount}
+              </span>
+            )}
+          </div>
           Cart
         </Link>
         <Link href="/shop" className="flex flex-col items-center gap-0.5 rounded-md py-1 text-[10px] font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900">
