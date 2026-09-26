@@ -103,12 +103,12 @@ export default function AdminFastDealsPage() {
 
       setDeals(dealsFromAPI);
       setStats({
-        activeDealss: dealsFromAPI.filter((d) => d.status === "active").length,
+        activeDealss: dealsFromAPI.filter((d: FastDeal) => d.status === "active").length,
         totalRevenue: dealsFromAPI.reduce(
-          (sum, d) => sum + d.deal_price * d.stock_sold,
+          (sum: number, d: FastDeal) => sum + d.deal_price * d.stock_sold,
           0
         ),
-        soldUnits: dealsFromAPI.reduce((sum, d) => sum + d.stock_sold, 0),
+        soldUnits: dealsFromAPI.reduce((sum: number, d: FastDeal) => sum + d.stock_sold, 0),
       });
     } catch (error) {
       console.error("Error loading deals:", error);
@@ -119,7 +119,7 @@ export default function AdminFastDealsPage() {
 
   const handleDelete = async (id: string) => {
     // Open the confirmation modal instead of using browser confirm
-    const deal = deals.find(d => d.id === id);
+    const deal = deals.find((d: FastDeal) => d.id === id);
     setDeleteModal({
       isOpen: true,
       dealId: id,
