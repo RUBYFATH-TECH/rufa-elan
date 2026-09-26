@@ -46,49 +46,50 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4 lg:px-12">
-          <div className="flex items-center gap-2 sm:gap-3">
+      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-sm">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-2.5 sm:px-6 sm:py-4 lg:px-12">
+          <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
             {/* Hamburger Menu Button - Mobile Only */}
             <button 
               onClick={() => setSidebarOpen(true)} 
-              className="md:hidden rounded-lg border border-slate-200 p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 active:bg-slate-100 transition-all touch-manipulation"
+              className="md:hidden flex-shrink-0 rounded-lg border border-slate-200 p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 active:bg-slate-100 transition-all touch-manipulation"
               aria-label="Open menu"
               aria-expanded={sidebarOpen}
             >
               <Menu className="h-5 w-5" />
             </button>
 
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 flex-shrink-0 touch-manipulation">
+            {/* Logo - Optimized for mobile */}
+            <Link href="/" className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 min-w-0 touch-manipulation">
               <Image
                 src="/images/logo.png"
                 alt="RUFA ELAN Logo"
-                width={40}
-                height={40}
-                className="h-8 w-8 sm:h-10 sm:w-10 rounded-full"
+                width={36}
+                height={36}
+                className="h-7 w-7 sm:h-9 sm:w-9 rounded-full flex-shrink-0"
                 priority
               />
-              <span className="hidden text-lg sm:text-xl font-semibold tracking-tight text-slate-950 sm:inline">RUFA ELAN</span>
+              <span className="text-base sm:text-lg lg:text-xl font-semibold tracking-tight text-slate-950 truncate">RUFA ELAN</span>
             </Link>
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden items-center gap-6 lg:gap-8 md:flex">
+          <nav className="hidden items-center gap-4 lg:gap-6 md:flex">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href as any}
-                className={`text-sm font-medium transition-colors ${pathname === link.href ? "text-brand-900" : "text-slate-600 hover:text-slate-900"}`}
+                className={`text-sm font-medium transition-colors whitespace-nowrap ${pathname === link.href ? "text-brand-900" : "text-slate-600 hover:text-slate-900"}`}
               >
                 {link.label}
               </Link>
             ))}
           </nav>
 
-          {/* Right Side Actions */}
-          <div className="flex items-center gap-2 sm:gap-4">
-            <div className="hidden items-center gap-2 sm:gap-3 md:flex">
+          {/* Right Side Actions - Compact for mobile */}
+          <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
+            {/* Desktop Icons */}
+            <div className="hidden items-center gap-2 md:flex">
               <Link href="/wishlist" className="relative rounded-lg border border-slate-200 p-2 text-slate-600 transition-all hover:text-slate-900 hover:bg-slate-50 hover:border-slate-300">
                 <Heart className="h-5 w-5" />
                 {mounted && wishlistCount > 0 && (
@@ -105,25 +106,25 @@ export default function Navbar() {
                   </span>
                 )}
               </Link>
-              <Link href="/account" className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 sm:px-4 py-2 text-sm font-semibold text-slate-900 transition-all hover:border-slate-300 hover:bg-slate-50">
+              <Link href="/account" className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 transition-all hover:border-slate-300 hover:bg-slate-50">
                 <User className="h-4 w-4" /> <span className="hidden lg:inline">Account</span>
               </Link>
             </div>
 
-            {/* Mobile Icons - Better touch targets */}
-            <div className="flex items-center gap-2 md:hidden">
-              <Link href="/wishlist" className="relative rounded-lg border border-slate-200 p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-50 active:bg-slate-100 transition-all touch-manipulation">
-                <Heart className="h-5 w-5" />
+            {/* Mobile Icons - Compact */}
+            <div className="flex items-center gap-1.5 md:hidden">
+              <Link href="/wishlist" className="relative rounded-lg border border-slate-200 p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 active:bg-slate-100 transition-all touch-manipulation">
+                <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
                 {mounted && wishlistCount > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-700 text-xs font-semibold text-white">
+                  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-brand-700 text-[10px] font-semibold text-white">
                     {wishlistCount}
                   </span>
                 )}
               </Link>
-              <Link href="/cart" className="relative rounded-lg border border-slate-200 p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-50 active:bg-slate-100 transition-all touch-manipulation">
-                <ShoppingBag className="h-5 w-5" />
+              <Link href="/cart" className="relative rounded-lg border border-slate-200 p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 active:bg-slate-100 transition-all touch-manipulation">
+                <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5" />
                 {mounted && cartCount > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-700 text-xs font-semibold text-white">
+                  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-brand-700 text-[10px] font-semibold text-white">
                     {cartCount}
                   </span>
                 )}
