@@ -72,6 +72,7 @@ export default function PaymentMethodsPage() {
   const [formData, setFormData] = useState<CreatePaymentMethodInput>({
     provider: '',
     method_type: '',
+    label: '',
     account_name: '',
     account_number: '',
     phone_number: '',
