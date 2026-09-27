@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import FilterBar from "@/components/filter-bar";
 import type { ProductFilters, ProductSort } from "@/components/filter-bar";
-import OrderTrackingCta from "@/components/order-tracking-cta";
 import TemuDealsSection from "@/components/temu-deals-section";
 import FastDealsSection from "@/components/fast-deals-section";
 import TemuProductCard from "@/components/temu-product-card";
@@ -388,7 +387,6 @@ export default function HomePage() {
 
         </div>
       </div>
-      <OrderTrackingCta />
       <MobileBottomNav />
     </div>
   );

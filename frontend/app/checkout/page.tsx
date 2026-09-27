@@ -192,60 +192,7 @@ export default function CheckoutPage() {
     }
   }, [selectedAddress, deliveryOption]);
 
-  // Load Paystack script
-  useEffect(() => {
-    if (!paystackPublicKey || paystackScriptLoaded) return;
 
-    const script = document.createElement("script");
-    script.src = "https://js.paystack.co/v1/inline.js";
-    script.async = true;
-    script.onload = () => setPaystackScriptLoaded(true);
-    document.body.appendChild(script);
-
-    return () => {
-      if (document.body.contains(script)) document.body.removeChild(script);
-    };
-  }, [paystackPublicKey, paystackScriptLoaded]);
-
-  // Load addresses on mount
-  useEffect(() => {
-    setHasMounted(true);
-    
-    const loadAddresses = async () => {
-      try {
-        const { data } = await supabase.auth.getSession();
-        if (!data.session) {
-          router.push("/auth/login?redirect=/checkout");
-          return;
-        }
-
-        const response = await fetch("/api/addresses", {
-          method: "GET",
-          headers: { "Content-Type": "application/json" }
-        });
-
-        if (response.ok) {
-          const addresses = await response.json();
-          if (addresses && addresses.length > 0) {
-            setUserAddresses(addresses);
-            // Set default address as selected
-            const defaultAddress = addresses.find((a: any) => a.is_default) || addresses[0];
-            setSelectedAddress(defaultAddress);
-          } else {
-            // No addresses - redirect to add address
-            router.push("/account/addresses?redirect=/checkout");
-            return;
-          }
-        }
-        setIsLoading(false);
-      } catch (error) {
-        console.error("Error loading addresses:", error);
-        setIsLoading(false);
-      }
-    };
-
-    loadAddresses();
-  }, [router, supabase]);
 
   const handleProceedToPayment = async () => {
     if (!selectedAddress) {
@@ -253,11 +200,9 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!isPaystackConfigured) {
-      setMessage("Payment service is not configured. Please try again later.");
-      return;
-    }
-
+    // paystackPublicKey is used only for the inline modal; the backend
+    // initializes the payment independently. If the key is missing we fall
+    // back to the hosted checkout page, so we never block the user here.
     try {
       // Get auth token and user email
       const { data: { session } } = await supabase.auth.getSession();
