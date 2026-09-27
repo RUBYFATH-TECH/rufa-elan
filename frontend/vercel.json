@@ -1,0 +1,24 @@
+{
+  "env": {
+    "NEXT_PUBLIC_BACKEND_URL": "https://rufaelan-backend.onrender.com",
+    "NEXT_PUBLIC_API_URL": "https://rufaelan-backend.onrender.com",
+    "NEXT_PUBLIC_SUPABASE_URL": "https://rxvpxsoadadbodfskhky.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4dnB4c29hZGFkYm9kZnNraGt5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3NDUxNDcsImV4cCI6MjEwMDMyMTE0N30.U22W_YDiphJ0LsRbdHPWtvHGINp3BeEFMmsZ0UFCcSc",
+    "NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY": "pk_test_ba005f00455dc204a2460451190886622ec1b375"
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    }
+  ]
+}
