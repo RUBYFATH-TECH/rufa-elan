@@ -3,14 +3,21 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { Search, ShoppingCart, User, Languages, Menu, X } from "lucide-react";
+import { Search, ShoppingCart, User, Languages, X } from "lucide-react";
 import { useCartStore } from "@/store/cart-store";
 import { Language, useLanguage } from "@/contexts/language-context";
+
+const languageLabels: Record<Language, string> = {
+  en: "EN",
+  fr: "FR",
+  es: "ES",
+  tr: "TR",
+  ar: "AR",
+};
 
 export default function TemuHeader() {
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const mobileSearchRef = useRef<HTMLInputElement>(null);
   const cartItems = useCartStore((state) => state.items);
@@ -78,6 +85,7 @@ export default function TemuHeader() {
 
           {/* Right side actions */}
           <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3 md:ml-0 md:justify-self-end md:gap-5">
+
             {/* Desktop: Orders & Account */}
             <Link href="/auth/login" className="hidden items-center gap-2 text-sm text-gray-700 hover:text-gray-900 md:flex">
               <User className="h-5 w-5" />
@@ -109,10 +117,7 @@ export default function TemuHeader() {
 
             {/* Mobile: Search icon button */}
             <button
-              onClick={() => {
-                setMobileSearchOpen((prev) => !prev);
-                setMobileMenuOpen(false);
-              }}
+              onClick={() => setMobileSearchOpen((prev) => !prev)}
               aria-label="Toggle search"
               aria-expanded={mobileSearchOpen}
               className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors md:hidden"
@@ -121,7 +126,11 @@ export default function TemuHeader() {
             </button>
 
             {/* Cart */}
-            <Link href="/cart" aria-label="Shopping cart" className="relative flex h-9 w-9 items-center justify-center rounded-full text-gray-700 hover:text-gray-900">
+            <Link
+              href="/cart"
+              aria-label="Shopping cart"
+              className="relative flex h-9 w-9 items-center justify-center rounded-full text-gray-700 hover:text-gray-900"
+            >
               <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6" />
               {mounted && cartCount > 0 && (
                 <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
@@ -130,18 +139,32 @@ export default function TemuHeader() {
               )}
             </Link>
 
-            {/* Mobile: Hamburger menu */}
-            <button
-              onClick={() => {
-                setMobileMenuOpen((prev) => !prev);
-                setMobileSearchOpen(false);
-              }}
-              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-              aria-expanded={mobileMenuOpen}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors md:hidden"
-            >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
+            {/* Mobile: Language switcher — replaces hamburger */}
+            <div className="relative flex items-center md:hidden">
+              <Languages className="pointer-events-none absolute left-2 h-4 w-4 text-gray-500" aria-hidden="true" />
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value as Language)}
+                aria-label={t("language")}
+                className="h-9 appearance-none rounded-full border border-gray-200 bg-white pl-7 pr-6 text-xs font-semibold text-gray-700 outline-none focus:border-gray-400 active:bg-gray-50 transition-colors cursor-pointer"
+              >
+                <option value="en">EN</option>
+                <option value="fr">FR</option>
+                <option value="es">ES</option>
+                <option value="tr">TR</option>
+                <option value="ar">AR</option>
+              </select>
+              {/* custom chevron */}
+              <svg
+                className="pointer-events-none absolute right-2 h-3 w-3 text-gray-500"
+                viewBox="0 0 12 12"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+
           </div>
         </div>
       </div>
@@ -164,43 +187,6 @@ export default function TemuHeader() {
             >
               <Search className="h-4 w-4" />
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* Mobile menu dropdown */}
-      {mobileMenuOpen && (
-        <div className="border-t border-gray-200 bg-white md:hidden">
-          <div className="px-4 py-4">
-            <div className="space-y-4">
-              <Link
-                href="/auth/login"
-                className="flex items-center gap-3 text-sm font-medium text-gray-700"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <User className="h-5 w-5" />
-                {t("orders")} &amp; {t("account")}
-              </Link>
-              <label className="flex items-center gap-3 text-sm font-medium text-gray-700">
-                <Languages className="h-5 w-5" aria-hidden="true" />
-                <span>{t("language")}</span>
-                <select
-                  value={language}
-                  onChange={(event) => {
-                    setLanguage(event.target.value as Language);
-                    setMobileMenuOpen(false);
-                  }}
-                  aria-label={t("language")}
-                  className="ml-auto rounded border border-gray-300 bg-white px-2 py-1 text-sm"
-                >
-                  <option value="en">English</option>
-                  <option value="fr">Français</option>
-                  <option value="es">Español</option>
-                  <option value="tr">Türkçe</option>
-                  <option value="ar">العربية</option>
-                </select>
-              </label>
-            </div>
           </div>
         </div>
       )}

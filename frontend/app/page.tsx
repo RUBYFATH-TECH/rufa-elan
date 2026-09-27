@@ -8,6 +8,7 @@ import OrderTrackingCta from "@/components/order-tracking-cta";
 import TemuDealsSection from "@/components/temu-deals-section";
 import FastDealsSection from "@/components/fast-deals-section";
 import TemuProductCard from "@/components/temu-product-card";
+import MobileBottomNav from "@/components/mobile-bottom-nav";
 import { fetchProducts } from "@/lib/api/products";
 import { Loader2, AlertCircle } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
@@ -195,7 +196,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-16 md:pb-0">
       <section className="relative isolate flex min-h-[400px] overflow-hidden bg-slate-950 sm:min-h-[480px] md:min-h-[560px] lg:min-h-[640px]">
         <video
           autoPlay
@@ -388,6 +389,7 @@ export default function HomePage() {
         </div>
       </div>
       <OrderTrackingCta />
+      <MobileBottomNav />
     </div>
   );
 }
