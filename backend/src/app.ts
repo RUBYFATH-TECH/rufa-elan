@@ -38,20 +38,30 @@ const corsOptions = {
     } else {
       // Support comma-separated list of allowed origins
       const frontendUrls = process.env.FRONTEND_URL || 'http://localhost:3000';
-      const allowedOrigins = frontendUrls.split(',').map(url => url.trim());
+      const allowedOrigins = frontendUrls.split(',').map(url => {
+        // Remove trailing slashes for consistent comparison
+        const trimmed = url.trim();
+        return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed;
+      });
       
       // Also check CORS_ORIGIN for backward compatibility
       if (process.env.CORS_ORIGIN) {
-        allowedOrigins.push(...process.env.CORS_ORIGIN.split(',').map(url => url.trim()));
+        allowedOrigins.push(...process.env.CORS_ORIGIN.split(',').map(url => {
+          const trimmed = url.trim();
+          return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed;
+        }));
       }
       
-      // Log for debugging
-      logger.info(`CORS check - Origin: ${origin}, Allowed: ${allowedOrigins.join(', ')}`);
+      // Normalize the incoming origin (remove trailing slash)
+      const normalizedOrigin = origin?.endsWith('/') ? origin.slice(0, -1) : origin;
       
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Log for debugging
+      logger.info(`CORS check - Origin: ${normalizedOrigin}, Allowed: ${allowedOrigins.join(', ')}`);
+      
+      if (!normalizedOrigin || allowedOrigins.includes(normalizedOrigin)) {
         callback(null, true);
       } else {
-        logger.warn(`CORS blocked origin: ${origin}`);
+        logger.warn(`CORS blocked origin: ${normalizedOrigin}`);
         callback(new Error('CORS not allowed'));
       }
     }
