@@ -60,7 +60,28 @@ export default function HomePage() {
     try {
       setLoading(true);
       setError(null);
+      
+      // Mobile debugging info
+      console.log('[HomePage] Starting product load');
+      console.log('[HomePage] Environment check:', {
+        backendUrl: process.env.NEXT_PUBLIC_BACKEND_URL,
+        apiUrl: process.env.NEXT_PUBLIC_API_URL,
+        isClient: typeof window !== 'undefined',
+        online: typeof navigator !== 'undefined' ? navigator.onLine : 'unknown',
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'SSR',
+      });
+      
       const data = await fetchProducts({ limit: 100 });
+      
+      console.log('[HomePage] Raw API response:', {
+        hasData: !!data,
+        dataKeys: data ? Object.keys(data) : [],
+        dataLength: data?.data?.length,
+      });
+      
+      if (!data || !data.data) {
+        throw new Error('Invalid API response: missing data field');
+      }
       
       const apiProducts: LandingProduct[] = (data.data || []).map((p: Product) => ({
         id: p.id,
@@ -79,19 +100,30 @@ export default function HomePage() {
         slug: p.slug,
       }));
       
-      // Debug logging (remove after testing)
-      console.log('Loaded products:', apiProducts.length);
-      console.log('Sample products:', apiProducts.slice(0, 3).map(p => ({ 
-        name: p.name, 
-        price: p.price, 
-        brand: p.brand, 
-        rating: p.rating 
-      })));
+      console.log('[HomePage] Products processed:', {
+        total: apiProducts.length,
+        sample: apiProducts.slice(0, 2).map(p => ({ 
+          name: p.name, 
+          price: p.price, 
+          brand: p.brand 
+        }))
+      });
       
       setProducts(apiProducts);
     } catch (err) {
-      console.error("Error loading products:", err);
-      setError(t("loadProductsError"));
+      console.error("[HomePage] Error loading products:", {
+        error: err,
+        message: err instanceof Error ? err.message : 'Unknown error',
+        name: err instanceof Error ? err.name : 'Unknown',
+        stack: err instanceof Error ? err.stack : undefined,
+      });
+      
+      // More specific error message
+      const errorMessage = err instanceof Error 
+        ? `${t("loadProductsError")}: ${err.message}`
+        : t("loadProductsError");
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

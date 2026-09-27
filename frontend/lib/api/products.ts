@@ -159,21 +159,48 @@ export async function fetchProducts(filters?: {
   const backendUrl = getBackendUrl();
   const url = `${backendUrl}/api/products?${params}`;
   
+  // Enhanced logging for mobile debugging
+  console.log('[Products API] Fetching products from:', url);
+  console.log('[Products API] Environment:', {
+    isClient: typeof window !== 'undefined',
+    backendUrl,
+    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'SSR',
+  });
+  
   try {
+    const startTime = Date.now();
+    
     const response = await fetch(url, {
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
       cache: 'no-store',
+      // Add timeout handling for slow mobile networks
+      signal: AbortSignal.timeout(30000), // 30 second timeout
     });
+
+    const fetchTime = Date.now() - startTime;
+    console.log(`[Products API] Response received in ${fetchTime}ms, status: ${response.status}`);
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error(`API Error ${response.status}:`, errorData);
-      throw new Error(`Failed to fetch products: ${response.status}`);
+      console.error(`[Products API] Error ${response.status}:`, errorData);
+      throw new Error(`Failed to fetch products: ${response.status} - ${errorData}`);
     }
 
-    return await response.json();
+    const data = await response.json();
+    console.log('[Products API] Success - products received:', data?.data?.length || 0);
+    
+    return data;
   } catch (error) {
-    console.error("Fetch products error:", error);
+    console.error("[Products API] Fetch error details:", {
+      error,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      name: error instanceof Error ? error.name : 'Unknown',
+      stack: error instanceof Error ? error.stack : undefined,
+      url,
+    });
     throw error;
   }
 }

@@ -1,0 +1,122 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    VERCEL ENVIRONMENT VARIABLES SETUP                        ║
+║                          Copy-Paste Ready Values                             ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+📋 INSTRUCTIONS:
+1. Go to: https://vercel.com/dashboard
+2. Select your project
+3. Settings → Environment Variables
+4. Add each variable below for: Production, Preview, Development
+5. After adding ALL variables, trigger a new deployment
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🔹 BACKEND CONFIGURATION (REQUIRED)
+
+Name: NEXT_PUBLIC_BACKEND_URL
+Value: https://rufaelan-backend.onrender.com
+
+Name: NEXT_PUBLIC_API_URL
+Value: https://rufaelan-backend.onrender.com
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🔹 SUPABASE CONFIGURATION (REQUIRED)
+
+Name: NEXT_PUBLIC_SUPABASE_URL
+Value: https://rxvpxsoadadbodfskhky.supabase.co
+
+Name: NEXT_PUBLIC_SUPABASE_ANON_KEY
+Value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4dnB4c29hZGFkYm9kZnNraGt5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ3NDUxNDcsImV4cCI6MjEwMDMyMTE0N30.U22W_YDiphJ0LsRbdHPWtvHGINp3BeEFMmsZ0UFCcSc
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🔹 PAYMENT CONFIGURATION (REQUIRED)
+
+Name: NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
+Value: pk_test_ba005f00455dc204a2460451190886622ec1b375
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🔹 AUTHENTICATION CONFIGURATION (REQUIRED)
+
+Name: NEXTAUTH_URL
+Value: https://YOUR_VERCEL_APP_URL.vercel.app
+⚠️ REPLACE WITH YOUR ACTUAL VERCEL URL!
+
+Name: NEXTAUTH_SECRET
+Value: your-nextauth-secret-for-jwt-encryption
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🔹 GOOGLE OAUTH (REQUIRED)
+
+Name: GOOGLE_CLIENT_ID
+Value: 259494227886-n7vjc6sfkrdtcsptdevr2v138gtev0f4.apps.googleusercontent.com
+
+Name: GOOGLE_CLIENT_SECRET
+Value: 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
+
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ CHECKLIST:
+
+[ ] All 8 environment variables added to Vercel
+[ ] NEXTAUTH_URL updated with actual Vercel URL
+[ ] Variables added to Production environment
+[ ] Variables added to Preview environment  
+[ ] Variables added to Development environment
+[ ] Triggered new deployment after adding variables
+[ ] Backend FRONTEND_URL configured on Render (see below)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🔧 RENDER BACKEND CONFIGURATION (ALSO REQUIRED!)
+
+Go to: https://dashboard.render.com → Your Backend Service → Environment
+
+Add/Update:
+
+Name: FRONTEND_URL
+Value: https://YOUR_VERCEL_APP_URL.vercel.app
+⚠️ REPLACE WITH YOUR ACTUAL VERCEL URL!
+
+Name: NODE_ENV
+Value: production
+
+For multiple URLs (production + preview):
+Value: https://your-app.vercel.app,https://preview-branch.vercel.app
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🧪 TESTING:
+
+After deployment, visit on mobile:
+https://YOUR_VERCEL_APP_URL.vercel.app/mobile-debug
+
+Expected results:
+✓ Backend URL: Shows Render URL (not localhost)
+✓ Backend Health: "Backend is healthy"
+✓ Products API: Shows product count
+✓ CORS Configuration: "CORS headers present"
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📞 TROUBLESHOOTING:
+
+Issue: "Using localhost" in mobile-debug
+→ Environment variables not set or deployment didn't include them
+→ Solution: Redeploy after adding variables
+
+Issue: CORS error
+→ Backend doesn't allow your Vercel domain
+→ Solution: Add FRONTEND_URL to Render backend
+
+Issue: 503 error
+→ Backend is sleeping (Render free tier)
+→ Solution: Wait 30-60 seconds, backend will wake up
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📚 Full guide: See MOBILE_DEPLOYMENT_GUIDE.md

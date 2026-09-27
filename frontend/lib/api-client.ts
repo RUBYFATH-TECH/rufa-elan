@@ -26,12 +26,23 @@ class ApiClient {
   ): Promise<T> {
     const url = `${this.baseURL}/api${endpoint}`;
     
+    // Log request for debugging
+    console.log('[API Client] Request:', {
+      endpoint,
+      url,
+      method: options.method || 'GET',
+      requiresAuth: options.requiresAuth,
+    });
+    
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         ...options.headers,
       },
       ...options,
+      // Add timeout for mobile networks (30 seconds)
+      signal: options.signal || AbortSignal.timeout(30000),
     };
     
     // Add auth token if required
@@ -46,15 +57,42 @@ class ApiClient {
     }
     
     try {
+      const startTime = Date.now();
       const response = await fetch(url, config);
+      const fetchTime = Date.now() - startTime;
+      
+      console.log('[API Client] Response:', {
+        endpoint,
+        status: response.status,
+        ok: response.ok,
+        time: `${fetchTime}ms`,
+      });
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Network error' }));
-        throw new Error(errorData.error || errorData.message || `HTTP ${response.status}`);
+        const errorMsg = errorData.error || errorData.message || `HTTP ${response.status}`;
+        console.error('[API Client] Error:', {
+          endpoint,
+          status: response.status,
+          error: errorMsg,
+        });
+        throw new Error(errorMsg);
       }
       
-      return await response.json();
+      const data = await response.json();
+      console.log('[API Client] Success:', {
+        endpoint,
+        hasData: !!data,
+      });
+      
+      return data;
     } catch (error) {
+      console.error('[API Client] Request failed:', {
+        endpoint,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        name: error instanceof Error ? error.name : 'Unknown',
+      });
+      
       if (error instanceof Error) {
         throw error;
       }
