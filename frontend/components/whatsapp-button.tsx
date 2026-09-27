@@ -6,7 +6,7 @@ export default function WhatsappButton() {
       href="https://wa.me/+905053783510"
       target="_blank"
       rel="noreferrer"
-      className="fixed bottom-6 right-6 z-50 inline-flex items-center gap-3 rounded-full bg-brand-700 px-4 py-3 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-800"
+      className="fixed bottom-20 right-4 z-50 inline-flex items-center gap-2 rounded-full bg-brand-700 px-3 py-2.5 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-800 md:bottom-6 md:right-6 md:px-4 md:py-3"
     >
       <MessageSquare className="h-4 w-4" /> WhatsApp
     </a>

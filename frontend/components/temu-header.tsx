@@ -125,11 +125,11 @@ export default function TemuHeader() {
               {mobileSearchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
             </button>
 
-            {/* Cart */}
+            {/* Cart — desktop only; mobile uses the bottom nav */}
             <Link
               href="/cart"
               aria-label="Shopping cart"
-              className="relative flex h-9 w-9 items-center justify-center rounded-full text-gray-700 hover:text-gray-900"
+              className="relative hidden md:flex h-9 w-9 items-center justify-center rounded-full text-gray-700 hover:text-gray-900"
             >
               <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6" />
               {mounted && cartCount > 0 && (
