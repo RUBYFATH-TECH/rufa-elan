@@ -36,10 +36,22 @@ const corsOptions = {
     if (process.env.NODE_ENV === 'development') {
       callback(null, true);
     } else {
-      const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000').split(',');
+      // Support comma-separated list of allowed origins
+      const frontendUrls = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const allowedOrigins = frontendUrls.split(',').map(url => url.trim());
+      
+      // Also check CORS_ORIGIN for backward compatibility
+      if (process.env.CORS_ORIGIN) {
+        allowedOrigins.push(...process.env.CORS_ORIGIN.split(',').map(url => url.trim()));
+      }
+      
+      // Log for debugging
+      logger.info(`CORS check - Origin: ${origin}, Allowed: ${allowedOrigins.join(', ')}`);
+      
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
+        logger.warn(`CORS blocked origin: ${origin}`);
         callback(new Error('CORS not allowed'));
       }
     }
