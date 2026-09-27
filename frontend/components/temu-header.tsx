@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Search, ShoppingCart, User, Languages, Menu, X } from "lucide-react";
 import { useCartStore } from "@/store/cart-store";
 import { Language, useLanguage } from "@/contexts/language-context";
@@ -11,6 +11,8 @@ export default function TemuHeader() {
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const mobileSearchRef = useRef<HTMLInputElement>(null);
   const cartItems = useCartStore((state) => state.items);
   const cartCount = cartItems.length;
   const hydrateCart = useCartStore((state) => state.hydrate);
@@ -21,17 +23,26 @@ export default function TemuHeader() {
     setMounted(true);
   }, [hydrateCart]);
 
+  // Auto-focus the mobile search input when it opens
+  useEffect(() => {
+    if (mobileSearchOpen) {
+      mobileSearchRef.current?.focus();
+    }
+  }, [mobileSearchOpen]);
+
   return (
     <header className="sticky top-0 z-50 border-b border-gray-200 bg-white">
+      {/* Main header row */}
       <div className="w-full px-4 py-3 sm:px-6">
-        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 sm:gap-5 md:grid-cols-[minmax(0,1fr)_minmax(18rem,2fr)_minmax(0,1fr)]">
+        <div className="flex items-center gap-2 sm:gap-4 md:grid md:grid-cols-[minmax(0,1fr)_minmax(18rem,2fr)_minmax(0,1fr)]">
+
           {/* Brand */}
           <Link
             href="/"
             aria-label="RUFA ELAN home"
             className="flex shrink-0 items-center gap-2 text-slate-950 transition-opacity hover:opacity-80"
           >
-            <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-950 shadow-sm">
+            <span className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-950 shadow-sm">
               <Image
                 src="/images/logo.png"
                 alt="RUFA ELAN"
@@ -46,8 +57,8 @@ export default function TemuHeader() {
             </span>
           </Link>
 
-          {/* Search */}
-          <div className="mx-auto w-full max-w-2xl min-w-0">
+          {/* Desktop search bar — hidden on mobile */}
+          <div className="hidden md:block mx-auto w-full max-w-2xl min-w-0">
             <div className="relative">
               <input
                 type="text"
@@ -56,15 +67,18 @@ export default function TemuHeader() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full rounded-full border border-gray-300 py-2 pl-4 pr-12 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none"
               />
-              <button className="absolute right-1 top-1 flex h-8 w-8 items-center justify-center rounded-full bg-black text-white hover:bg-gray-800">
+              <button
+                aria-label="Search"
+                className="absolute right-1 top-1 flex h-8 w-8 items-center justify-center rounded-full bg-black text-white hover:bg-gray-800"
+              >
                 <Search className="h-4 w-4" />
               </button>
             </div>
           </div>
 
-          {/* Right side - Actions */}
-          <div className="flex shrink-0 items-center justify-self-end gap-3 sm:gap-5">
-            {/* Orders & Account */}
+          {/* Right side actions */}
+          <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3 md:ml-0 md:justify-self-end md:gap-5">
+            {/* Desktop: Orders & Account */}
             <Link href="/auth/login" className="hidden items-center gap-2 text-sm text-gray-700 hover:text-gray-900 md:flex">
               <User className="h-5 w-5" />
               <div className="text-left">
@@ -73,7 +87,7 @@ export default function TemuHeader() {
               </div>
             </Link>
 
-            {/* Language selector */}
+            {/* Desktop: Language selector */}
             <label className="hidden items-center gap-2 text-sm text-gray-700 md:flex">
               <Languages className="h-5 w-5" aria-hidden="true" />
               <div className="text-left">
@@ -93,39 +107,79 @@ export default function TemuHeader() {
               </div>
             </label>
 
+            {/* Mobile: Search icon button */}
+            <button
+              onClick={() => {
+                setMobileSearchOpen((prev) => !prev);
+                setMobileMenuOpen(false);
+              }}
+              aria-label="Toggle search"
+              aria-expanded={mobileSearchOpen}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors md:hidden"
+            >
+              {mobileSearchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
+            </button>
+
             {/* Cart */}
-            <Link href="/cart" aria-label="Shopping cart" className="relative text-gray-700 hover:text-gray-900">
-              <ShoppingCart className="h-6 w-6" />
+            <Link href="/cart" aria-label="Shopping cart" className="relative flex h-9 w-9 items-center justify-center rounded-full text-gray-700 hover:text-gray-900">
+              <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6" />
               {mounted && cartCount > 0 && (
-                <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
                   {cartCount}
                 </span>
               )}
             </Link>
 
-            {/* Mobile menu button */}
-            <button 
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-gray-700 hover:text-gray-900 md:hidden"
+            {/* Mobile: Hamburger menu */}
+            <button
+              onClick={() => {
+                setMobileMenuOpen((prev) => !prev);
+                setMobileSearchOpen(false);
+              }}
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileMenuOpen}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors md:hidden"
             >
-              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile search bar — slides in below the main row */}
+      {mobileSearchOpen && (
+        <div className="border-t border-gray-100 bg-white px-4 py-3 md:hidden">
+          <div className="relative">
+            <input
+              ref={mobileSearchRef}
+              type="text"
+              placeholder={t("searchPlaceholder")}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-full border border-gray-300 py-2.5 pl-4 pr-12 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none"
+            />
+            <button
+              aria-label="Search"
+              className="absolute right-1 top-1 flex h-9 w-9 items-center justify-center rounded-full bg-black text-white hover:bg-gray-800 active:bg-gray-700 transition-colors"
+            >
+              <Search className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile menu dropdown */}
       {mobileMenuOpen && (
         <div className="border-t border-gray-200 bg-white md:hidden">
-          <div className="mx-auto max-w-7xl px-4 py-4">
+          <div className="px-4 py-4">
             <div className="space-y-4">
-              <Link 
-                href="/auth/login" 
+              <Link
+                href="/auth/login"
                 className="flex items-center gap-3 text-sm font-medium text-gray-700"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <User className="h-5 w-5" />
-                {t("orders")} {t("account")}
+                {t("orders")} &amp; {t("account")}
               </Link>
               <label className="flex items-center gap-3 text-sm font-medium text-gray-700">
                 <Languages className="h-5 w-5" aria-hidden="true" />
