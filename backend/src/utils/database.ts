@@ -467,6 +467,7 @@ export class DatabaseTransaction {
  * Database helper instances for common tables
  */
 export const db = {
+  supabase, // Export supabase client for direct queries
   profiles: new DatabaseHelper('profiles'),
   categories: new DatabaseHelper('categories'),
   products: new DatabaseHelper('products'),

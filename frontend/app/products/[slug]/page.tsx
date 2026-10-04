@@ -96,7 +96,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             slug: foundProduct.slug,
             badge: foundProduct.sale_price ? `${Math.round(((foundProduct.regular_price - foundProduct.sale_price) / foundProduct.regular_price) * 100)}% OFF` : undefined,
             stock_quantity: foundProduct.stock_quantity || 0,
-            in_stock: foundProduct.in_stock ?? false,
+            in_stock: foundProduct.in_stock !== false, // Default to true if not explicitly set to false
             low_stock: foundProduct.low_stock ?? false,
             features: foundProduct.features || [],
           };

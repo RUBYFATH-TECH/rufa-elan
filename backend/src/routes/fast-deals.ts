@@ -141,30 +141,28 @@ router.get('/', async (req: Request, res: Response) => {
     const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
     const offset = (pageNum - 1) * limitNum;
 
-    const queryOptions = {
-      // Review summaries are maintained on products, so Fast Deals can show
-      // the same real rating data customers see on the product page.
-      select: '*,products(id,name,slug,regular_price,avg_rating,review_count,product_images(url))',
-      limit: limitNum,
-      offset: offset,
-      orderBy: [{ column: 'created_at', ascending: false }]
-    };
+    // First, try to fetch with nested products and is_in_stock
+    const { data: deals, error: dealsError, count } = await db.supabase
+      .from('fast_deals')
+      .select('*, products(id, name, slug, regular_price, is_in_stock, avg_rating, review_count, product_images(url))', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limitNum - 1);
 
-    const result = await db.fastDeals.find(queryOptions);
-
-    if (result.error) {
-      logger.error('Error fetching fast deals:', result.error);
-      throw new Error(result.error);
+    if (dealsError) {
+      logger.error('Error fetching fast deals:', dealsError);
+      return res.status(500).json({
+        success: false,
+        error: 'Database error',
+        message: dealsError.message
+      });
     }
 
-    // Get total count
-    const countResult = await db.fastDeals.count();
-    const total = countResult.data || 0;
+    const total = count || 0;
     const totalPages = Math.ceil(total / limitNum);
 
     res.json({
       success: true,
-      data: result.data || [],
+      data: deals || [],
       pagination: {
         total,
         page: pageNum,
@@ -192,9 +190,22 @@ router.get('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const result = await db.fastDeals.findById(id, '*,products(id,name,slug,regular_price,description,product_images(url))');
+    const { data: deal, error } = await db.supabase
+      .from('fast_deals')
+      .select('*, products(id, name, slug, regular_price, is_in_stock, description, product_images(url))')
+      .eq('id', id)
+      .single();
 
-    if (!result.data) {
+    if (error) {
+      logger.error('Error fetching fast deal:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Database error',
+        message: error.message
+      });
+    }
+
+    if (!deal) {
       logger.error('Fast deal not found:', id);
       return res.status(404).json({
         success: false,
@@ -205,7 +216,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      data: result.data
+      data: deal
     });
   } catch (error) {
     logger.error('Error fetching fast deal:', error);

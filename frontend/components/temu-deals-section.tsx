@@ -31,6 +31,7 @@ interface FastDeal {
     name: string;
     slug: string;
     regular_price: number;
+    is_in_stock: boolean;
     avg_rating?: number;
     review_count?: number;
     product_images?: Array<{ url: string }>;
@@ -93,6 +94,7 @@ function DealCard({ deal }: { deal: FastDeal }) {
   const rating = deal.products.avg_rating || 0;
   const reviewCount = deal.products.review_count || 0;
   const imageUrl = deal.products.product_images?.[0]?.url || "/images/placeholder.jpg";
+  const isOutOfStock = !deal.products.is_in_stock || remaining <= 0;
 
   return (
     <Link href={`/products/${deal.products.slug}`} className="group block">
@@ -106,19 +108,32 @@ function DealCard({ deal }: { deal: FastDeal }) {
             className="object-cover transition-transform group-hover:scale-105"
           />
           
-          {/* Discount Badge */}
-          <div className="absolute left-2 top-2">
-            <div className="rounded bg-red-500 px-1.5 py-0.5 text-xs font-bold text-white">
-              -{discountPercentage}%
+          {/* Out of Stock Overlay */}
+          {isOutOfStock && (
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+              <span className="bg-red-600 text-white px-3 py-1.5 rounded-full text-sm font-bold shadow-lg">
+                OUT OF STOCK
+              </span>
             </div>
-          </div>
+          )}
+          
+          {/* Discount Badge */}
+          {!isOutOfStock && (
+            <div className="absolute left-2 top-2">
+              <div className="rounded bg-red-500 px-1.5 py-0.5 text-xs font-bold text-white">
+                -{discountPercentage}%
+              </div>
+            </div>
+          )}
 
           {/* Quick Add to Cart */}
-          <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-            <button className="flex h-10 w-10 items-center justify-center rounded-full bg-rufaelan-primary text-white hover:bg-rufaelan-primary-dark">
-              <ShoppingCart className="h-4 w-4" />
-            </button>
-          </div>
+          {!isOutOfStock && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+              <button className="flex h-10 w-10 items-center justify-center rounded-full bg-rufaelan-primary text-white hover:bg-rufaelan-primary-dark">
+                <ShoppingCart className="h-4 w-4" />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Content */}
@@ -151,7 +166,7 @@ function DealCard({ deal }: { deal: FastDeal }) {
 
           {/* Prices */}
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-lg font-bold text-rufaelan-primary">
+            <span className={`text-lg font-bold ${isOutOfStock ? 'text-slate-400' : 'text-rufaelan-primary'}`}>
               GHS {deal.deal_price.toFixed(2)}
             </span>
             <span className="text-sm text-slate-500 line-through">
@@ -160,18 +175,27 @@ function DealCard({ deal }: { deal: FastDeal }) {
           </div>
 
           {/* Stock Progress */}
-          <div className="mb-2">
-            <div className="flex justify-between text-xs text-slate-600 mb-1">
-              <span>{remaining} left</span>
-              <span>{Math.round(claimedPercent)}% claimed</span>
+          {!isOutOfStock && (
+            <div className="mb-2">
+              <div className="flex justify-between text-xs text-slate-600 mb-1">
+                <span>{remaining} left</span>
+                <span>{Math.round(claimedPercent)}% claimed</span>
+              </div>
+              <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-rufaelan-primary to-red-500 rounded-full transition-all"
+                  style={{ width: `${claimedPercent}%` }}
+                />
+              </div>
             </div>
-            <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-rufaelan-primary to-red-500 rounded-full transition-all"
-                style={{ width: `${claimedPercent}%` }}
-              />
+          )}
+
+          {/* Out of Stock Message */}
+          {isOutOfStock && (
+            <div className="text-xs text-red-600 font-medium">
+              Currently unavailable
             </div>
-          </div>
+          )}
         </div>
       </div>
     </Link>
@@ -193,7 +217,11 @@ export default function TemuDealsSection() {
           headers: { "Content-Type": "application/json" },
           cache: "no-store",
         });
-        if (!response.ok) throw new Error("Failed to fetch deals");
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+          console.error("Fast deals API error:", response.status, errorData);
+          throw new Error(`Failed to fetch deals: ${errorData.message || response.statusText}`);
+        }
         const data = await response.json();
         setDeals(data.data || []);
       } catch (error) {

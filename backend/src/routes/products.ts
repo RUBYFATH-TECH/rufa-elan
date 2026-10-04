@@ -157,11 +157,15 @@ router.get('/', async (req: Request, res: Response) => {
           0
         );
         
+        // Check both the manual is_in_stock flag AND calculated stock from variants
+        const hasStock = totalStock > 0;
+        const isManuallyInStock = product.is_in_stock !== false; // Default to true if not set
+        
         return {
           ...product,
           stock_quantity: totalStock,
-          in_stock: totalStock > 0,
-          low_stock: totalStock > 0 && totalStock < 20
+          in_stock: isManuallyInStock && hasStock, // Must be manually in stock AND have quantity
+          low_stock: hasStock && totalStock < 20
         };
       })
     );

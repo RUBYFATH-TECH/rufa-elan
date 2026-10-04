@@ -17,6 +17,7 @@ interface FastDeal {
     name: string;
     slug: string;
     regular_price: number;
+    is_in_stock: boolean;
     avg_rating?: number;
     review_count?: number;
     product_images?: Array<{ url: string }>;
@@ -79,13 +80,25 @@ export default function FastDealsSection() {
             const rating = deal.products.avg_rating || 0;
             const reviewCount = deal.products.review_count || 0;
             const imageUrl = deal.products.product_images?.[0]?.url || "/images/placeholder.jpg";
+            const isOutOfStock = !deal.products.is_in_stock || remaining <= 0;
 
             return (
               <Link key={deal.id} href={`/products/${deal.products.slug}`} className="group w-44 shrink-0 snap-start overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:shadow-md sm:w-52">
                 <div className="relative aspect-square overflow-hidden bg-slate-100">
                   <Image src={imageUrl} alt={deal.products.name} fill className="object-cover transition-transform duration-300 group-hover:scale-105" />
-                  <span className="absolute left-2 top-2 rounded bg-rose-500 px-1.5 py-0.5 text-xs font-bold text-white">-{discount}%</span>
-                  <span className="absolute bottom-2 left-2 rounded bg-slate-950/75 px-1.5 py-0.5 text-[10px] font-bold text-white">{getCountdown(deal.end_date, deal.end_time)}</span>
+                  {isOutOfStock && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                      <span className="bg-red-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg">
+                        OUT OF STOCK
+                      </span>
+                    </div>
+                  )}
+                  {!isOutOfStock && (
+                    <>
+                      <span className="absolute left-2 top-2 rounded bg-rose-500 px-1.5 py-0.5 text-xs font-bold text-white">-{discount}%</span>
+                      <span className="absolute bottom-2 left-2 rounded bg-slate-950/75 px-1.5 py-0.5 text-[10px] font-bold text-white">{getCountdown(deal.end_date, deal.end_time)}</span>
+                    </>
+                  )}
                 </div>
 
                 <div className="p-3">
@@ -94,8 +107,20 @@ export default function FastDealsSection() {
                     <div className="flex">{Array.from({ length: 5 }, (_, index) => <Star key={index} className={`h-3 w-3 ${index < Math.round(rating) ? "fill-yellow-400 text-yellow-400" : "text-slate-300"}`} />)}</div>
                     {rating > 0 ? <span className="text-xs text-slate-600">{rating.toFixed(1)} ({reviewCount})</span> : <span className="text-xs text-slate-500">No ratings yet</span>}
                   </div>
-                  <div className="mt-2 flex items-baseline gap-2"><span className="text-lg font-bold text-orange-600">GHS {deal.deal_price.toFixed(2)}</span><span className="text-xs text-slate-500 line-through">GHS {deal.products.regular_price.toFixed(2)}</span></div>
-                  <div className="mt-3"><div className="mb-1 flex justify-between text-xs text-slate-600"><span>{remaining} left</span><span>{Math.round(claimedPercent)}% claimed</span></div><div className="h-1.5 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-gradient-to-r from-orange-500 to-red-500" style={{ width: `${claimedPercent}%` }} /></div></div>
+                  <div className="mt-2 flex items-baseline gap-2">
+                    <span className={`text-lg font-bold ${isOutOfStock ? 'text-slate-400' : 'text-orange-600'}`}>GHS {deal.deal_price.toFixed(2)}</span>
+                    <span className="text-xs text-slate-500 line-through">GHS {deal.products.regular_price.toFixed(2)}</span>
+                  </div>
+                  {!isOutOfStock ? (
+                    <div className="mt-3">
+                      <div className="mb-1 flex justify-between text-xs text-slate-600"><span>{remaining} left</span><span>{Math.round(claimedPercent)}% claimed</span></div>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-gradient-to-r from-orange-500 to-red-500" style={{ width: `${claimedPercent}%` }} /></div>
+                    </div>
+                  ) : (
+                    <div className="mt-2 text-xs text-red-600 font-medium">
+                      Currently unavailable
+                    </div>
+                  )}
                 </div>
               </Link>
             );

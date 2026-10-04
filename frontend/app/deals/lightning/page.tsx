@@ -18,6 +18,7 @@ interface FastDeal {
     name: string;
     slug: string;
     regular_price: number;
+    is_in_stock: boolean;
     avg_rating?: number;
     review_count?: number;
     product_images?: Array<{ url: string }>;
@@ -125,6 +126,7 @@ export default function LightningDealsPage() {
               const rating = deal.products.avg_rating || 0;
               const reviewCount = deal.products.review_count || 0;
               const imageUrl = deal.products.product_images?.[0]?.url || "/images/placeholder.jpg";
+              const isOutOfStock = !deal.products.is_in_stock || remaining <= 0;
 
               return (
                 <Link
@@ -139,12 +141,23 @@ export default function LightningDealsPage() {
                       fill
                       className="object-cover transition-transform duration-300 group-hover:scale-105"
                     />
-                    <span className="absolute left-2 top-2 rounded bg-rose-500 px-1.5 py-0.5 text-xs font-bold text-white">
-                      -{discount}%
-                    </span>
-                    <span className="absolute bottom-2 left-2 rounded bg-slate-950/75 px-1.5 py-0.5 text-[10px] font-bold text-white">
-                      <FlashSaleCountdown endDate={deal.end_date} endTime={deal.end_time} />
-                    </span>
+                    {isOutOfStock && (
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                        <span className="bg-red-600 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-lg">
+                          OUT OF STOCK
+                        </span>
+                      </div>
+                    )}
+                    {!isOutOfStock && (
+                      <>
+                        <span className="absolute left-2 top-2 rounded bg-rose-500 px-1.5 py-0.5 text-xs font-bold text-white">
+                          -{discount}%
+                        </span>
+                        <span className="absolute bottom-2 left-2 rounded bg-slate-950/75 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                          <FlashSaleCountdown endDate={deal.end_date} endTime={deal.end_time} />
+                        </span>
+                      </>
+                    )}
                   </div>
 
                   <div className="p-3">
@@ -176,24 +189,30 @@ export default function LightningDealsPage() {
                     </div>
 
                     <div className="mt-2 flex items-baseline gap-2">
-                      <span className="text-lg font-bold text-orange-600">GHS {deal.deal_price.toFixed(2)}</span>
+                      <span className={`text-lg font-bold ${isOutOfStock ? 'text-slate-400' : 'text-orange-600'}`}>GHS {deal.deal_price.toFixed(2)}</span>
                       <span className="text-xs text-slate-500 line-through">
                         GHS {deal.products.regular_price.toFixed(2)}
                       </span>
                     </div>
 
-                    <div className="mt-3">
-                      <div className="mb-1 flex justify-between text-xs text-slate-600">
-                        <span>{remaining} left</span>
-                        <span>{Math.round(claimedPercent)}% claimed</span>
+                    {!isOutOfStock ? (
+                      <div className="mt-3">
+                        <div className="mb-1 flex justify-between text-xs text-slate-600">
+                          <span>{remaining} left</span>
+                          <span>{Math.round(claimedPercent)}% claimed</span>
+                        </div>
+                        <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-orange-500 to-red-500"
+                            style={{ width: `${claimedPercent}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-orange-500 to-red-500"
-                          style={{ width: `${claimedPercent}%` }}
-                        />
+                    ) : (
+                      <div className="mt-2 text-xs text-red-600 font-medium">
+                        Currently unavailable
                       </div>
-                    </div>
+                    )}
                   </div>
                 </Link>
               );
