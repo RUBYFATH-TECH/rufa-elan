@@ -72,11 +72,11 @@ export default function TemuHeader() {
                 placeholder={t("searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-full border border-gray-300 py-2 pl-4 pr-12 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none"
+                className="w-full rounded-full border border-gray-300 py-2 pl-4 pr-14 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none"
               />
               <button
                 aria-label="Search"
-                className="absolute right-1 top-1 flex h-8 w-8 items-center justify-center rounded-full bg-black text-white hover:bg-gray-800"
+                className="absolute right-0 top-1/2 -translate-y-1/2 flex h-full w-12 items-center justify-center rounded-r-full bg-black text-white hover:bg-gray-800"
               >
                 <Search className="h-4 w-4" />
               </button>
@@ -179,13 +179,13 @@ export default function TemuHeader() {
               placeholder={t("searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-full border border-gray-300 py-2.5 pl-4 pr-12 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none"
+              className="w-full rounded-full border border-gray-300 py-2.5 pl-4 pr-14 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-500 focus:outline-none"
             />
             <button
               aria-label="Search"
-              className="absolute right-1 top-1 flex h-9 w-9 items-center justify-center rounded-full bg-black text-white hover:bg-gray-800 active:bg-gray-700 transition-colors"
+              className="absolute right-0 top-1/2 -translate-y-1/2 flex h-full w-14 items-center justify-center rounded-r-full bg-black text-white hover:bg-gray-800 active:bg-gray-700 transition-colors"
             >
-              <Search className="h-4 w-4" />
+              <Search className="h-5 w-5" />
             </button>
           </div>
         </div>
