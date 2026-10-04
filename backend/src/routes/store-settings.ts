@@ -28,6 +28,8 @@ export interface StoreSettings {
   store_description?: string;
   store_logo_url?: string;
   store_banner_url?: string;
+  whatsapp_number?: string;
+  phone_number?: string;
   created_at: string;
   updated_at: string;
   updated_by?: string;
@@ -73,6 +75,8 @@ async function ensureStoreSettingsTable() {
           tax_rate: 5.00,
           default_shipping_cost: 25.00,
           store_status: 'active',
+          whatsapp_number: '+905053783510',
+          phone_number: '+233241234567',
         });
 
       if (!insertError) {
@@ -127,6 +131,8 @@ router.get('/', async (req: Request, res: Response) => {
             store_description: null,
             store_logo_url: null,
             store_banner_url: null,
+            whatsapp_number: '+905053783510',
+            phone_number: '+233241234567',
           },
         });
       }
@@ -188,6 +194,8 @@ router.put('/', async (req: Request, res: Response) => {
       store_description,
       store_logo_url,
       store_banner_url,
+      whatsapp_number,
+      phone_number,
     } = req.body;
 
     // Validation
@@ -227,6 +235,14 @@ router.put('/', async (req: Request, res: Response) => {
       errors.push('store_status must be one of: active, maintenance, closed');
     }
 
+    if (whatsapp_number !== undefined && whatsapp_number && typeof whatsapp_number !== 'string') {
+      errors.push('whatsapp_number must be a valid phone number string');
+    }
+
+    if (phone_number !== undefined && phone_number && typeof phone_number !== 'string') {
+      errors.push('phone_number must be a valid phone number string');
+    }
+
     if (errors.length > 0) {
       return res.status(400).json({
         success: false,
@@ -254,6 +270,8 @@ router.put('/', async (req: Request, res: Response) => {
     if (store_description !== undefined) updateData.store_description = store_description;
     if (store_logo_url !== undefined) updateData.store_logo_url = store_logo_url;
     if (store_banner_url !== undefined) updateData.store_banner_url = store_banner_url;
+    if (whatsapp_number !== undefined) updateData.whatsapp_number = whatsapp_number;
+    if (phone_number !== undefined) updateData.phone_number = phone_number;
 
     // Fetch current settings to get the ID
     const { data: currentSettings, error: fetchError } = await supabaseAdmin

@@ -1,17 +1,10 @@
 /**
  * Store Settings API Client
- * Handles all store settings API calls
+ * Handles fetching and caching of store configuration
  */
 
-function getBackendUrl(): string {
-  if (typeof window !== 'undefined') {
-    return process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-  }
-  return process.env.BACKEND_URL || 'http://localhost:8000';
-}
-
 export interface StoreSettings {
-  id?: string;
+  id: string;
   store_name: string;
   store_email: string;
   store_phone: string;
@@ -22,150 +15,69 @@ export interface StoreSettings {
   currency_code: string;
   tax_rate: number;
   default_shipping_cost: number;
-  store_status?: string;
+  store_status: string;
   store_description?: string;
   store_logo_url?: string;
   store_banner_url?: string;
-  created_at?: string;
-  updated_at?: string;
-  updated_by?: string;
+  whatsapp_number?: string;
+  phone_number?: string;
+  created_at: string;
+  updated_at: string;
 }
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+
 /**
- * Fetch current store settings
- * Public endpoint - no auth required
+ * Fetch store settings from the backend
  */
-export async function fetchStoreSettings(): Promise<StoreSettings> {
-  const backendUrl = getBackendUrl();
-  const url = `${backendUrl}/api/store-settings`;
+export async function getStoreSettings(): Promise<StoreSettings> {
+  const response = await fetch(`${API_BASE_URL}/store-settings`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    cache: 'no-store', // Always fetch fresh data
+  });
 
-  try {
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      cache: 'no-store',
-    });
-
-    if (!response.ok) {
-      let errorMessage = `Failed to fetch store settings (${response.status})`;
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorData.error || errorMessage;
-      } catch {
-        errorMessage = response.statusText || errorMessage;
-      }
-      throw new Error(errorMessage);
-    }
-
-    const data = await response.json();
-    return data.data || data;
-  } catch (error) {
-    console.error('Error fetching store settings:', error);
-    throw error;
+  if (!response.ok) {
+    throw new Error(`Failed to fetch store settings: ${response.statusText}`);
   }
+
+  const result = await response.json();
+  
+  if (!result.success || !result.data) {
+    throw new Error('Invalid response from store settings API');
+  }
+
+  return result.data;
 }
 
 /**
- * Update store settings
- * Admin only - requires authentication and admin privileges
+ * Update store settings (admin only)
  */
 export async function updateStoreSettings(
   settings: Partial<StoreSettings>,
-  authToken?: string
+  authToken: string
 ): Promise<StoreSettings> {
-  const backendUrl = getBackendUrl();
-  const url = `${backendUrl}/api/store-settings`;
-
-  if (!authToken) {
-    throw new Error('Authentication token required to update store settings');
-  }
-
-  try {
-    const response = await fetch(url, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`,
-      },
-      body: JSON.stringify(settings),
-      cache: 'no-store',
-    });
-
-    if (!response.ok) {
-      let errorMessage = `Failed to update store settings (${response.status})`;
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorData.error || errorMessage;
-        
-        // Handle validation errors
-        if (errorData.details && Array.isArray(errorData.details)) {
-          errorMessage = errorData.details.join(', ');
-        }
-      } catch {
-        errorMessage = response.statusText || errorMessage;
-      }
-      throw new Error(errorMessage);
-    }
-
-    const data = await response.json();
-    return data.data || data;
-  } catch (error) {
-    console.error('Error updating store settings:', error);
-    throw error;
-  }
-}
-
-/**
- * Fetch store settings update history
- * Admin only - requires authentication and admin privileges
- */
-export async function fetchStoreSettingsHistory(
-  limit: number = 10,
-  offset: number = 0,
-  authToken?: string
-): Promise<{
-  data: any[];
-  pagination: {
-    total: number;
-    limit: number;
-    offset: number;
-  };
-}> {
-  const backendUrl = getBackendUrl();
-  const params = new URLSearchParams({
-    limit: limit.toString(),
-    offset: offset.toString(),
+  const response = await fetch(`${API_BASE_URL}/store-settings`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${authToken}`,
+    },
+    body: JSON.stringify(settings),
   });
-  const url = `${backendUrl}/api/store-settings/history?${params.toString()}`;
 
-  if (!authToken) {
-    throw new Error('Authentication token required to fetch history');
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || `Failed to update store settings: ${response.statusText}`);
   }
 
-  try {
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`,
-      },
-      cache: 'no-store',
-    });
-
-    if (!response.ok) {
-      let errorMessage = `Failed to fetch history (${response.status})`;
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorData.error || errorMessage;
-      } catch {
-        errorMessage = response.statusText || errorMessage;
-      }
-      throw new Error(errorMessage);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching store settings history:', error);
-    throw error;
+  const result = await response.json();
+  
+  if (!result.success || !result.data) {
+    throw new Error('Invalid response from store settings API');
   }
+
+  return result.data;
 }

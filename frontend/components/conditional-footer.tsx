@@ -2,14 +2,16 @@
 
 import { usePathname } from "next/navigation";
 import Footer from "./footer";
-import WhatsappButton from "./whatsapp-button";
+import LiveContactButton from "./live-contact-button";
 import { useReviewForm } from "@/contexts/review-form-context";
+import { useStoreSettings } from "@/hooks/use-store-settings";
 
 export default function ConditionalFooter() {
   const pathname = usePathname();
   const { isReviewFormOpen } = useReviewForm();
+  const { settings } = useStoreSettings();
   
-  // Hide footer and WhatsApp button on these paths
+  // Hide footer and live contact button on these paths
   const hideFooterPaths = [
     '/account',
     '/admin',
@@ -35,7 +37,10 @@ export default function ConditionalFooter() {
   return (
     <>
       <Footer />
-      <WhatsappButton />
+      <LiveContactButton 
+        whatsappNumber={settings?.whatsapp_number}
+        phoneNumber={settings?.phone_number}
+      />
     </>
   );
 }

@@ -31,10 +31,10 @@ export default function StatCard({
   return (
     <div className={`${bgColor} relative min-w-0 overflow-hidden backdrop-blur-sm rounded-2xl border border-slate-200/50 p-5 sm:p-6 shadow-sm hover:shadow-xl hover:border-slate-200 transition-all group`}>
       <div>
-        <div className="min-w-0 flex-1">
-          <p className="pr-14 text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">{title}</p>
+        <div className="min-w-0 flex-1 pr-16 sm:pr-20">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">{title}</p>
           <div className="flex flex-col items-start gap-2 mb-3">
-            <h3 className={`max-w-full text-[clamp(1.5rem,2vw,2rem)] font-bold leading-tight tabular-nums bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent`}>{value}</h3>
+            <h3 className={`max-w-full text-[clamp(1.5rem,2vw,2rem)] font-bold leading-tight tabular-nums bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent break-words`}>{value}</h3>
             {trend && (
               <div className={`flex shrink-0 items-center gap-1 px-2.5 py-1 rounded-full ${trend.isPositive ? "bg-green-100/80 text-green-700" : "bg-red-100/80 text-red-700"}`}>
                 {trend.isPositive ? (

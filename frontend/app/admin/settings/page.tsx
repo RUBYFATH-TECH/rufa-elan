@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
-import { fetchStoreSettings, updateStoreSettings, StoreSettings } from "@/lib/api/store-settings";
+import { getStoreSettings, updateStoreSettings, StoreSettings } from "@/lib/api/store-settings";
 import {
   Save,
   AlertCircle,
@@ -14,6 +14,7 @@ import {
   MapPin,
   Globe,
   Loader2,
+  MessageSquare,
 } from "lucide-react";
 
 export default function AdminSettingsPage() {
@@ -29,7 +30,9 @@ export default function AdminSettingsPage() {
     currency_code: "GHS",
     tax_rate: 5,
     default_shipping_cost: 25,
-  });
+    whatsapp_number: "+905053783510",
+    phone_number: "+233241234567",
+  } as any);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -44,7 +47,7 @@ export default function AdminSettingsPage() {
   const loadSettings = async () => {
     try {
       setLoading(true);
-      const data = await fetchStoreSettings();
+      const data = await getStoreSettings();
       setSettings(data);
       setIsDirty(false);
     } catch (error) {
@@ -205,6 +208,81 @@ export default function AdminSettingsPage() {
                       onChange={(e) => handleChange('store_phone', e.target.value)}
                       className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Live Contact Settings */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+              <div className="border-b border-slate-200 p-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <MessageSquare className="w-5 h-5 text-slate-600" />
+                  <h2 className="text-lg font-semibold text-slate-900">Live Contact Settings</h2>
+                </div>
+                <p className="text-sm text-slate-600 ml-8">
+                  Configure the contact numbers displayed on the Live Contact button. These numbers allow customers to reach you via WhatsApp or phone call.
+                </p>
+              </div>
+              <div className="p-6 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-900 mb-2">
+                      WhatsApp Number
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="tel"
+                        value={settings.whatsapp_number || ''}
+                        onChange={(e) => handleChange('whatsapp_number', e.target.value)}
+                        placeholder="+905053783510"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      />
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1.5">
+                      Include country code (e.g., +90 for Turkey)
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-900 mb-2">
+                      Call Number
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="tel"
+                        value={settings.phone_number || ''}
+                        onChange={(e) => handleChange('phone_number', e.target.value)}
+                        placeholder="+233241234567"
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1.5">
+                      Include country code (e.g., +233 for Ghana)
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Preview */}
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                  <p className="text-xs font-semibold text-slate-700 mb-3 uppercase tracking-wider">
+                    Preview
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    {settings.whatsapp_number && (
+                      <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm">
+                        <MessageSquare className="w-4 h-4" />
+                        <span>WhatsApp: {settings.whatsapp_number}</span>
+                      </div>
+                    )}
+                    {settings.phone_number && (
+                      <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm">
+                        <Phone className="w-4 h-4" />
+                        <span>Call: {settings.phone_number}</span>
+                      </div>
+                    )}
+                    {!settings.whatsapp_number && !settings.phone_number && (
+                      <p className="text-sm text-slate-500 italic">No contact numbers configured</p>
+                    )}
                   </div>
                 </div>
               </div>
