@@ -94,12 +94,12 @@ export default function ProductForm({
     description: initialData?.description || "",
     category: initialData?.category || "",
     color: initialData?.color || "",
-    regular_price: initialData?.regular_price || 0,
-    sale_price: initialData?.sale_price || 0,
+    regular_price: initialData?.regular_price || ("" as any),
+    sale_price: initialData?.sale_price || ("" as any),
     is_in_stock: initialData?.is_in_stock ?? true,
     stock_quantity: initialData?.stock_quantity || 0,
     is_fast_deal: initialData?.is_fast_deal || false,
-    fast_deal_price: initialData?.fast_deal_price || 0,
+    fast_deal_price: initialData?.fast_deal_price || ("" as any),
     images: initialData?.images || [],
   });
 
@@ -126,7 +126,7 @@ export default function ProductForm({
       return "Product name is required";
     }
 
-    if (formData.regular_price <= 0) {
+    if (!formData.regular_price || formData.regular_price <= 0) {
       return "Regular price must be greater than 0";
     }
 
@@ -352,9 +352,9 @@ export default function ProductForm({
                   type="number"
                   min="0"
                   step="0.01"
-                  value={formData.regular_price}
+                  value={formData.regular_price || ""}
                   onChange={(e) =>
-                    handleChange("regular_price", parseFloat(e.target.value) || 0)
+                    handleChange("regular_price", e.target.value ? parseFloat(e.target.value) : "")
                   }
                   required
                   className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
@@ -370,9 +370,9 @@ export default function ProductForm({
                   type="number"
                   min="0"
                   step="0.01"
-                  value={formData.sale_price}
+                  value={formData.sale_price || ""}
                   onChange={(e) =>
-                    handleChange("sale_price", parseFloat(e.target.value) || 0)
+                    handleChange("sale_price", e.target.value ? parseFloat(e.target.value) : "")
                   }
                   className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   placeholder="0.00"
@@ -484,9 +484,9 @@ export default function ProductForm({
                     type="number"
                     min="0"
                     step="0.01"
-                    value={formData.fast_deal_price}
+                    value={formData.fast_deal_price || ""}
                     onChange={(e) =>
-                      handleChange("fast_deal_price", parseFloat(e.target.value) || 0)
+                      handleChange("fast_deal_price", e.target.value ? parseFloat(e.target.value) : "")
                     }
                     className="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     placeholder="0.00"

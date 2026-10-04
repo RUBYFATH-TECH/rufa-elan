@@ -274,12 +274,12 @@ export default function ImageUpload({
                       </div>
 
                       {/* Actions */}
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         {!image.is_primary && (
                           <button
                             type="button"
                             onClick={() => setPrimaryImage(index)}
-                            className="text-xs px-3 py-1 border border-slate-300 rounded-md hover:bg-slate-50 transition-colors"
+                            className="text-xs px-3 py-1.5 border border-slate-300 rounded-md hover:bg-slate-50 transition-colors whitespace-nowrap"
                           >
                             Set as Primary
                           </button>
@@ -289,9 +289,9 @@ export default function ImageUpload({
                           <button
                             type="button"
                             onClick={() => reorderImages(index, index - 1)}
-                            className="text-xs px-3 py-1 border border-slate-300 rounded-md hover:bg-slate-50 transition-colors"
+                            className="text-xs px-3 py-1.5 border border-slate-300 rounded-md hover:bg-slate-50 transition-colors whitespace-nowrap"
                           >
-                            ↑ Move Up
+                            Move Up
                           </button>
                         )}
 
@@ -299,16 +299,16 @@ export default function ImageUpload({
                           <button
                             type="button"
                             onClick={() => reorderImages(index, index + 1)}
-                            className="text-xs px-3 py-1 border border-slate-300 rounded-md hover:bg-slate-50 transition-colors"
+                            className="text-xs px-3 py-1.5 border border-slate-300 rounded-md hover:bg-slate-50 transition-colors whitespace-nowrap"
                           >
-                            ↓ Move Down
+                            Move Down
                           </button>
                         )}
 
                         <button
                           type="button"
                           onClick={() => removeImage(index)}
-                          className="text-xs px-3 py-1 border border-red-300 text-red-600 rounded-md hover:bg-red-50 transition-colors ml-auto"
+                          className="text-xs px-3 py-1.5 border border-red-300 text-red-600 rounded-md hover:bg-red-50 transition-colors whitespace-nowrap"
                         >
                           <X className="h-3 w-3 inline mr-1" />
                           Remove
