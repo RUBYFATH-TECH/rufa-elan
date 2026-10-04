@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import FilterBar from "@/components/filter-bar";
 import type { ProductFilters, ProductSort } from "@/components/filter-bar";
 import TemuDealsSection from "@/components/temu-deals-section";
-import FastDealsSection from "@/components/fast-deals-section";
 import TemuProductCard from "@/components/temu-product-card";
 import MobileBottomNav from "@/components/mobile-bottom-nav";
 import { fetchProducts } from "@/lib/api/products";
@@ -242,7 +241,6 @@ export default function HomePage() {
       <div className="mx-auto max-w-7xl px-3 sm:px-4 py-4 sm:py-6">
         <div className="mt-4 sm:mt-6 space-y-6 sm:space-y-8">
           <TemuDealsSection />
-          <FastDealsSection />
           
           {loading ? (
             <div className="flex items-center justify-center py-12">

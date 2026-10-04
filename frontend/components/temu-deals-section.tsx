@@ -8,6 +8,7 @@ import {
   Crown,
   Footprints,
   Glasses,
+  Loader2,
   ShoppingBag,
   ShoppingCart,
   Sparkles,
@@ -18,100 +19,23 @@ import {
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/language-context";
 
-interface Deal {
+interface FastDeal {
   id: string;
-  title: string;
-  originalPrice: number;
-  currentPrice: number;
-  image: string;
-  timeLeft: number; // in seconds
-  stockLeft: number;
-  maxStock: number;
-  rating: number;
-  reviewCount: number;
-  slug: string;
+  deal_price: number;
+  stock_quantity: number;
+  sold_quantity: number;
+  end_date: string;
+  end_time: string;
+  products: {
+    id: string;
+    name: string;
+    slug: string;
+    regular_price: number;
+    avg_rating?: number;
+    review_count?: number;
+    product_images?: Array<{ url: string }>;
+  };
 }
-
-const lightningDeals: Deal[] = [
-  {
-    id: "deal-1",
-    title: "Mini Facial Device Set with Charging Cable",
-    originalPrice: 274.03,
-    currentPrice: 145.61,
-    image: "/images/2026-07-21 at 16.58.28.jpeg",
-    timeLeft: 23454, // 6h 30m 54s
-    stockLeft: 12,
-    maxStock: 50,
-    rating: 4.7,
-    reviewCount: 1234,
-    slug: "mini-facial-device-set"
-  },
-  {
-    id: "deal-2",
-    title: "Stackable Golden Bracelets Set of 3",
-    originalPrice: 54.01,
-    currentPrice: 28.31,
-    image: "/images/Image 2026-07-21 at 16.58.27.jpeg",
-    timeLeft: 13654, // 3h 47m 34s
-    stockLeft: 8,
-    maxStock: 30,
-    rating: 4.8,
-    reviewCount: 876,
-    slug: "golden-bracelets-set"
-  },
-  {
-    id: "deal-3",
-    title: "Pink Makeup Brush Set with Storage",
-    originalPrice: 65.61,
-    currentPrice: 32.39,
-    image: "/images/WhatsApp 2026-07-21 at 16.58.31.jpeg",
-    timeLeft: 8754, // 2h 25m 54s
-    stockLeft: 5,
-    maxStock: 20,
-    rating: 4.6,
-    reviewCount: 543,
-    slug: "pink-makeup-brush-set"
-  },
-  {
-    id: "deal-4",
-    title: "Hello Kitty Decorative Items Set",
-    originalPrice: 44.24,
-    currentPrice: 22.44,
-    image: "/images/WhatsApp Image 2026-07-21 at 16.58.32.jpeg",
-    timeLeft: 18954, // 5h 15m 54s
-    stockLeft: 15,
-    maxStock: 40,
-    rating: 4.5,
-    reviewCount: 321,
-    slug: "hello-kitty-decorative-set"
-  },
-  {
-    id: "deal-5",
-    title: "Structured Ladies' Shoulder Bag with Gold Detail",
-    originalPrice: 180.0,
-    currentPrice: 112.0,
-    image: "/images/WhatsApp Image 2026-07-21 at 16.58.28.jpeg",
-    timeLeft: 15454,
-    stockLeft: 10,
-    maxStock: 30,
-    rating: 4.8,
-    reviewCount: 694,
-    slug: "structured-ladies-shoulder-bag"
-  },
-  {
-    id: "deal-6",
-    title: "Elegant Everyday Tote Bag",
-    originalPrice: 210.0,
-    currentPrice: 136.0,
-    image: "/images/2026-07-21 at 16.58.28.jpeg",
-    timeLeft: 11454,
-    stockLeft: 7,
-    maxStock: 25,
-    rating: 4.7,
-    reviewCount: 518,
-    slug: "elegant-everyday-tote-bag"
-  }
-];
 
 const ladiesCategories = [
   { name: { en: "Ladies bags", tr: "Kadın çantaları", ar: "حقائب نسائية" }, count: { en: "Everyday favourites", tr: "Günlük favoriler", ar: "المفضلات اليومية" }, href: "/shop/ladies-bags", icon: ShoppingBag, color: "bg-[#7c3aed]", iconColor: "bg-white/20" },
@@ -123,14 +47,19 @@ const ladiesCategories = [
   { name: { en: "Accessories", tr: "Aksesuarlar", ar: "إكسسوارات" }, count: { en: "Complete the look", tr: "Görünümü tamamlayın", ar: "أكملي إطلالتك" }, href: "/shop/accessories", icon: Sparkles, color: "bg-[#4338ca]", iconColor: "bg-white/20" },
 ];
 
-function FlashSaleCountdown({ seconds }: { seconds: number }) {
-  const [timeLeft, setTimeLeft] = useState(seconds);
+function getTimeUntilEnd(endDate: string, endTime: string): number {
+  const difference = new Date(`${endDate}T${endTime}`).getTime() - Date.now();
+  return Math.max(0, Math.floor(difference / 1000));
+}
+
+function FlashSaleCountdown({ endDate, endTime }: { endDate: string; endTime: string }) {
+  const [timeLeft, setTimeLeft] = useState(() => getTimeUntilEnd(endDate, endTime));
 
   useEffect(() => {
     if (timeLeft <= 0) return;
-    const timer = setInterval(() => setTimeLeft((previous) => previous - 1), 1000);
+    const timer = setInterval(() => setTimeLeft(getTimeUntilEnd(endDate, endTime)), 1000);
     return () => clearInterval(timer);
-  }, [timeLeft]);
+  }, [endDate, endTime, timeLeft]);
 
   const units = [
     { value: Math.floor(timeLeft / 3600), label: "HR" },
@@ -153,18 +82,26 @@ function FlashSaleCountdown({ seconds }: { seconds: number }) {
   );
 }
 
-function DealCard({ deal, isLightning = false }: { deal: Deal; isLightning?: boolean }) {
-  const discountPercentage = Math.round(((deal.originalPrice - deal.currentPrice) / deal.originalPrice) * 100);
-  const stockPercentage = ((deal.maxStock - deal.stockLeft) / deal.maxStock) * 100;
+function DealCard({ deal }: { deal: FastDeal }) {
+  const discountPercentage = deal.products.regular_price > 0
+    ? Math.round(((deal.products.regular_price - deal.deal_price) / deal.products.regular_price) * 100)
+    : 0;
+  const remaining = Math.max(0, deal.stock_quantity - deal.sold_quantity);
+  const claimedPercent = deal.stock_quantity > 0 
+    ? Math.min(100, (deal.sold_quantity / deal.stock_quantity) * 100) 
+    : 0;
+  const rating = deal.products.avg_rating || 0;
+  const reviewCount = deal.products.review_count || 0;
+  const imageUrl = deal.products.product_images?.[0]?.url || "/images/placeholder.jpg";
 
   return (
-    <Link href={`/products/${deal.slug}`} className="group block">
+    <Link href={`/products/${deal.products.slug}`} className="group block">
       <div className="relative overflow-hidden rounded-lg bg-white shadow-sm transition-all hover:shadow-md">
         {/* Image */}
         <div className="relative aspect-square">
           <Image
-            src={deal.image}
-            alt={deal.title}
+            src={imageUrl}
+            alt={deal.products.name}
             fill
             className="object-cover transition-transform group-hover:scale-105"
           />
@@ -187,7 +124,7 @@ function DealCard({ deal, isLightning = false }: { deal: Deal; isLightning?: boo
         {/* Content */}
         <div className="p-3">
           <h3 className="text-sm font-medium text-slate-900 line-clamp-2 mb-2">
-            {deal.title}
+            {deal.products.name}
           </h3>
 
           {/* Rating */}
@@ -198,36 +135,40 @@ function DealCard({ deal, isLightning = false }: { deal: Deal; isLightning?: boo
                   key={i}
                   className={cn(
                     "h-3 w-3",
-                    i < Math.floor(deal.rating)
+                    i < Math.floor(rating)
                       ? "text-yellow-400 fill-current"
                       : "text-slate-300"
                   )}
                 />
               ))}
             </div>
-            <span className="text-xs text-slate-600">({deal.reviewCount})</span>
+            {rating > 0 ? (
+              <span className="text-xs text-slate-600">({reviewCount})</span>
+            ) : (
+              <span className="text-xs text-slate-500">No ratings yet</span>
+            )}
           </div>
 
           {/* Prices */}
           <div className="flex items-center gap-2 mb-3">
             <span className="text-lg font-bold text-rufaelan-primary">
-              GH₵{deal.currentPrice.toFixed(2)}
+              GHS {deal.deal_price.toFixed(2)}
             </span>
             <span className="text-sm text-slate-500 line-through">
-              GH₵{deal.originalPrice.toFixed(2)}
+              GHS {deal.products.regular_price.toFixed(2)}
             </span>
           </div>
 
           {/* Stock Progress */}
           <div className="mb-2">
             <div className="flex justify-between text-xs text-slate-600 mb-1">
-              <span>{deal.stockLeft} left</span>
-              <span>{Math.round(stockPercentage)}% claimed</span>
+              <span>{remaining} left</span>
+              <span>{Math.round(claimedPercent)}% claimed</span>
             </div>
             <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-gradient-to-r from-rufaelan-primary to-red-500 rounded-full transition-all"
-                style={{ width: `${stockPercentage}%` }}
+                style={{ width: `${claimedPercent}%` }}
               />
             </div>
           </div>
@@ -239,7 +180,32 @@ function DealCard({ deal, isLightning = false }: { deal: Deal; isLightning?: boo
 
 export default function TemuDealsSection() {
   const { language } = useLanguage();
+  const [deals, setDeals] = useState<FastDeal[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const localized = (copy: { en: string; tr: string; ar: string }) => copy[language === "tr" || language === "ar" ? language : "en"];
+
+  useEffect(() => {
+    const loadFastDeals = async () => {
+      try {
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+        const response = await fetch(`${backendUrl}/api/fast-deals?limit=6`, {
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+        });
+        if (!response.ok) throw new Error("Failed to fetch deals");
+        const data = await response.json();
+        setDeals(data.data || []);
+      } catch (error) {
+        console.error("Error loading fast deals:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFastDeals();
+  }, []);
+
   return (
     <div className="bg-gray-50 py-8">
       <div className="mx-auto max-w-7xl px-4">
@@ -253,8 +219,12 @@ export default function TemuDealsSection() {
                 </span>
                 <span className="text-xl font-extrabold">{localized({ en: "FLASH SALES", tr: "FIRSAT SATIŞLARI", ar: "عروض سريعة" })}</span>
               </div>
-              <span className="text-sm font-medium text-slate-600">{localized({ en: "Ends in", tr: "Bitiş", ar: "ينتهي خلال" })}</span>
-              <FlashSaleCountdown seconds={lightningDeals[0].timeLeft} />
+              {!loading && deals.length > 0 && (
+                <>
+                  <span className="text-sm font-medium text-slate-600">{localized({ en: "Ends in", tr: "Bitiş", ar: "ينتهي خلال" })}</span>
+                  <FlashSaleCountdown endDate={deals[0].end_date} endTime={deals[0].end_time} />
+                </>
+              )}
             </div>
             <Link
               href="/deals/lightning"
@@ -264,13 +234,21 @@ export default function TemuDealsSection() {
             </Link>
           </div>
 
-          <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {lightningDeals.map((deal) => (
-              <div key={deal.id} className="w-44 shrink-0 snap-start sm:w-52">
-                <DealCard deal={deal} isLightning={true} />
-              </div>
-            ))}
-          </div>
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+            </div>
+          ) : deals.length > 0 ? (
+            <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {deals.map((deal) => (
+                <div key={deal.id} className="w-44 shrink-0 snap-start sm:w-52">
+                  <DealCard deal={deal} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-sm text-slate-600 py-8">{localized({ en: "No flash deals available at the moment", tr: "Şu anda fırsat satışı yok", ar: "لا توجد عروض سريعة متاحة في الوقت الحالي" })}</p>
+          )}
         </div>
 
         {/* Shop Ladies' Fashion */}
