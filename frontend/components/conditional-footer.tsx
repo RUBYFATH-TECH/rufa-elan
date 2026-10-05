@@ -18,7 +18,9 @@ export default function ConditionalFooter() {
     '/auth/login',
     '/auth/register', 
     '/auth/callback',
-    '/debug-auth'
+    '/debug-auth',
+    '/payment-callback',
+    '/checkout'
   ];
   
   // Check if current path starts with any of the hide paths
