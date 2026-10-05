@@ -520,6 +520,24 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       }
     }
 
+    // Clear the user's cart after successful order creation
+    try {
+      const { error: clearCartError } = await req.db!
+        .from('cart_items')
+        .delete()
+        .eq('user_id', req.userId);
+      
+      if (clearCartError) {
+        logger.error(`Failed to clear cart for user ${req.userId}:`, clearCartError);
+        // Don't fail the order, just log the error
+      } else {
+        logger.info(`Cart cleared for user ${req.userId} after order ${orderId}`);
+      }
+    } catch (cartError) {
+      logger.error('Error clearing cart:', cartError);
+      // Don't fail the order, just log the error
+    }
+
     // Fetch complete order details
     const { data: createdOrder } = await req.db!
       .from('orders')

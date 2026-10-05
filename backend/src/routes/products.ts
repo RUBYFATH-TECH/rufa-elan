@@ -306,6 +306,10 @@ router.get('/:id', async (req: Request, res: Response) => {
       }).catch(err => logger.warn('Failed to increment popularity:', err));
     }
 
+    // Check both the manual is_in_stock flag AND calculated stock from variants
+    const hasStock = totalStock > 0;
+    const isManuallyInStock = product.is_in_stock !== false; // Default to true if not set
+    
     // Construct response with all related data
     const responseData = {
       ...product,
@@ -314,8 +318,8 @@ router.get('/:id', async (req: Request, res: Response) => {
       product_images: imagesResult.data || [],
       product_variants: variantsResult.data || [],
       stock_quantity: totalStock,
-      in_stock: totalStock > 0,
-      low_stock: totalStock > 0 && totalStock < 20
+      in_stock: isManuallyInStock && hasStock, // Must be manually in stock AND have quantity
+      low_stock: hasStock && totalStock < 20
     };
 
     logger.info(`Fetched product: ${id}`, { userId: req.userId });
