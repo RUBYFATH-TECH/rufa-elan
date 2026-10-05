@@ -420,6 +420,22 @@ router.get('/verify/:reference', requireAuth, async (req: Request, res: Response
             reference
           });
         }
+
+        // Clear the user's cart after order status update
+        try {
+          const { error: clearCartError } = await req.db!
+            .from('cart_items')
+            .delete()
+            .eq('user_id', req.userId);
+          
+          if (clearCartError) {
+            logger.error(`Failed to clear cart for user ${req.userId}:`, clearCartError);
+          } else {
+            logger.info(`Cart cleared for user ${req.userId} after updating order ${payment.order_id}`);
+          }
+        } catch (cartError) {
+          logger.error('Error clearing cart:', cartError);
+        }
       } else if (orderMetadata) {
         // Order doesn't exist yet - create it from payment metadata
         logger.info('Creating order from payment metadata', {

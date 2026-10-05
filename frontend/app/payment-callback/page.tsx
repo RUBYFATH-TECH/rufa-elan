@@ -4,6 +4,7 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { verifyPayment } from '@/lib/paystack';
 import { createClientComponentSupabaseClient } from '@/lib/supabase-client';
+import { useCartStore } from '@/store/cart-store';
 
 // Force dynamic rendering for this page
 export const dynamic = 'force-dynamic';
@@ -23,6 +24,7 @@ interface PaymentStatus {
 function PaymentCallbackContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const clearCart = useCartStore((state: any) => state.clearCart);
   const [status, setStatus] = useState<PaymentStatus>({
     loading: true,
     success: false
@@ -64,6 +66,15 @@ function PaymentCallbackContent() {
             reference,
             payment: result.data
           });
+
+          // Clear cart after successful payment verification
+          try {
+            await clearCart();
+            console.log('Cart cleared after successful payment');
+          } catch (cartError) {
+            console.error('Failed to clear cart:', cartError);
+            // Don't fail the payment verification if cart clearing fails
+          }
 
           // Redirect to orders page after 3 seconds
           setTimeout(() => {
