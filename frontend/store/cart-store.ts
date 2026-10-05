@@ -9,6 +9,7 @@ export type CartItem = {
   image: string;
   sku?: string;
   stock_quantity?: number;
+  variant?: string;
 };
 
 type CartState = {
