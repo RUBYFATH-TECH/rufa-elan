@@ -104,29 +104,36 @@ function PaymentCallbackContent() {
   }, [searchParams, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-orange-50 to-slate-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-lg w-full">
         {status.loading ? (
-          <div className="text-center">
-            <div className="flex justify-center mb-4">
-              <div className="relative w-16 h-16">
-                <div className="absolute inset-0 border-4 border-blue-200 rounded-full" />
-                <div className="absolute inset-0 border-4 border-transparent border-t-blue-600 rounded-full animate-spin" />
+          <div className="bg-white rounded-2xl shadow-2xl p-8 sm:p-12 text-center border border-slate-200">
+            <div className="flex justify-center mb-6">
+              <div className="relative w-20 h-20">
+                <div className="absolute inset-0 border-4 border-orange-100 rounded-full" />
+                <div className="absolute inset-0 border-4 border-transparent border-t-orange-600 rounded-full animate-spin" />
               </div>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <h2 className="text-3xl font-bold text-slate-900 mb-3">
               Verifying Payment
             </h2>
-            <p className="text-gray-600">
-              Please wait while we verify your payment...
+            <p className="text-slate-600 text-lg">
+              Please wait while we confirm your transaction...
             </p>
+            <div className="mt-6 flex items-center justify-center gap-2 text-sm text-slate-500">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+              </svg>
+              <span>Secure payment processing</span>
+            </div>
           </div>
         ) : status.success ? (
-          <div className="text-center">
-            <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 sm:p-12 text-center border border-green-200">
+            {/* Success Icon with Animation */}
+            <div className="flex justify-center mb-6">
+              <div className="w-24 h-24 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg animate-pulse">
                 <svg
-                  className="w-8 h-8 text-green-600"
+                  className="w-12 h-12 text-white"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -134,40 +141,84 @@ function PaymentCallbackContent() {
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeWidth={2}
+                    strokeWidth={3}
                     d="M5 13l4 4L19 7"
                   />
                 </svg>
               </div>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+
+            {/* Success Message */}
+            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-3">
               Payment Successful!
             </h2>
-            <p className="text-gray-600 mb-4">
-              Your payment of ₦{status.payment?.amount?.toLocaleString('en-NG')} has been confirmed.
+            <p className="text-slate-600 text-lg mb-6">
+              Your transaction has been completed successfully
             </p>
-            <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
-              <p className="text-sm text-gray-500 mb-1">Reference:</p>
-              <p className="font-mono text-sm text-gray-900 break-all">
-                {status.reference}
+
+            {/* Amount Display */}
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6 mb-6">
+              <p className="text-sm font-semibold text-green-800 mb-2 uppercase tracking-wide">
+                Amount Paid
+              </p>
+              <p className="text-4xl font-bold text-green-700">
+                GH₵ {status.payment?.amount?.toFixed(2) || '0.00'}
+              </p>
+              <div className="mt-4 pt-4 border-t border-green-200">
+                <div className="flex items-center justify-center gap-2 text-sm text-green-700">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span className="font-medium">Payment Confirmed</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Reference Number */}
+            <div className="bg-slate-50 rounded-xl p-5 mb-6 border border-slate-200">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <div className="flex-1 text-left">
+                  <p className="text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wide">
+                    Transaction Reference
+                  </p>
+                  <p className="font-mono text-sm text-slate-800 break-all leading-relaxed">
+                    {status.reference}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Redirect Message */}
+            <div className="flex items-center justify-center gap-2 text-slate-600 mb-6">
+              <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+              <p className="text-sm">
+                Redirecting to your orders...
               </p>
             </div>
-            <p className="text-sm text-gray-600 mb-4">
-              Redirecting to your orders page...
-            </p>
+
+            {/* Action Button */}
             <button
               onClick={() => router.push('/account/orders')}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+              className="w-full bg-gradient-to-r from-orange-600 to-red-600 text-white py-4 px-6 rounded-xl font-semibold text-lg hover:from-orange-700 hover:to-red-700 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
             >
-              Go to Orders
+              View My Orders
             </button>
+
+            {/* Additional Info */}
+            <p className="mt-6 text-xs text-slate-500">
+              A confirmation email has been sent to your registered email address
+            </p>
           </div>
         ) : (
-          <div className="text-center">
-            <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 sm:p-12 text-center border border-red-200">
+            {/* Error Icon */}
+            <div className="flex justify-center mb-6">
+              <div className="w-24 h-24 bg-gradient-to-br from-red-400 to-red-600 rounded-full flex items-center justify-center shadow-lg">
                 <svg
-                  className="w-8 h-8 text-red-600"
+                  className="w-12 h-12 text-white"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -175,39 +226,64 @@ function PaymentCallbackContent() {
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeWidth={2}
+                    strokeWidth={3}
                     d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
               </div>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+
+            {/* Error Message */}
+            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-3">
               Payment Failed
             </h2>
-            <p className="text-gray-600 mb-4">
-              {status.error || 'Unable to verify your payment. Please try again.'}
+            <p className="text-slate-600 text-lg mb-6">
+              {status.error || 'We couldn\'t verify your payment. Please try again or contact support.'}
             </p>
+
+            {/* Reference if available */}
             {status.reference && (
-              <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
-                <p className="text-sm text-gray-500 mb-1">Reference:</p>
-                <p className="font-mono text-sm text-gray-900 break-all">
-                  {status.reference}
-                </p>
+              <div className="bg-slate-50 rounded-xl p-5 mb-6 border border-slate-200">
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <div className="flex-1 text-left">
+                    <p className="text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wide">
+                      Reference Number
+                    </p>
+                    <p className="font-mono text-sm text-slate-800 break-all leading-relaxed">
+                      {status.reference}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-2">
+                      Please save this reference for support inquiries
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
-            <div className="flex gap-3">
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3">
               <button
-                onClick={() => router.back()}
-                className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors"
+                onClick={() => router.push('/checkout')}
+                className="flex-1 bg-gradient-to-r from-orange-600 to-red-600 text-white py-4 px-6 rounded-xl font-semibold hover:from-orange-700 hover:to-red-700 transform hover:scale-105 transition-all duration-200 shadow-lg"
               >
-                Go Back
+                Try Again
               </button>
               <button
-                onClick={() => router.push('/account/orders')}
-                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                onClick={() => router.push('/contact')}
+                className="flex-1 bg-slate-100 text-slate-700 py-4 px-6 rounded-xl font-semibold hover:bg-slate-200 transition-all duration-200 border border-slate-300"
               >
-                To Orders
+                Contact Support
               </button>
+            </div>
+
+            {/* Help Text */}
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-sm text-blue-800">
+                <strong>Need help?</strong> Our support team is available 24/7 to assist you with payment issues.
+              </p>
             </div>
           </div>
         )}
@@ -219,15 +295,16 @@ function PaymentCallbackContent() {
 export default function PaymentCallbackPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="relative w-16 h-16">
-              <div className="absolute inset-0 border-4 border-blue-200 rounded-full" />
-              <div className="absolute inset-0 border-4 border-transparent border-t-blue-600 rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-orange-50 to-slate-50">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 sm:p-12 text-center border border-slate-200 max-w-lg w-full mx-4">
+          <div className="flex justify-center mb-6">
+            <div className="relative w-20 h-20">
+              <div className="absolute inset-0 border-4 border-orange-100 rounded-full" />
+              <div className="absolute inset-0 border-4 border-transparent border-t-orange-600 rounded-full animate-spin" />
             </div>
           </div>
-          <p className="text-gray-600">Loading...</p>
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Loading...</h2>
+          <p className="text-slate-600">Please wait a moment</p>
         </div>
       </div>
     }>
