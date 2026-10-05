@@ -3,19 +3,19 @@ import { createClientComponentSupabaseClient } from '@/lib/supabase-client';
 import { getUnreadNotificationCount } from '@/lib/api/notifications';
 
 /**
- * Hook to manage unread notification count
- * Polls the backend every 30 seconds for updates
+ * Hook to manage unread notification count with real-time updates
+ * Uses Supabase real-time subscriptions for instant updates
  */
 export function useNotificationCount() {
   const [count, setCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+  const [supabase] = useState(() => createClientComponentSupabaseClient());
 
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
 
     const fetchCount = async () => {
       try {
-        const supabase = createClientComponentSupabaseClient();
         const { data: { session } } = await supabase.auth.getSession();
 
         if (!session?.user?.id || !session?.access_token) {
@@ -31,6 +31,31 @@ export function useNotificationCount() {
         
         setCount(unreadCount);
         setLoading(false);
+
+        // Set up real-time subscription for this user's notifications
+        channel = supabase
+          .channel('notification-changes')
+          .on(
+            'postgres_changes',
+            {
+              event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+              schema: 'public',
+              table: 'notifications',
+              filter: `user_id=eq.${session.user.id}`
+            },
+            async (payload) => {
+              console.log('Notification change detected:', payload);
+              
+              // Refetch the count when notifications change
+              const newCount = await getUnreadNotificationCount(
+                session.user.id,
+                session.access_token
+              );
+              setCount(newCount);
+            }
+          )
+          .subscribe();
+
       } catch (error) {
         console.error('Failed to fetch notification count:', error);
         setLoading(false);
@@ -40,15 +65,12 @@ export function useNotificationCount() {
     // Initial fetch
     fetchCount();
 
-    // Poll every 30 seconds
-    interval = setInterval(fetchCount, 30000);
-
     return () => {
-      if (interval) {
-        clearInterval(interval);
+      if (channel) {
+        supabase.removeChannel(channel);
       }
     };
-  }, []);
+  }, [supabase]);
 
   return { count, loading };
 }

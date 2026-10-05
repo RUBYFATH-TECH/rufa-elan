@@ -100,6 +100,45 @@ export default function NotificationsPage() {
           }));
 
           setOrderPreviews(Object.fromEntries(previews.filter(Boolean) as Array<readonly [string, OrderPreview]>));
+
+          // Set up real-time subscription for notifications
+          const channel = supabase
+            .channel('user-notifications')
+            .on(
+              'postgres_changes',
+              {
+                event: '*',
+                schema: 'public',
+                table: 'notifications',
+                filter: `user_id=eq.${session.user.id}`
+              },
+              async (payload) => {
+                console.log('Notification change:', payload);
+                
+                if (payload.eventType === 'INSERT') {
+                  // Add new notification to the list
+                  setNotifications(prev => [payload.new as Notification, ...prev]);
+                } else if (payload.eventType === 'UPDATE') {
+                  // Update existing notification
+                  setNotifications(prev =>
+                    prev.map(notif =>
+                      notif.id === payload.new.id ? payload.new as Notification : notif
+                    )
+                  );
+                } else if (payload.eventType === 'DELETE') {
+                  // Remove deleted notification
+                  setNotifications(prev =>
+                    prev.filter(notif => notif.id !== payload.old.id)
+                  );
+                }
+              }
+            )
+            .subscribe();
+
+          // Cleanup subscription on unmount
+          return () => {
+            supabase.removeChannel(channel);
+          };
         }
       } catch (error) {
         console.error('Error loading notifications:', error);
