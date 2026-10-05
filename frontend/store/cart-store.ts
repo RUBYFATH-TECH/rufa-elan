@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
 
 export type CartItem = {
   id: string;
@@ -17,7 +18,7 @@ type CartState = {
   addItem: (item: CartItem) => void;
   updateQuantity: (id: string, quantity: number) => void;
   removeItem: (id: string) => void;
-  clearCart: () => void;
+  clearCart: () => Promise<void>;
   hydrate: () => void;
   error: string | null;
   setError: (error: string | null) => void;
@@ -76,9 +77,30 @@ export const useCartStore = create<CartState>((set, get) => ({
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
     set({ items });
   },
-  clearCart: () => {
+  clearCart: async () => {
+    // Clear localStorage immediately
     window.localStorage.removeItem(STORAGE_KEY);
     set({ items: [] });
+    
+    // Also clear backend cart if user is authenticated
+    try {
+      const supabase = createClientComponentSupabaseClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.access_token) {
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+        await fetch(`${backendUrl}/api/cart`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Failed to clear backend cart:', err);
+      // Don't fail the local clear if backend fails
+    }
   },
   hydrate: () => {
     try {

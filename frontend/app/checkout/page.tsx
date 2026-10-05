@@ -387,8 +387,10 @@ export default function CheckoutPage() {
       setPaymentStatus("success");
       setMessage("Payment successful! Your order has been placed.");
 
+      // Clear cart (both localStorage and backend)
       try {
-        clearCart();
+        await clearCart();
+        console.log("Cart cleared successfully");
       } catch (e) {
         console.error("Error clearing cart:", e);
       }
