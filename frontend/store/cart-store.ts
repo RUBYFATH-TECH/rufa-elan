@@ -7,7 +7,6 @@ export type CartItem = {
   price: number;
   quantity: number;
   image: string;
-  variant?: string;
   sku?: string;
   stock_quantity?: number;
 };

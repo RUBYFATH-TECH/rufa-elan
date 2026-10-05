@@ -723,12 +723,6 @@ export default function CheckoutPage() {
           )}
             </div>
           )}
-
-          {/* Live Order Tracking */}
-          <div className="rounded-lg bg-blue-50 border border-blue-200 p-4 text-center">
-            <p className="text-sm font-semibold text-blue-900 mb-2">Order Reference</p>
-            <p className="text-lg font-bold text-blue-600">RUFA-1001</p>
-          </div>
         </aside>
       </div>
     </section>

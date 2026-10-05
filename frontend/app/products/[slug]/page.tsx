@@ -37,7 +37,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [selectedColor, setSelectedColor] = useState("Black");
   const [addedToCart, setAddedToCart] = useState(false);
   const [stockError, setStockError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'details' | 'reviews'>('details');
@@ -210,11 +209,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
         price,
         quantity,
         image: product.image,
-        variant: selectedColor,
         sku: `RUFA-${product.id.toUpperCase()}`
       };
     },
-    [product, price, quantity, selectedColor]
+    [product, price, quantity]
   );
 
   const handleAddToCart = () => {
@@ -404,29 +402,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
 
           {/* Selection Options */}
           <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            {/* Color Selection */}
-            <div>
-              <label className="block text-sm font-bold text-slate-900 mb-3">Choose Color</label>
-              <div className="flex gap-3 flex-wrap">
-                {['Black', 'Beige', 'Pink'].map((option) => (
-                  <button
-                    key={option}
-                    onClick={() => setSelectedColor(option)}
-                    className={`relative px-4 py-3 rounded-xl font-semibold text-sm transition-all transform ${
-                      selectedColor === option 
-                        ? "bg-brand-600 text-white ring-2 ring-brand-300 scale-105 shadow-lg" 
-                        : "bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-50"
-                    }`}
-                  >
-                    {option}
-                    {selectedColor === option && (
-                      <Check className="absolute top-1 right-1 h-4 w-4" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Quantity Selection */}
             <div>
               <label className="block text-sm font-bold text-slate-900 mb-3">Quantity</label>
@@ -615,7 +590,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             <ul className="space-y-3">
               <li className="flex items-start gap-3 text-slate-700">
                 <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                <span>Multiple color options</span>
+                <span>Elegant design</span>
               </li>
               <li className="flex items-start gap-3 text-slate-700">
                 <Check className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
