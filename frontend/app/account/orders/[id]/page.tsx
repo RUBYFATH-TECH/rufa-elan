@@ -267,15 +267,25 @@ export default function OrderDetailPage() {
                     key={item.id}
                     className="flex gap-4 border-b border-slate-100 pb-4 last:border-0"
                   >
-                    <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                    <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-100 ring-2 ring-slate-200">
                       {image ? (
-                        <Image
-                          src={image}
-                          alt={name || "Product"}
-                          fill
-                          sizes="80px"
-                          className="object-cover"
-                        />
+                        <>
+                          <Image
+                            src={image}
+                            alt={name || "Product"}
+                            fill
+                            sizes="80px"
+                            className="object-cover"
+                          />
+                          {/* Indicator that this is the user's selected image */}
+                          {snapshot?.image_url && (
+                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-1 py-0.5">
+                              <p className="text-[9px] font-semibold text-white text-center leading-none">
+                                YOUR CHOICE
+                              </p>
+                            </div>
+                          )}
+                        </>
                       ) : (
                         <Package className="m-7 h-6 w-6 text-slate-400" />
                       )}

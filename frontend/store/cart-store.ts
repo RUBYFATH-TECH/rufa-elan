@@ -10,6 +10,7 @@ export type CartItem = {
   sku?: string;
   stock_quantity?: number;
   variant?: string;
+  selected_image_url?: string; // The image URL selected by user for this cart item
 };
 
 type CartState = {
@@ -46,7 +47,15 @@ export const useCartStore = create<CartState>((set, get) => ({
     const items = existing
       ? get().items.map((cartItem) =>
           cartItem.id === item.id
-            ? { ...cartItem, quantity: newQuantity, stock_quantity: item.stock_quantity }
+            ? { 
+                ...cartItem, 
+                quantity: newQuantity, 
+                stock_quantity: item.stock_quantity,
+                // Update selected_image_url if a new one is provided
+                selected_image_url: item.selected_image_url || cartItem.selected_image_url,
+                // Update image to match selected_image_url for consistency
+                image: item.selected_image_url || cartItem.selected_image_url || item.image
+              }
             : cartItem
         )
       : [...get().items, item];

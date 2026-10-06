@@ -122,7 +122,7 @@ router.get('/', async (req: Request, res: Response) => {
 router.post('/items', async (req: Request, res: Response) => {
   try {
     const cartIdentifier = getCartIdentifier(req);
-    const { product_variant_id, quantity = 1 } = req.body;
+    const { product_variant_id, quantity = 1, selected_image_url } = req.body;
 
     if (!cartIdentifier.user_id && !cartIdentifier.session_id) {
       return res.status(400).json({
@@ -177,7 +177,7 @@ router.post('/items', async (req: Request, res: Response) => {
     let result;
 
     if (existingItem.data && existingItem.data.length > 0) {
-      // Update quantity
+      // Update quantity and selected_image_url
       const newQuantity = existingItem.data[0].quantity + quantity;
       
       if (newQuantity > variant.data.stock_quantity) {
@@ -188,16 +188,28 @@ router.post('/items', async (req: Request, res: Response) => {
         } as ApiResponse);
       }
 
-      result = await db.cartItems.updateById(existingItem.data[0].id, {
-        quantity: newQuantity
-      });
+      const updateData: any = { quantity: newQuantity };
+      
+      // Update selected_image_url if provided
+      if (selected_image_url) {
+        updateData.selected_image_url = selected_image_url;
+      }
+
+      result = await db.cartItems.updateById(existingItem.data[0].id, updateData);
     } else {
       // Create new cart item
-      result = await db.cartItems.create({
+      const cartItemData: any = {
         ...cartIdentifier,
         product_variant_id,
         quantity
-      });
+      };
+      
+      // Add selected_image_url if provided
+      if (selected_image_url) {
+        cartItemData.selected_image_url = selected_image_url;
+      }
+      
+      result = await db.cartItems.create(cartItemData);
     }
 
     if (result.error || !result.data) {

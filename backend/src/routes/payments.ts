@@ -666,6 +666,9 @@ router.get('/verify/:reference', requireAuth, async (req: Request, res: Response
             const images = Array.isArray((product as any)?.product_images) ? (product as any).product_images : [];
             const primaryImage = images.find((img: any) => img.position === 1) || images[0];
             
+            // Use selected_image_url from cart if available, otherwise use primary image
+            const selectedImageUrl = item.selected_image_url || primaryImage?.url || null;
+            
             const productSnapshot = {
               product_id: (product as any)?.id,
               product_name: (product as any)?.name,
@@ -673,7 +676,7 @@ router.get('/verify/:reference', requireAuth, async (req: Request, res: Response
               description: (product as any)?.description,
               sku: (variant as any).sku,
               color: (variant as any).value,
-              image_url: primaryImage?.url || null,
+              image_url: selectedImageUrl,
               all_images: images.map((img: any) => ({
                 url: img.url,
                 position: img.position

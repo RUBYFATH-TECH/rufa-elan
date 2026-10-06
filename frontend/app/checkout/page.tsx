@@ -260,7 +260,8 @@ export default function CheckoutPage() {
             items: items.map((i: CartItem) => ({
               product_variant_id: i.id,
               quantity: i.quantity,
-              price: i.price
+              price: i.price,
+              selected_image_url: i.selected_image_url || i.image
             }))
           }
         })

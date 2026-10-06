@@ -360,6 +360,9 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       const images = Array.isArray((product as any)?.product_images) ? (product as any).product_images : [];
       const primaryImage = images.find((img: any) => img.position === 1) || images[0];
 
+      // Use selected_image_url from order item if available, otherwise use primary image
+      const selectedImageUrl = item.selected_image_url || primaryImage?.url || null;
+
       orderItems.push({
         product_variant_id: item.product_variant_id,
         quantity: item.quantity,
@@ -372,7 +375,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
           description: (product as any)?.description,
           sku: variant.sku,
           color: variant.value, // variant value typically contains color
-          image_url: primaryImage?.url || null,
+          image_url: selectedImageUrl,
           all_images: images.map((img: any) => ({
             url: img.url,
             position: img.position

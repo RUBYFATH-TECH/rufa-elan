@@ -101,6 +101,7 @@ export interface CartItem {
   session_id?: string;
   product_variant_id: string;
   quantity: number;
+  selected_image_url?: string;
   created_at: string;
   updated_at: string;
 }

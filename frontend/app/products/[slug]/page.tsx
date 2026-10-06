@@ -40,6 +40,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const [addedToCart, setAddedToCart] = useState(false);
   const [stockError, setStockError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'details' | 'reviews'>('details');
+  const [selectedImageForCart, setSelectedImageForCart] = useState<any>(null);
   
   // Reviews state
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -208,11 +209,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
         name: product.name,
         price,
         quantity,
-        image: product.image,
-        sku: `RUFA-${product.id.toUpperCase()}`
+        image: selectedImageForCart?.url || product.image,
+        sku: `RUFA-${product.id.toUpperCase()}`,
+        selected_image_url: selectedImageForCart?.url || product.image
       };
     },
-    [product, price, quantity]
+    [product, price, quantity, selectedImageForCart]
   );
 
   const handleAddToCart = () => {
@@ -311,6 +313,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             <ProductImageGallery
               images={product.images?.length ? product.images : [{ url: product.image }]}
               productName={product.name}
+              showCartSelection={true}
+              selectedImageForCart={selectedImageForCart}
+              onImageSelectForCart={setSelectedImageForCart}
             />
             {discount > 0 && (
               <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold">
