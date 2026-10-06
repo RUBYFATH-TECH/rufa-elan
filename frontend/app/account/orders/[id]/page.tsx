@@ -69,6 +69,7 @@ export default function OrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [showInvoice, setShowInvoice] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
   const backHref =
     searchParams.get("from") === "notifications"
       ? "/account/notifications"
@@ -151,7 +152,14 @@ export default function OrderDetailPage() {
       "[data-invoice-print]",
     ) as HTMLElement | null;
     if (!element || !order) return;
+    
     try {
+      // Set printing mode to load images properly
+      setIsPrinting(true);
+      
+      // Wait a bit for images to load and render
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       // Keep html2pdf in this page's client bundle. A lazily emitted chunk can
       // disappear after a Next.js development rebuild while the page is open.
       const html2pdf = (
@@ -163,13 +171,23 @@ export default function OrderDetailPage() {
           margin: 10,
           filename: `${order.order_number}-invoice.pdf`,
           image: { type: "jpeg", quality: 0.98 },
-          html2canvas: { scale: 2 },
+          html2canvas: { 
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            logging: false,
+            imageTimeout: 0,
+          },
           jsPDF: { orientation: "portrait", unit: "mm", format: "a4" },
         })
         .from(element)
         .save();
+        
+      // Reset printing mode after download
+      setIsPrinting(false);
     } catch (error) {
       console.error("Invoice download failed; opening the print dialog instead.", error);
+      setIsPrinting(false);
       window.print();
     }
   };
@@ -375,9 +393,11 @@ export default function OrderDetailPage() {
                 </button>
                 <button
                   onClick={downloadInvoice}
-                  className="inline-flex items-center gap-1.5 rounded bg-orange-600 px-2.5 py-1.5 text-xs sm:text-sm text-white"
+                  disabled={isPrinting}
+                  className="inline-flex items-center gap-1.5 rounded bg-orange-600 px-2.5 py-1.5 text-xs sm:text-sm text-white disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Download className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Download</span>
+                  <Download className="h-3.5 w-3.5" /> 
+                  <span className="hidden sm:inline">{isPrinting ? 'Preparing...' : 'Download'}</span>
                 </button>
                 <button
                   onClick={() => setShowInvoice(false)}
@@ -413,6 +433,7 @@ export default function OrderDetailPage() {
               paymentMethod="Paystack"
               transactionId={reference}
               status={order.status as any}
+              isPrinting={isPrinting}
             />
           </div>
         </div>

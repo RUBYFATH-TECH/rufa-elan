@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useReactToPrint } from 'react-to-print';
 
@@ -39,6 +39,7 @@ interface InvoiceProps {
   paymentMethod?: string;
   transactionId?: string;
   status?: 'pending' | 'completed' | 'shipped' | 'delivered';
+  isPrinting?: boolean;
 }
 
 const InvoiceReceipt = React.forwardRef<HTMLDivElement, InvoiceProps>(
@@ -55,11 +56,39 @@ const InvoiceReceipt = React.forwardRef<HTMLDivElement, InvoiceProps>(
       paymentMethod,
       transactionId,
       status,
+      isPrinting = false,
     },
     ref
   ) => {
     const contentRef = useRef<HTMLDivElement>(null);
     const printRef = ref || contentRef;
+    const [imagesLoaded, setImagesLoaded] = useState(false);
+
+    // Preload all images before PDF generation
+    useEffect(() => {
+      if (isPrinting) {
+        const imageUrls = [
+          '/images/logo.png',
+          ...items.map(item => item.image).filter(Boolean)
+        ];
+        
+        Promise.all(
+          imageUrls.map(url => {
+            return new Promise((resolve, reject) => {
+              const img = new window.Image();
+              img.onload = resolve;
+              img.onerror = resolve; // Don't fail if image doesn't load
+              img.crossOrigin = 'anonymous';
+              img.src = url as string;
+            });
+          })
+        ).then(() => {
+          setImagesLoaded(true);
+        });
+      } else {
+        setImagesLoaded(true);
+      }
+    }, [isPrinting, items]);
 
     const handlePrint = useReactToPrint({
       contentRef: printRef as React.RefObject<HTMLDivElement>,
@@ -83,14 +112,23 @@ const InvoiceReceipt = React.forwardRef<HTMLDivElement, InvoiceProps>(
           <div className="flex flex-wrap items-start justify-between gap-4 mb-6 pb-5 border-b-2 border-gray-300">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-12 h-12 sm:w-16 sm:h-16 flex-shrink-0 overflow-hidden rounded-lg">
-                <Image
-                  src="/images/logo.png"
-                  alt="RUFA ELAN Logo"
-                  width={64}
-                  height={64}
-                  className="w-full h-full object-cover"
-                  priority
-                />
+                {isPrinting ? (
+                  <img
+                    src="/images/logo.png"
+                    alt="RUFA ELAN Logo"
+                    className="w-full h-full object-cover"
+                    crossOrigin="anonymous"
+                  />
+                ) : (
+                  <Image
+                    src="/images/logo.png"
+                    alt="RUFA ELAN Logo"
+                    width={64}
+                    height={64}
+                    className="w-full h-full object-cover"
+                    priority
+                  />
+                )}
               </div>
               <div className="min-w-0">
                 <h1 className="text-lg sm:text-2xl font-bold text-gray-800 truncate">RUFA ELAN</h1>
@@ -169,14 +207,24 @@ const InvoiceReceipt = React.forwardRef<HTMLDivElement, InvoiceProps>(
                         <div className="flex gap-2 items-start">
                           {item.image && (
                             <div className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 bg-gray-100 rounded overflow-hidden">
-                              <Image
-                                src={item.image}
-                                alt={item.name}
-                                width={48}
-                                height={48}
-                                className="w-full h-full object-cover"
-                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                              />
+                              {isPrinting ? (
+                                <img
+                                  src={item.image}
+                                  alt={item.name}
+                                  className="w-full h-full object-cover"
+                                  crossOrigin="anonymous"
+                                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                />
+                              ) : (
+                                <Image
+                                  src={item.image}
+                                  alt={item.name}
+                                  width={48}
+                                  height={48}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                />
+                              )}
                             </div>
                           )}
                           <div className="min-w-0">
