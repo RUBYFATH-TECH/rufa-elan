@@ -36,8 +36,17 @@ export async function uploadProductImages(images: UploadedImage[]): Promise<stri
       });
 
       if (!response.ok) {
-        const errorData = await response.text();
-        console.error(`Upload API Error ${response.status}:`, errorData);
+        let error;
+        const contentType = response.headers.get('content-type');
+        
+        if (contentType?.includes('application/json')) {
+          error = await response.json();
+        } else {
+          const errorText = await response.text();
+          error = { message: errorText };
+        }
+        
+        console.error(`Upload API Error ${response.status}:`, error);
         throw new Error("Failed to upload image");
       }
 
@@ -184,9 +193,18 @@ export async function fetchProducts(filters?: {
     console.log(`[Products API] Response received in ${fetchTime}ms, status: ${response.status}`);
 
     if (!response.ok) {
-      const errorData = await response.text();
-      console.error(`[Products API] Error ${response.status}:`, errorData);
-      throw new Error(`Failed to fetch products: ${response.status} - ${errorData}`);
+      let error;
+      const contentType = response.headers.get('content-type');
+      
+      if (contentType?.includes('application/json')) {
+        error = await response.json();
+      } else {
+        const errorText = await response.text();
+        error = { message: errorText };
+      }
+      
+      console.error(`[Products API] Error ${response.status}:`, error);
+      throw new Error(`Failed to fetch products: ${response.status} - ${error.message || 'Unknown error'}`);
     }
 
     const data = await response.json();
@@ -219,8 +237,17 @@ export async function fetchProduct(id: string) {
     });
 
     if (!response.ok) {
-      const errorData = await response.text();
-      console.error(`API Error ${response.status}:`, errorData);
+      let error;
+      const contentType = response.headers.get('content-type');
+      
+      if (contentType?.includes('application/json')) {
+        error = await response.json();
+      } else {
+        const errorText = await response.text();
+        error = { message: errorText };
+      }
+      
+      console.error(`API Error ${response.status}:`, error);
       throw new Error(`Failed to fetch product: ${response.status}`);
     }
 

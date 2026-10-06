@@ -173,7 +173,16 @@ export default function CreateFastDealPage() {
       });
 
       if (!response.ok) {
-        const error = await response.json();
+        let error;
+        const contentType = response.headers.get('content-type');
+        
+        if (contentType?.includes('application/json')) {
+          error = await response.json();
+        } else {
+          const errorText = await response.text();
+          error = { message: errorText };
+        }
+        
         throw new Error(error.message || 'Failed to create fast deal');
       }
 

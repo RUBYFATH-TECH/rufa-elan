@@ -34,7 +34,7 @@ async function applyMigration() {
 
     if (checkError && checkError.code !== 'PGRST116') {
       console.error('❌ Error checking table:', checkError);
-      throw checkError;
+5      throw checkError;
     }
 
     // Check if columns exist

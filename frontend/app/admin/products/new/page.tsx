@@ -70,11 +70,17 @@ export default function CreateProductPage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.text();
-        console.error(`API Error ${response.status}:`, errorData);
-        const error = response.headers.get('content-type')?.includes('application/json') 
-          ? await response.json() 
-          : { message: errorData };
+        let error;
+        const contentType = response.headers.get('content-type');
+        
+        if (contentType?.includes('application/json')) {
+          error = await response.json();
+        } else {
+          const errorText = await response.text();
+          error = { message: errorText };
+        }
+        
+        console.error(`API Error ${response.status}:`, error);
         throw new Error(error.message || "Failed to create product");
       }
 
