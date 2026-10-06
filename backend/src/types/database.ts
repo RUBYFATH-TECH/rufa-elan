@@ -370,6 +370,7 @@ export interface CreateOrderRequest {
   items: {
     product_variant_id: string;
     quantity: number;
+    selected_image_url?: string;
   }[];
   shipping_address: Record<string, any>;
   billing_address?: Record<string, any>;

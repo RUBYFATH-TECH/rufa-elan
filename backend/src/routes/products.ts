@@ -416,11 +416,11 @@ router.post('/', requireAdmin, async (req: Request, res: Response) => {
     const category_id = category.id; // Get the actual UUID from the category
 
     // Prepare product data with actual category UUID
-    // Extract images separately (not part of products table)
-    const { images, ...productDataWithoutImages } = productData;
+    // Extract images and stock_quantity separately (not part of products table)
+    const { images, stock_quantity, ...productDataWithoutExtras } = productData;
     
     const newProduct = {
-      ...productDataWithoutImages,
+      ...productDataWithoutExtras,
       category_id,  // Use the actual UUID, not the slug
       sku,
       slug,
@@ -428,7 +428,7 @@ router.post('/', requireAdmin, async (req: Request, res: Response) => {
       featured: productData.featured || false,
       popularity: 0,
       color: productData.color || null  // Add color field
-      // Don't include: images, total_stock, avg_rating, review_count, view_count
+      // Don't include: images, stock_quantity, total_stock, avg_rating, review_count, view_count
       // These either are in separate tables or don't exist in the products table
     };
 
@@ -482,7 +482,7 @@ router.post('/', requireAdmin, async (req: Request, res: Response) => {
         value: productData.color || 'Standard',
         sku: `${sku}-DEFAULT`,
         price: productData.regular_price,
-        stock_quantity: productData.stock_quantity || 100,
+        stock_quantity: stock_quantity || 100,
         is_default: true,
         variant_type: 'standard',
         attributes: productData.color ? { color: productData.color } : {}
