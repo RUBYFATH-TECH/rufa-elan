@@ -50,6 +50,7 @@ export default function CreateProductPage() {
         color: data.color || null,
         regular_price: data.regular_price,
         sale_price: data.sale_price || null,
+        stock_quantity: data.stock_quantity || 100, // Send stock quantity to backend
         featured: data.is_fast_deal,
         images: orderedImages,
       };

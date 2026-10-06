@@ -475,13 +475,14 @@ router.post('/', requireAdmin, async (req: Request, res: Response) => {
       await Promise.all(variantPromises);
     } else {
       // Create default variant - use product color if available
+      // Default to 100 units in stock for new products without explicit stock info
       await db.productVariants.create({
         product_id: productId,
         name: 'Default',
         value: productData.color || 'Standard',
         sku: `${sku}-DEFAULT`,
         price: productData.regular_price,
-        stock_quantity: 0,
+        stock_quantity: productData.stock_quantity || 100,
         is_default: true,
         variant_type: 'standard',
         attributes: productData.color ? { color: productData.color } : {}
@@ -622,10 +623,10 @@ router.put('/:id', requireAdmin, async (req: Request, res: Response) => {
       updateData.category_id = category.id;
     }
 
-    // Extract images if provided (they're stored in separate table)
-    const { images, ...updateDataWithoutImages } = updateData;
+    // Extract images and stock_quantity if provided (they're stored in separate tables)
+    const { images, stock_quantity, ...updateDataWithoutImages } = updateData;
 
-    // Update product (without images)
+    // Update product (without images and stock_quantity)
     const result = await db.products.updateById(id, updateDataWithoutImages);
 
     if (result.error || !result.data) {
@@ -715,6 +716,21 @@ router.put('/:id', requireAdmin, async (req: Request, res: Response) => {
           error: 'Image update failed',
           message: imageError instanceof Error ? imageError.message : 'Failed to update product images'
         } as ApiResponse);
+      }
+    }
+
+    // Update stock quantity if provided
+    // Find the default variant and update its stock
+    if (stock_quantity !== undefined) {
+      const variantsResult = await db.productVariants.find({
+        filters: { product_id: id, is_default: true }
+      });
+
+      if (variantsResult.data && variantsResult.data.length > 0) {
+        const defaultVariant = variantsResult.data[0];
+        await db.productVariants.updateById(defaultVariant.id, {
+          stock_quantity: stock_quantity
+        });
       }
     }
 

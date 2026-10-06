@@ -336,6 +336,7 @@ export interface CreateProductRequest {
   tags?: string[];
   featured?: boolean;
   status?: Product['status'];
+  stock_quantity?: number; // Initial stock quantity for default variant
   meta_title?: string;
   meta_description?: string;
   // Existing images keep their id when an admin edits a product. New images
