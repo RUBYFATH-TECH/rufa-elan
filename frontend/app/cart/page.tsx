@@ -103,78 +103,116 @@ export default function CartPage() {
         {/* Cart Items */}
         <div className="space-y-4">
           {items.map((item) => (
-            <div key={item.id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-all group">
-              <div className="flex gap-5">
-                {/* Product Image */}
-                <div className="relative flex-shrink-0">
-                  <img 
-                    src={item.image} 
-                    alt={item.name} 
-                    className="h-24 w-24 rounded-lg object-cover shadow-sm group-hover:shadow-md transition"
-                  />
-                  {item.variant && (
-                    <div className="absolute -bottom-1 -right-1 rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-700">
-                      {item.variant}
-                    </div>
-                  )}
-                </div>
+            <div key={item.id} className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm hover:shadow-md transition-all group">
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-5">
+                {/* Top row: Image and Product Info with Remove button */}
+                <div className="flex gap-4 flex-1">
+                  {/* Product Image */}
+                  <div className="relative flex-shrink-0">
+                    <img 
+                      src={item.image} 
+                      alt={item.name} 
+                      className="h-20 w-20 sm:h-24 sm:w-24 rounded-lg object-cover shadow-sm group-hover:shadow-md transition"
+                    />
+                    {item.variant && (
+                      <div className="absolute -bottom-1 -right-1 rounded-full bg-orange-100 px-2 py-0.5 text-[10px] sm:text-xs font-semibold text-orange-700">
+                        {item.variant}
+                      </div>
+                    )}
+                  </div>
 
-                {/* Product Details */}
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-bold text-slate-900 truncate">{item.name}</h3>
-                  <p className="mt-1 text-sm text-slate-600">{item.variant ?? "Standard"}</p>
-                  
-                  {/* Stock Information */}
-                  {item.stock_quantity !== undefined && (
-                    <div className="mt-1">
-                      {item.stock_quantity > 0 ? (
-                        <p className={`text-xs font-medium ${
-                          item.stock_quantity <= 5 
-                            ? 'text-orange-600' 
-                            : 'text-green-600'
-                        }`}>
-                          {item.stock_quantity <= 5 
-                            ? `Only ${item.stock_quantity} left in stock!` 
-                            : `${item.stock_quantity} available`
-                          }
-                        </p>
-                      ) : (
-                        <p className="text-xs font-medium text-red-600">Out of stock</p>
-                      )}
+                  {/* Product Details */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm sm:text-base font-bold text-slate-900 truncate">{item.name}</h3>
+                        <p className="mt-0.5 text-xs sm:text-sm text-slate-600">{item.variant ?? "Standard"}</p>
+                      </div>
+                      
+                      {/* Remove Button - Mobile: Top Right */}
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeItem(item.id);
+                        }}
+                        className="flex-shrink-0 p-1.5 sm:hidden text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition touch-manipulation"
+                        title="Remove item"
+                        aria-label={`Remove ${item.name} from cart`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
-                  )}
-                  
-                  {/* Price and Quantity */}
-                  <div className="mt-4 flex items-center justify-between">
-                    <p className="text-lg font-bold text-slate-950">GHS {(item.price * item.quantity).toFixed(2)}</p>
                     
-                    {/* Quantity Controls */}
-                    <div className="flex items-center gap-2 rounded-lg border border-slate-300 bg-slate-50 p-1">
-                      <button 
-                        onClick={() => updateQuantity(item.id, Math.max(item.quantity - 1, 1))}
-                        className="p-1.5 hover:bg-white rounded-md transition text-slate-600 hover:text-slate-900"
-                      >
-                        <Minus className="h-4 w-4" />
-                      </button>
-                      <span className="w-8 text-center text-sm font-semibold text-slate-900">{item.quantity}</span>
-                      <button 
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="p-1.5 hover:bg-white rounded-md transition text-slate-600 hover:text-slate-900"
-                      >
-                        <Plus className="h-4 w-4" />
-                      </button>
-                    </div>
+                    {/* Stock Information */}
+                    {item.stock_quantity !== undefined && (
+                      <div className="mt-1">
+                        {item.stock_quantity > 0 ? (
+                          <p className={`text-[10px] sm:text-xs font-medium ${
+                            item.stock_quantity <= 5 
+                              ? 'text-orange-600' 
+                              : 'text-green-600'
+                          }`}>
+                            {item.stock_quantity <= 5 
+                              ? `Only ${item.stock_quantity} left!` 
+                              : `${item.stock_quantity} available`
+                            }
+                          </p>
+                        ) : (
+                          <p className="text-[10px] sm:text-xs font-medium text-red-600">Out of stock</p>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Price - Mobile only */}
+                    <p className="mt-2 text-base sm:hidden font-bold text-slate-950">GHS {(item.price * item.quantity).toFixed(2)}</p>
                   </div>
                 </div>
 
-                {/* Remove Button */}
-                <button 
-                  onClick={() => removeItem(item.id)} 
-                  className="flex-shrink-0 p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                  title="Remove item"
-                >
-                  <Trash2 className="h-5 w-5" />
-                </button>
+                {/* Bottom row: Quantity and Price - Desktop version */}
+                <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6">
+                  {/* Quantity Controls */}
+                  <div className="flex items-center gap-2 rounded-lg border border-slate-300 bg-slate-50 p-1">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        updateQuantity(item.id, Math.max(item.quantity - 1, 1));
+                      }}
+                      className="p-1.5 sm:p-2 hover:bg-white rounded-md transition text-slate-600 hover:text-slate-900 touch-manipulation active:scale-95"
+                      aria-label="Decrease quantity"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </button>
+                    <span className="w-8 sm:w-10 text-center text-sm font-semibold text-slate-900">{item.quantity}</span>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        updateQuantity(item.id, item.quantity + 1);
+                      }}
+                      className="p-1.5 sm:p-2 hover:bg-white rounded-md transition text-slate-600 hover:text-slate-900 touch-manipulation active:scale-95"
+                      aria-label="Increase quantity"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* Price - Desktop */}
+                  <p className="hidden sm:block text-lg font-bold text-slate-950 min-w-[100px] text-right">
+                    GHS {(item.price * item.quantity).toFixed(2)}
+                  </p>
+
+                  {/* Remove Button - Desktop only */}
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeItem(item.id);
+                    }}
+                    className="hidden sm:flex flex-shrink-0 p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                    title="Remove item"
+                    aria-label={`Remove ${item.name} from cart`}
+                  >
+                    <Trash2 className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
