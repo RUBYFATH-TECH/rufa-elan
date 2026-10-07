@@ -2,7 +2,9 @@
 
 ## 🎯 What Was Fixed
 
-The invoice download feature was not showing product images and logo properly in the generated PDF. This has been fixed using a **base64 image conversion** approach.
+The invoice download feature was not showing product images and logo properly in the generated PDF. Images were too small and not fully visible. This has been fixed using:
+1. **Base64 image conversion** approach (eliminates CORS issues)
+2. **Increased image sizes** for better visibility in PDF (64px → 80px for product images, 48px → 80px for logo)
 
 ## 🔧 Changes Made
 
@@ -14,12 +16,16 @@ The invoice download feature was not showing product images and logo properly in
 - Automatic image conversion when printing mode is enabled
 - Console logging for debugging
 - Inline styles for better PDF compatibility
+- **Larger image sizes**: Product images now 80x80px (was 48x48px), Logo now 80x80px (was 64x64px)
+- Border styling for better image definition
+- `display: block` style to prevent layout issues
 
 **Key Features:**
 - All images are converted to base64 data URLs before PDF generation
 - No CORS issues since images are embedded as data
 - Works with both logo and product images
 - Graceful fallback if image conversion fails
+- Images are now more prominent and clearly visible in PDFs
 
 ### 2. Order Detail Page (`frontend/app/account/orders/[id]/page.tsx`)
 

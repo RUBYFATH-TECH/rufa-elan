@@ -146,19 +146,24 @@ const InvoiceReceipt = React.forwardRef<HTMLDivElement, InvoiceProps>(
           {/* ── HEADER ── */}
           <div className="flex flex-wrap items-start justify-between gap-4 mb-6 pb-5 border-b-2 border-gray-300">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 flex-shrink-0 overflow-hidden rounded-lg">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 overflow-hidden rounded-lg border-2 border-gray-200">
                 {isPrinting && base64Images['logo'] ? (
                   <img
                     src={base64Images['logo']}
                     alt="RUFA ELAN Logo"
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    style={{ 
+                      width: '100%', 
+                      height: '100%', 
+                      objectFit: 'cover',
+                      display: 'block'
+                    }}
                   />
                 ) : (
                   <Image
                     src="/images/logo.png"
                     alt="RUFA ELAN Logo"
-                    width={64}
-                    height={64}
+                    width={80}
+                    height={80}
                     className="w-full h-full object-cover"
                     priority
                   />
@@ -238,21 +243,26 @@ const InvoiceReceipt = React.forwardRef<HTMLDivElement, InvoiceProps>(
                       className={`border-b border-gray-200 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
                     >
                       <td className="px-3 py-3">
-                        <div className="flex gap-2 items-start">
+                        <div className="flex gap-3 items-start">
                           {item.image && (
-                            <div className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 bg-gray-100 rounded overflow-hidden">
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 bg-gray-100 rounded overflow-hidden border border-gray-200">
                               {isPrinting && base64Images[item.id] ? (
                                 <img
                                   src={base64Images[item.id]}
                                   alt={item.name}
-                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                  style={{ 
+                                    width: '100%', 
+                                    height: '100%', 
+                                    objectFit: 'cover',
+                                    display: 'block'
+                                  }}
                                 />
                               ) : (
                                 <Image
                                   src={item.image}
                                   alt={item.name}
-                                  width={48}
-                                  height={48}
+                                  width={80}
+                                  height={80}
                                   className="w-full h-full object-cover"
                                   onError={(e) => { e.currentTarget.style.display = 'none'; }}
                                 />
