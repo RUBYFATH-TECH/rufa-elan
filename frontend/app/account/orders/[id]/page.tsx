@@ -184,8 +184,7 @@ export default function OrderDetailPage() {
           jsPDF: { 
             orientation: "portrait", 
             unit: "mm", 
-            format: "a4",
-            compressPDF: true,
+            format: "a4"
           },
         })
         .from(element)
