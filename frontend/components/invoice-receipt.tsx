@@ -4,6 +4,23 @@ import React, { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useReactToPrint } from 'react-to-print';
 
+// Helper function to convert image URL to base64
+const getBase64FromUrl = async (url: string): Promise<string> => {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error('Failed to convert image to base64:', error);
+    return '';
+  }
+};
+
 interface InvoiceItem {
   id: string;
   name: string;
@@ -63,28 +80,46 @@ const InvoiceReceipt = React.forwardRef<HTMLDivElement, InvoiceProps>(
     const contentRef = useRef<HTMLDivElement>(null);
     const printRef = ref || contentRef;
     const [imagesLoaded, setImagesLoaded] = useState(false);
+    const [base64Images, setBase64Images] = useState<Record<string, string>>({});
 
-    // Preload all images before PDF generation
+    // Convert all images to base64 when in printing mode
     useEffect(() => {
       if (isPrinting) {
-        const imageUrls = [
-          '/images/logo.png',
-          ...items.map(item => item.image).filter(Boolean)
-        ];
-        
-        Promise.all(
-          imageUrls.map(url => {
-            return new Promise((resolve, reject) => {
-              const img = new window.Image();
-              img.onload = resolve;
-              img.onerror = resolve; // Don't fail if image doesn't load
-              img.crossOrigin = 'anonymous';
-              img.src = url as string;
-            });
-          })
-        ).then(() => {
+        const loadImages = async () => {
+          console.log('[Invoice] Starting image conversion to base64...');
+          const imageMap: Record<string, string> = {};
+          
+          // Load logo
+          console.log('[Invoice] Converting logo...');
+          const logoBase64 = await getBase64FromUrl('/images/logo.png');
+          if (logoBase64) {
+            imageMap['logo'] = logoBase64;
+            console.log('[Invoice] ✓ Logo converted successfully (', logoBase64.length, 'characters)');
+          } else {
+            console.error('[Invoice] ✗ Logo conversion failed');
+          }
+          
+          // Load all product images
+          console.log('[Invoice] Converting', items.filter(i => i.image).length, 'product images...');
+          for (const item of items) {
+            if (item.image) {
+              console.log(`[Invoice] Converting image for: ${item.name}`);
+              const base64 = await getBase64FromUrl(item.image);
+              if (base64) {
+                imageMap[item.id] = base64;
+                console.log(`[Invoice] ✓ ${item.name} converted (${base64.length} characters)`);
+              } else {
+                console.error(`[Invoice] ✗ ${item.name} conversion failed`);
+              }
+            }
+          }
+          
+          console.log('[Invoice] Conversion complete. Total images:', Object.keys(imageMap).length);
+          setBase64Images(imageMap);
           setImagesLoaded(true);
-        });
+        };
+        
+        loadImages();
       } else {
         setImagesLoaded(true);
       }
@@ -112,12 +147,11 @@ const InvoiceReceipt = React.forwardRef<HTMLDivElement, InvoiceProps>(
           <div className="flex flex-wrap items-start justify-between gap-4 mb-6 pb-5 border-b-2 border-gray-300">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-12 h-12 sm:w-16 sm:h-16 flex-shrink-0 overflow-hidden rounded-lg">
-                {isPrinting ? (
+                {isPrinting && base64Images['logo'] ? (
                   <img
-                    src="/images/logo.png"
+                    src={base64Images['logo']}
                     alt="RUFA ELAN Logo"
-                    className="w-full h-full object-cover"
-                    crossOrigin="anonymous"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                 ) : (
                   <Image
@@ -207,13 +241,11 @@ const InvoiceReceipt = React.forwardRef<HTMLDivElement, InvoiceProps>(
                         <div className="flex gap-2 items-start">
                           {item.image && (
                             <div className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 bg-gray-100 rounded overflow-hidden">
-                              {isPrinting ? (
+                              {isPrinting && base64Images[item.id] ? (
                                 <img
-                                  src={item.image}
+                                  src={base64Images[item.id]}
                                   alt={item.name}
-                                  className="w-full h-full object-cover"
-                                  crossOrigin="anonymous"
-                                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                 />
                               ) : (
                                 <Image

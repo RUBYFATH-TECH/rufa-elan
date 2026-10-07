@@ -154,11 +154,18 @@ export default function OrderDetailPage() {
     if (!element || !order) return;
     
     try {
-      // Set printing mode to load images properly
+      console.log('[Download] Starting PDF generation for order:', order.order_number);
+      console.log('[Download] Number of items:', invoiceItems.length);
+      console.log('[Download] Items with images:', invoiceItems.filter((i: any) => i.image).length);
+      
+      // Set printing mode to convert images to base64
       setIsPrinting(true);
       
-      // Wait a bit for images to load and render
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('[Download] Converting images to base64... (waiting 2.5 seconds)');
+      // Wait for base64 conversion to complete (give it more time)
+      await new Promise(resolve => setTimeout(resolve, 2500));
+      
+      console.log('[Download] Images should be ready, generating PDF...');
       
       // Keep html2pdf in this page's client bundle. A lazily emitted chunk can
       // disappear after a Next.js development rebuild while the page is open.
@@ -173,20 +180,25 @@ export default function OrderDetailPage() {
           image: { type: "jpeg", quality: 0.98 },
           html2canvas: { 
             scale: 2,
-            useCORS: true,
-            allowTaint: true,
             logging: false,
-            imageTimeout: 0,
+            letterRendering: true,
           },
-          jsPDF: { orientation: "portrait", unit: "mm", format: "a4" },
+          jsPDF: { 
+            orientation: "portrait", 
+            unit: "mm", 
+            format: "a4",
+            compressPDF: true,
+          },
         })
         .from(element)
         .save();
         
+      console.log('[Download] ✓ PDF generated successfully!');
+      
       // Reset printing mode after download
       setIsPrinting(false);
     } catch (error) {
-      console.error("Invoice download failed; opening the print dialog instead.", error);
+      console.error("[Download] ✗ Invoice download failed:", error);
       setIsPrinting(false);
       window.print();
     }
