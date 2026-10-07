@@ -179,7 +179,7 @@ export default function OrderDetailPage() {
           filename: `${order.order_number}-invoice.pdf`,
           image: { type: "jpeg", quality: 0.98 },
           html2canvas: { 
-            scale: 2,
+            scale: 2
           },
           jsPDF: { 
             orientation: "portrait", 
