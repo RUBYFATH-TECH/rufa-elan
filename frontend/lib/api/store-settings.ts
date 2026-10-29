@@ -25,7 +25,9 @@ export interface StoreSettings {
   updated_at: string;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL 
+  ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/api` 
+  : 'http://localhost:8000/api';
 
 /**
  * Fetch store settings from the backend

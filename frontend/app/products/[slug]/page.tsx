@@ -129,8 +129,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const loadReviews = async (productId: string) => {
     try {
       setReviewsLoading(true);
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/reviews/product/${productId}?sort=${reviewSort}`
+        `${backendUrl}/api/reviews/product/${productId}?sort=${reviewSort}`
       );
       const data = await response.json();
       
@@ -164,7 +165,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   // Mark review as helpful
   const markReviewHelpful = async (reviewId: string) => {
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reviews/${reviewId}/helpful`, {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      await fetch(`${backendUrl}/api/reviews/${reviewId}/helpful`, {
         method: 'PUT',
       });
       

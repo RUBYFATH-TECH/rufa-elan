@@ -45,8 +45,9 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
   const fetchReviews = async () => {
     setLoading(true);
     try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/reviews/product/${productId}?page=${page}&limit=10&sort=${sortBy}`
+        `${backendUrl}/api/reviews/product/${productId}?page=${page}&limit=10&sort=${sortBy}`
       );
       const data = await response.json();
 
@@ -64,7 +65,8 @@ export default function ProductReviews({ productId }: ProductReviewsProps) {
 
   const markAsHelpful = async (reviewId: string) => {
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reviews/${reviewId}/helpful`, {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      await fetch(`${backendUrl}/api/reviews/${reviewId}/helpful`, {
         method: 'PUT',
       });
       // Refresh reviews to show updated count

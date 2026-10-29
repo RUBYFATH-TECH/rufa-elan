@@ -63,8 +63,9 @@ export default function NotificationsPage() {
         setUserId(session.user.id);
 
         // Fetch notifications from API
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/notifications?user_id=${session.user.id}&limit=50`,
+          `${backendUrl}/api/notifications?user_id=${session.user.id}&limit=50`,
           {
             headers: {
               'Authorization': `Bearer ${session.access_token}`
@@ -156,8 +157,9 @@ export default function NotificationsPage() {
       
       if (!session) return;
 
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/notifications/${notificationId}/read`,
+        `${backendUrl}/api/notifications/${notificationId}/read`,
         {
           method: 'PUT',
           headers: {
@@ -186,8 +188,9 @@ export default function NotificationsPage() {
       
       if (!session) return;
 
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/notifications/${notificationId}`,
+        `${backendUrl}/api/notifications/${notificationId}`,
         {
           method: 'DELETE',
           headers: {
@@ -210,8 +213,9 @@ export default function NotificationsPage() {
       
       if (!session || !userId) return;
 
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/notifications/user/${userId}/read-all`,
+        `${backendUrl}/api/notifications/user/${userId}/read-all`,
         {
           method: 'PUT',
           headers: {

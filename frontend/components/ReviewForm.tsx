@@ -42,7 +42,8 @@ export default function ReviewForm({ productId, orderId, orderItemId, productNam
         return;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reviews`, {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+      const response = await fetch(`${backendUrl}/api/reviews`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
