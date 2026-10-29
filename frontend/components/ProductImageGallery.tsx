@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Image as ImageIcon, ZoomIn } from "lucide-react";
 
 export interface ProductImage {
@@ -30,10 +30,12 @@ export default function ProductImageGallery({
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
 
-  // Initialize selected image for cart if not set
-  if (showCartSelection && !selectedImageForCart && images.length > 0 && onImageSelectForCart) {
-    onImageSelectForCart(images[0]);
-  }
+  // Initialize selected image for cart if not set - moved to useEffect to avoid setState during render
+  useEffect(() => {
+    if (showCartSelection && !selectedImageForCart && images.length > 0 && onImageSelectForCart) {
+      onImageSelectForCart(images[0]);
+    }
+  }, [showCartSelection, selectedImageForCart, images, onImageSelectForCart]);
 
   if (!images || images.length === 0) {
     return (

@@ -134,26 +134,26 @@ function TemuProductCard({ product, className }: TemuProductCardProps) {
           </h3>
 
           {/* Rating & Reviews */}
-          {product.rating && (
-            <div className="flex items-center gap-2 mb-2">
-              <div className="flex items-center">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={cn(
-                      "h-3 w-3",
-                      i < Math.floor(product.rating!)
-                        ? "text-yellow-400 fill-current"
-                        : "text-slate-300"
-                    )}
-                  />
-                ))}
-              </div>
-              {product.reviewCount && (
-                <span className="text-xs text-slate-600">({product.reviewCount})</span>
-              )}
+          <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  className={cn(
+                    "h-3 w-3",
+                    product.rating && i < Math.floor(product.rating)
+                      ? "text-yellow-400 fill-current"
+                      : "text-slate-300"
+                  )}
+                />
+              ))}
             </div>
-          )}
+            {product.reviewCount && product.reviewCount > 0 ? (
+              <span className="text-xs text-slate-600">({product.reviewCount})</span>
+            ) : (
+              <span className="text-xs text-slate-400">(0)</span>
+            )}
+          </div>
 
           {/* Social Proof */}
           <div className="flex items-center gap-2 mb-3 text-xs text-slate-600">
