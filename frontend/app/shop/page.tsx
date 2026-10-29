@@ -68,7 +68,8 @@ export default function ShopPage() {
     try {
       setLoading(true);
       setError(null);
-      const data = await fetchProducts({ limit: 100 });
+      // PERFORMANCE: Reduce from 100 to 60 products to improve load time
+      const data = await fetchProducts({ limit: 60 });
       
       console.log('🔍 RAW API Response (first product):', data.data?.[0]);
       

@@ -61,9 +61,10 @@ export default function LightningDealsPage() {
     const loadFastDeals = async () => {
       try {
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
-        const response = await fetch(`${backendUrl}/api/fast-deals`, {
+        const response = await fetch(`${backendUrl}/api/fast-deals?limit=50`, {
           headers: { "Content-Type": "application/json" },
-          cache: "no-store",
+          // PERFORMANCE: Cache deals for 2 minutes
+          next: { revalidate: 120 },
         });
         if (!response.ok) throw new Error("Failed to fetch deals");
         const data = await response.json();
