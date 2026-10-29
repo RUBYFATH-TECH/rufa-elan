@@ -145,15 +145,30 @@ router.get('/', async (req: Request, res: Response) => {
 
     let products = result.data || [];
 
-    // Calculate total stock quantity from variants for each product
-    const productsWithStock = await Promise.all(
-      products.map(async (product) => {
-        const variantsResult = await db.productVariants.find({
-          filters: { product_id: product.id }
-        });
-        
-        const totalStock = (variantsResult.data || []).reduce(
-          (sum, variant: any) => sum + (variant.stock_quantity || 0),
+    // Optimize: Fetch ALL variants in a single query instead of N+1 queries
+    // This is a massive performance improvement when loading multiple products
+    if (products.length > 0) {
+      const productIds = products.map((p: any) => p.id);
+      
+      // Fetch all variants for all products in one query
+      const allVariantsResult = await db.productVariants.find({
+        filters: { product_id: productIds }
+      });
+      
+      // Group variants by product_id for quick lookup
+      const variantsByProduct = new Map<string, any[]>();
+      (allVariantsResult.data || []).forEach((variant: any) => {
+        if (!variantsByProduct.has(variant.product_id)) {
+          variantsByProduct.set(variant.product_id, []);
+        }
+        variantsByProduct.get(variant.product_id)!.push(variant);
+      });
+      
+      // Now calculate stock for each product using the pre-fetched variants
+      products = products.map((product: any) => {
+        const variants = variantsByProduct.get(product.id) || [];
+        const totalStock = variants.reduce(
+          (sum, variant) => sum + (variant.stock_quantity || 0),
           0
         );
         
@@ -167,10 +182,8 @@ router.get('/', async (req: Request, res: Response) => {
           in_stock: isManuallyInStock && hasStock, // Must be manually in stock AND have quantity
           low_stock: hasStock && totalStock < 20
         };
-      })
-    );
-
-    products = productsWithStock;
+      });
+    }
 
     // Apply additional filters that can't be done at database level
     if (min_price || max_price) {

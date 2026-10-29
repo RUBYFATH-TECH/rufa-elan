@@ -105,6 +105,7 @@ function DealCard({ deal }: { deal: FastDeal }) {
             src={imageUrl}
             alt={deal.products.name}
             fill
+            sizes="(max-width: 640px) 176px, 208px"
             className="object-cover transition-transform group-hover:scale-105"
           />
           
@@ -215,7 +216,8 @@ export default function TemuDealsSection() {
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
         const response = await fetch(`${backendUrl}/api/fast-deals?limit=6`, {
           headers: { "Content-Type": "application/json" },
-          cache: "no-store",
+          // PERFORMANCE FIX: Cache deals for 2 minutes instead of no-store
+          next: { revalidate: 120 },
         });
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));

@@ -184,7 +184,9 @@ export async function fetchProducts(filters?: {
         "Content-Type": "application/json",
         "Accept": "application/json",
       },
-      cache: 'no-store',
+      // Cache product list for 60 seconds to improve performance
+      // Use 'force-cache' for static product data or reduce revalidation time
+      next: { revalidate: 60 },
       // Add timeout handling for slow mobile networks
       signal: AbortSignal.timeout(30000), // 30 second timeout
     });
@@ -233,7 +235,8 @@ export async function fetchProduct(id: string) {
   try {
     const response = await fetch(url, {
       headers: { "Content-Type": "application/json" },
-      cache: 'no-store',
+      // Cache individual products for 5 minutes
+      next: { revalidate: 300 },
     });
 
     if (!response.ok) {

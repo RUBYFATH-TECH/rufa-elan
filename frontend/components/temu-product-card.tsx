@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, memo } from "react";
 import { Heart, Star, ShoppingCart, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/store/cart-store";
@@ -75,6 +75,7 @@ export default function TemuProductCard({ product, className }: TemuProductCardP
             src={product.image}
             alt={product.name}
             fill
+            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
             className={cn(
               "object-cover transition-all duration-300 group-hover:scale-105",
               imageLoading ? "blur-sm" : "blur-0"
@@ -188,3 +189,6 @@ export default function TemuProductCard({ product, className }: TemuProductCardP
     </Link>
   );
 }
+
+// PERFORMANCE: Memoize component to prevent unnecessary re-renders
+export default memo(TemuProductCard);

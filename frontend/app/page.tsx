@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import FilterBar from "@/components/filter-bar";
 import type { ProductFilters, ProductSort } from "@/components/filter-bar";
 import TemuDealsSection from "@/components/temu-deals-section";
@@ -70,7 +70,9 @@ export default function HomePage() {
         userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'SSR',
       });
       
-      const data = await fetchProducts({ limit: 100 });
+      // PERFORMANCE FIX: Reduce initial load from 100 to 48 products
+      // This significantly improves initial page load time
+      const data = await fetchProducts({ limit: 48 });
       
       console.log('[HomePage] Raw API response:', {
         hasData: !!data,
@@ -128,24 +130,35 @@ export default function HomePage() {
     }
   };
 
-  const availableBrands = Array.from(new Set(products.map((product) => product.brand).filter((brand): brand is string => Boolean(brand)))).sort((a, b) => a.localeCompare(b));
-  const filteredProducts = products.filter((product) => {
-    if (filters.minPrice !== undefined && product.price < filters.minPrice) return false;
-    if (filters.maxPrice !== undefined && product.price > filters.maxPrice) return false;
-    if (filters.minimumRating !== undefined && (product.rating ?? 0) < filters.minimumRating) return false;
-    return !filters.brands.length || (product.brand ? filters.brands.includes(product.brand) : false);
-  });
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
-    switch (sort) {
-      case "price-low": return a.price - b.price;
-      case "price-high": return b.price - a.price;
-      case "rating": return (b.rating ?? 0) - (a.rating ?? 0);
-      case "newest": return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-      case "bestselling":
-      case "recommended": return b.popularity - a.popularity;
-      default: return 0;
-    }
-  });
+  const availableBrands = useMemo(() => 
+    Array.from(new Set(products.map((product) => product.brand).filter((brand): brand is string => Boolean(brand)))).sort((a, b) => a.localeCompare(b)),
+    [products]
+  );
+  
+  const filteredProducts = useMemo(() => 
+    products.filter((product) => {
+      if (filters.minPrice !== undefined && product.price < filters.minPrice) return false;
+      if (filters.maxPrice !== undefined && product.price > filters.maxPrice) return false;
+      if (filters.minimumRating !== undefined && (product.rating ?? 0) < filters.minimumRating) return false;
+      return !filters.brands.length || (product.brand ? filters.brands.includes(product.brand) : false);
+    }),
+    [products, filters]
+  );
+  
+  const sortedProducts = useMemo(() => 
+    [...filteredProducts].sort((a, b) => {
+      switch (sort) {
+        case "price-low": return a.price - b.price;
+        case "price-high": return b.price - a.price;
+        case "rating": return (b.rating ?? 0) - (a.rating ?? 0);
+        case "newest": return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+        case "bestselling":
+        case "recommended": return b.popularity - a.popularity;
+        default: return 0;
+      }
+    }),
+    [filteredProducts, sort]
+  );
   
   // Debug logging (remove after testing)
   if (typeof window !== 'undefined') {
