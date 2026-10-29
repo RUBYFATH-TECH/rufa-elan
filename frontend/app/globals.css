@@ -144,3 +144,61 @@ select {
 .animation-delay-4000 {
   animation-delay: 4s;
 }
+
+/* Print and PDF export styles */
+@media print {
+  body {
+    background: white;
+  }
+  
+  /* Ensure borders and rounded corners are preserved in PDF */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  
+  /* Force rounded corners to render in PDF */
+  .rounded,
+  .rounded-lg,
+  .rounded-xl {
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
+  
+  /* Ensure images display properly */
+  img {
+    display: block;
+    max-width: 100%;
+    page-break-inside: avoid;
+  }
+  
+  /* Prevent page breaks inside critical elements */
+  table,
+  tr,
+  td {
+    page-break-inside: avoid;
+  }
+}
+
+/* Styles for PDF generation (html2pdf.js) */
+[data-invoice-print] * {
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+  color-adjust: exact !important;
+}
+
+/* Ensure rounded corners render in PDF exports */
+[data-invoice-print] .rounded,
+[data-invoice-print] .rounded-lg,
+[data-invoice-print] .rounded-xl {
+  border-radius: 0.5rem !important;
+  overflow: hidden !important;
+}
+
+/* Fix for border rendering in PDF */
+[data-invoice-print] img,
+[data-invoice-print] .border,
+[data-invoice-print] .border-2 {
+  box-sizing: border-box;
+}

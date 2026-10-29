@@ -146,7 +146,10 @@ const InvoiceReceipt = React.forwardRef<HTMLDivElement, InvoiceProps>(
           {/* ── HEADER ── */}
           <div className="flex flex-wrap items-start justify-between gap-4 mb-6 pb-5 border-b-2 border-gray-300">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 overflow-hidden rounded-lg border-2 border-gray-200">
+              <div 
+                className="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 overflow-hidden rounded-lg border-2 border-gray-200"
+                style={{ borderRadius: '0.5rem', overflow: 'hidden' }}
+              >
                 {isPrinting && base64Images['logo'] ? (
                   <img
                     src={base64Images['logo']}
@@ -155,7 +158,8 @@ const InvoiceReceipt = React.forwardRef<HTMLDivElement, InvoiceProps>(
                       width: '100%', 
                       height: '100%', 
                       objectFit: 'cover',
-                      display: 'block'
+                      display: 'block',
+                      borderRadius: '0.5rem'
                     }}
                   />
                 ) : (
@@ -245,7 +249,10 @@ const InvoiceReceipt = React.forwardRef<HTMLDivElement, InvoiceProps>(
                       <td className="px-3 py-3">
                         <div className="flex gap-3 items-start">
                           {item.image && (
-                            <div className="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 bg-gray-100 rounded overflow-hidden border border-gray-200">
+                            <div 
+                              className="w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 bg-gray-100 rounded overflow-hidden border border-gray-200"
+                              style={{ borderRadius: '0.5rem', overflow: 'hidden' }}
+                            >
                               {isPrinting && base64Images[item.id] ? (
                                 <img
                                   src={base64Images[item.id]}
@@ -254,7 +261,8 @@ const InvoiceReceipt = React.forwardRef<HTMLDivElement, InvoiceProps>(
                                     width: '100%', 
                                     height: '100%', 
                                     objectFit: 'cover',
-                                    display: 'block'
+                                    display: 'block',
+                                    borderRadius: '0.5rem'
                                   }}
                                 />
                               ) : (
