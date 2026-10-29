@@ -28,7 +28,7 @@ interface TemuProductCardProps {
   className?: string;
 }
 
-export default function TemuProductCard({ product, className }: TemuProductCardProps) {
+function TemuProductCard({ product, className }: TemuProductCardProps) {
   const { t } = useLanguage();
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
