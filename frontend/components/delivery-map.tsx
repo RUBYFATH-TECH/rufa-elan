@@ -37,7 +37,8 @@ export default function DeliveryMap({
 
       try {
         const L = (await import("leaflet")).default;
-        await import("leaflet/dist/leaflet.css");
+        // Import Leaflet CSS using require
+        require("leaflet/dist/leaflet.css");
 
         if (!isMounted) return;
 
