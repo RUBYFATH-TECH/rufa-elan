@@ -180,12 +180,11 @@ export default function OrderDetailPage() {
           image: { type: "jpeg", quality: 0.98 },
           html2canvas: { 
             scale: 2,
-            useCORS: true,
             logging: false,
             backgroundColor: '#ffffff',
             imageTimeout: 0,
             allowTaint: true
-          },
+          } as any,
           jsPDF: { 
             orientation: "portrait", 
             unit: "mm", 
