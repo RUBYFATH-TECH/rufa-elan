@@ -27,30 +27,48 @@ export default function DeliveryMap({
   const [mapLoaded, setMapLoaded] = useState(false);
   const [routeData, setRouteData] = useState<any>(null);
   const [isLoadingRoute, setIsLoadingRoute] = useState(true);
+  const [mapError, setMapError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
+    let cleanupFunctions: (() => void)[] = [];
     
     // Dynamically import leaflet only on client
     const loadMap = async () => {
       if (!containerRef.current || mapLoaded) return;
 
       try {
+        // Import Leaflet
         const L = (await import("leaflet")).default;
-        // Import Leaflet CSS using require
-        require("leaflet/dist/leaflet.css");
+        
+        // Load Leaflet CSS dynamically
+        if (typeof window !== 'undefined' && !document.getElementById('leaflet-css')) {
+          const link = document.createElement('link');
+          link.id = 'leaflet-css';
+          link.rel = 'stylesheet';
+          link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+          link.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
+          link.crossOrigin = '';
+          document.head.appendChild(link);
+          
+          // Wait for CSS to load
+          await new Promise((resolve) => {
+            link.onload = resolve;
+            setTimeout(resolve, 1000); // Fallback timeout
+          });
+        }
 
         if (!isMounted) return;
 
-        // Fix for default marker icons in production
+        // Fix for default marker icons
         delete (L.Icon.Default.prototype as any)._getIconUrl;
         L.Icon.Default.mergeOptions({
-          iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-          iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+          iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+          iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+          shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
         });
 
-        // Initialize map with better styling
+        // Initialize map
         if (!mapRef.current && containerRef.current) {
           mapRef.current = L.map(containerRef.current, {
             zoomControl: true,
@@ -63,7 +81,7 @@ export default function DeliveryMap({
             12
           );
 
-          // Add modern tile layer (CartoDB Positron - clean and professional)
+          // Add tile layer
           L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
             attribution: '© OpenStreetMap contributors, © CARTO',
             maxZoom: 19,
@@ -75,33 +93,31 @@ export default function DeliveryMap({
 
         const map = mapRef.current;
 
-        // Clear existing markers and lines
+        // Clear existing layers
         map.eachLayer((layer: any) => {
           if (layer instanceof L.Marker || layer instanceof L.Polyline || layer instanceof L.Circle) {
             map.removeLayer(layer);
           }
         });
 
-        // Create custom icons using divIcon for better styling
+        // Custom icons
         const startIcon = L.divIcon({
           html: `
-            <div style="position: relative;">
-              <div style="
-                width: 40px;
-                height: 40px;
-                background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-                border: 3px solid white;
-                border-radius: 50%;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-              ">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                </svg>
-              </div>
+            <div style="
+              width: 40px;
+              height: 40px;
+              background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+              border: 3px solid white;
+              border-radius: 50%;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            ">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
             </div>
           `,
           className: 'custom-marker-icon',
@@ -111,23 +127,21 @@ export default function DeliveryMap({
 
         const endIcon = L.divIcon({
           html: `
-            <div style="position: relative;">
-              <div style="
-                width: 36px;
-                height: 36px;
-                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-                border: 3px solid white;
-                border-radius: 50%;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-              ">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2">
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                  <circle cx="12" cy="10" r="3" fill="#3b82f6"></circle>
-                </svg>
-              </div>
+            <div style="
+              width: 36px;
+              height: 36px;
+              background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+              border: 3px solid white;
+              border-radius: 50%;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            ">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3" fill="#3b82f6"></circle>
+              </svg>
             </div>
           `,
           className: 'custom-marker-icon',
@@ -135,17 +149,16 @@ export default function DeliveryMap({
           iconAnchor: [18, 18],
         });
 
-        // Add start marker (Shop)
+        // Add markers
         L.marker([startLat, startLng], { icon: startIcon })
           .bindPopup(`<div style="font-weight: 600; font-size: 12px;">🏪 ${startLabel}</div>`)
           .addTo(map);
 
-        // Add end marker (Delivery Address)
         L.marker([endLat, endLng], { icon: endIcon })
           .bindPopup(`<div style="font-weight: 600; font-size: 12px;">📍 ${endLabel}</div>`)
           .addTo(map);
 
-        // Add pulsing circle at start location
+        // Add circles
         L.circle([startLat, startLng], {
           color: '#f97316',
           fillColor: '#f97316',
@@ -154,7 +167,6 @@ export default function DeliveryMap({
           weight: 2,
         }).addTo(map);
 
-        // Add destination circle
         L.circle([endLat, endLng], {
           color: '#3b82f6',
           fillColor: '#3b82f6',
@@ -163,7 +175,7 @@ export default function DeliveryMap({
           weight: 2,
         }).addTo(map);
 
-        // Fetch real route from OSRM (Open Source Routing Machine)
+        // Fetch route
         setIsLoadingRoute(true);
         try {
           const routeResponse = await fetch(
@@ -177,7 +189,6 @@ export default function DeliveryMap({
             const route = routeData.routes[0];
             const coordinates = route.geometry.coordinates.map((coord: number[]) => [coord[1], coord[0]]);
 
-            // Draw main route line with gradient effect
             const mainRoute = L.polyline(coordinates, {
               color: '#f97316',
               weight: 6,
@@ -186,7 +197,6 @@ export default function DeliveryMap({
               lineCap: 'round',
             }).addTo(map);
 
-            // Add shadow/outline effect
             const routeShadow = L.polyline(coordinates, {
               color: '#000000',
               weight: 8,
@@ -196,7 +206,6 @@ export default function DeliveryMap({
             }).addTo(map);
             routeShadow.bringToBack();
 
-            // Add animated dashed line overlay
             const animatedLine = L.polyline(coordinates, {
               color: '#ffffff',
               weight: 2,
@@ -207,7 +216,6 @@ export default function DeliveryMap({
               lineCap: 'round',
             }).addTo(map);
 
-            // Animate the dashed line
             let offset = 0;
             const animationInterval = setInterval(() => {
               if (!isMounted) {
@@ -218,7 +226,8 @@ export default function DeliveryMap({
               (animatedLine as any).setStyle({ dashOffset: String(offset) });
             }, 50);
 
-            // Fit bounds with padding
+            cleanupFunctions.push(() => clearInterval(animationInterval));
+
             map.fitBounds(mainRoute.getBounds(), { 
               padding: [60, 60],
               maxZoom: 14
@@ -229,14 +238,26 @@ export default function DeliveryMap({
               duration: Math.round(route.duration / 60)
             });
           } else {
-            // Fallback to straight line if routing fails
-            drawFallbackLine(L, map, startLat, startLng, endLat, endLng);
+            const line = L.polyline([[startLat, startLng], [endLat, endLng]], {
+              color: "#f97316",
+              weight: 5,
+              opacity: 0.8,
+              dashArray: "10, 10",
+              lineJoin: 'round',
+            }).addTo(map);
+            map.fitBounds(line.getBounds(), { padding: [50, 50] });
           }
         } catch (error) {
           console.error("Error fetching route:", error);
           if (isMounted) {
-            // Fallback to straight line
-            drawFallbackLine(L, map, startLat, startLng, endLat, endLng);
+            const line = L.polyline([[startLat, startLng], [endLat, endLng]], {
+              color: "#f97316",
+              weight: 5,
+              opacity: 0.8,
+              dashArray: "10, 10",
+              lineJoin: 'round',
+            }).addTo(map);
+            map.fitBounds(line.getBounds(), { padding: [50, 50] });
           }
         } finally {
           if (isMounted) {
@@ -244,7 +265,7 @@ export default function DeliveryMap({
           }
         }
 
-        // Add CSS for animations
+        // Add custom styles
         if (isMounted && !document.getElementById('leaflet-custom-styles')) {
           const style = document.createElement('style');
           style.id = 'leaflet-custom-styles';
@@ -267,33 +288,39 @@ export default function DeliveryMap({
         setMapLoaded(true);
       } catch (error) {
         console.error("Error loading map:", error);
+        setMapError("Failed to load map. Please refresh the page.");
         setIsLoadingRoute(false);
       }
-    };
-
-    // Helper function to draw fallback straight line
-    const drawFallbackLine = (L: any, map: any, startLat: number, startLng: number, endLat: number, endLng: number) => {
-      const line = L.polyline([[startLat, startLng], [endLat, endLng]], {
-        color: "#f97316",
-        weight: 5,
-        opacity: 0.8,
-        dashArray: "10, 10",
-        lineJoin: 'round',
-      }).addTo(map);
-
-      map.fitBounds(line.getBounds(), { padding: [50, 50] });
     };
 
     loadMap();
 
     return () => {
       isMounted = false;
+      cleanupFunctions.forEach(fn => fn());
       if (mapRef.current) {
-        mapRef.current.remove();
+        try {
+          mapRef.current.remove();
+        } catch (e) {
+          console.error("Error removing map:", e);
+        }
         mapRef.current = null;
       }
     };
   }, [startLat, startLng, endLat, endLng, mapLoaded, startLabel, endLabel]);
+
+  if (mapError) {
+    return (
+      <div className="space-y-0">
+        <div className="w-full h-64 sm:h-80 bg-red-50 flex items-center justify-center rounded-xl border-2 border-red-200">
+          <div className="text-center p-6">
+            <p className="text-red-600 font-semibold mb-2">Map Error</p>
+            <p className="text-sm text-red-500">{mapError}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-0">
