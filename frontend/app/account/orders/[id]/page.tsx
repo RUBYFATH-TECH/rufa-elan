@@ -190,7 +190,7 @@ export default function OrderDetailPage() {
             unit: "mm", 
             format: "a4",
             compress: true
-          },
+          } as any,
         })
         .from(element)
         .save();
