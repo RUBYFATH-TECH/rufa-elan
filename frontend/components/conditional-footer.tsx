@@ -42,10 +42,8 @@ export default function ConditionalFooter() {
     };
   }, []);
   
-  // Hide footer and live contact button on these paths
-  const hideFooterPaths = [
-    '/account',
-    '/admin',
+  // Paths where footer should be hidden (regardless of auth status)
+  const alwaysHideFooterPaths = [
     '/auth/login',
     '/auth/register', 
     '/auth/callback',
@@ -54,8 +52,20 @@ export default function ConditionalFooter() {
     '/checkout'
   ];
   
-  // Check if current path starts with any of the hide paths
-  const shouldHideFooter = hideFooterPaths.some(path => 
+  // Paths where footer should be hidden ONLY when logged in
+  const hideFooterWhenLoggedInPaths = [
+    '/account',
+    '/admin',
+    '/wishlist',
+  ];
+  
+  // Check if current path should always hide footer
+  const shouldAlwaysHideFooter = alwaysHideFooterPaths.some(path => 
+    pathname.startsWith(path)
+  );
+  
+  // Check if current path should hide footer when logged in
+  const shouldHideFooterWhenLoggedIn = isLoggedIn && hideFooterWhenLoggedInPaths.some(path => 
     pathname.startsWith(path)
   );
   
@@ -63,11 +73,11 @@ export default function ConditionalFooter() {
   const isOrderReviewPage = /^\/orders\/[^\/]+\/review/.test(pathname);
   
   // Don't render footer components if:
-  // - User is logged in (globally hide footer for authenticated users)
-  // - Should be hidden based on path
+  // - Should always be hidden based on path
+  // - Should be hidden when logged in AND user is logged in
   // - On review pages
   // - Review form is open
-  if (isLoggedIn || shouldHideFooter || isOrderReviewPage || isReviewFormOpen) {
+  if (shouldAlwaysHideFooter || shouldHideFooterWhenLoggedIn || isOrderReviewPage || isReviewFormOpen) {
     return null;
   }
 
