@@ -689,41 +689,26 @@ export default function CheckoutPage() {
             <span className="text-3xl font-bold text-orange-600">GHS {grandTotal.toFixed(2)}</span>
           </div>
 
-          {/* Google Maps */}
-          {deliveryOption === "delivery" && selectedAddress && (
-            <div className="rounded-lg overflow-hidden border border-slate-200 mb-6">
-              <div className="bg-slate-100 p-4">
-                <p className="text-xs font-bold text-slate-700 mb-2">📍 DISTANCE TO DELIVERY ADDRESS</p>
-                {geocodingAddress ? (
-                  <div className="flex items-center gap-2 text-sm text-slate-600">
-                    <Loader className="h-4 w-4 animate-spin" />
-                    Calculating...
-                  </div>
-                ) : calculatedDistance ? (
-                  <div className="space-y-2">
-                    <div className="bg-white rounded p-3">
-                      <p className="text-lg font-bold text-slate-950">{calculatedDistance.toFixed(1)} km</p>
-                      <p className="text-xs text-slate-500">From Kumasi Abrepo Junction</p>
-                    </div>
-                    <p className="text-xs text-slate-600">
-                      📍 To: {selectedAddress.address}, {selectedAddress.city}
-                    </p>
-                  </div>
-                ) : null}
-              </div>
-              
-          {/* Beautiful Route Map */}
-          {selectedAddress && calculatedDistance && (
-            <DeliveryMap
-              startLat={KUMASI_OFFICE.lat}
-              startLng={KUMASI_OFFICE.lng}
-              endLat={selectedAddress.latitude || 6.0}
-              endLng={selectedAddress.longitude || -1.5}
-              distance={calculatedDistance}
-              startLabel={KUMASI_OFFICE.name}
-              endLabel={selectedAddress.city}
-            />
+          {/* Beautiful Route Map with Distance Info */}
+          {deliveryOption === "delivery" && selectedAddress && calculatedDistance && (
+            <div className="rounded-xl overflow-hidden border-2 border-slate-200 shadow-lg">
+              <DeliveryMap
+                startLat={KUMASI_OFFICE.lat}
+                startLng={KUMASI_OFFICE.lng}
+                endLat={selectedAddress.latitude || 6.0}
+                endLng={selectedAddress.longitude || -1.5}
+                distance={calculatedDistance}
+                startLabel={KUMASI_OFFICE.name}
+                endLabel={selectedAddress.city}
+              />
+            </div>
           )}
+
+          {/* Calculating Distance Loader */}
+          {deliveryOption === "delivery" && selectedAddress && geocodingAddress && (
+            <div className="rounded-xl bg-slate-50 border-2 border-slate-200 p-6 flex items-center justify-center gap-3">
+              <Loader className="h-5 w-5 animate-spin text-orange-600" />
+              <span className="text-sm font-medium text-slate-700">Calculating route distance...</span>
             </div>
           )}
         </aside>

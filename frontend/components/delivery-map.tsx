@@ -26,15 +26,20 @@ export default function DeliveryMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [routeData, setRouteData] = useState<any>(null);
+  const [isLoadingRoute, setIsLoadingRoute] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+    
     // Dynamically import leaflet only on client
     const loadMap = async () => {
       if (!containerRef.current || mapLoaded) return;
 
       try {
         const L = (await import("leaflet")).default;
-        require("leaflet/dist/leaflet.css");
+        await import("leaflet/dist/leaflet.css");
+
+        if (!isMounted) return;
 
         // Fix for default marker icons in production
         delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -45,7 +50,7 @@ export default function DeliveryMap({
         });
 
         // Initialize map with better styling
-        if (!mapRef.current) {
+        if (!mapRef.current && containerRef.current) {
           mapRef.current = L.map(containerRef.current, {
             zoomControl: true,
             scrollWheelZoom: false,
@@ -65,6 +70,8 @@ export default function DeliveryMap({
           }).addTo(mapRef.current);
         }
 
+        if (!isMounted || !mapRef.current) return;
+
         const map = mapRef.current;
 
         // Clear existing markers and lines
@@ -79,98 +86,66 @@ export default function DeliveryMap({
           html: `
             <div style="position: relative;">
               <div style="
-                width: 48px;
-                height: 48px;
+                width: 40px;
+                height: 40px;
                 background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-                border: 4px solid white;
+                border: 3px solid white;
                 border-radius: 50%;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.3);
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                animation: pulse 2s ease-in-out infinite;
               ">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                   <polyline points="9 22 9 12 15 12 15 22"></polyline>
                 </svg>
               </div>
-              <div style="
-                position: absolute;
-                top: 52px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: white;
-                padding: 6px 12px;
-                border-radius: 8px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-                white-space: nowrap;
-                font-weight: 600;
-                font-size: 12px;
-                color: #1e293b;
-              ">
-                🏪 ${startLabel}
-              </div>
             </div>
           `,
           className: 'custom-marker-icon',
-          iconSize: [48, 48],
-          iconAnchor: [24, 24],
+          iconSize: [40, 40],
+          iconAnchor: [20, 20],
         });
 
         const endIcon = L.divIcon({
           html: `
             <div style="position: relative;">
               <div style="
-                width: 44px;
-                height: 44px;
+                width: 36px;
+                height: 36px;
                 background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-                border: 4px solid white;
+                border: 3px solid white;
                 border-radius: 50%;
                 box-shadow: 0 4px 12px rgba(0,0,0,0.3);
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                animation: bounce 2s ease-in-out infinite;
               ">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2">
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                   <circle cx="12" cy="10" r="3" fill="#3b82f6"></circle>
                 </svg>
               </div>
-              <div style="
-                position: absolute;
-                top: 48px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: white;
-                padding: 6px 12px;
-                border-radius: 8px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-                white-space: nowrap;
-                font-weight: 600;
-                font-size: 12px;
-                color: #1e293b;
-              ">
-                📍 ${endLabel}
-              </div>
             </div>
           `,
           className: 'custom-marker-icon',
-          iconSize: [44, 44],
-          iconAnchor: [22, 22],
+          iconSize: [36, 36],
+          iconAnchor: [18, 18],
         });
 
         // Add start marker (Shop)
         L.marker([startLat, startLng], { icon: startIcon })
+          .bindPopup(`<div style="font-weight: 600; font-size: 12px;">🏪 ${startLabel}</div>`)
           .addTo(map);
 
         // Add end marker (Delivery Address)
         L.marker([endLat, endLng], { icon: endIcon })
+          .bindPopup(`<div style="font-weight: 600; font-size: 12px;">📍 ${endLabel}</div>`)
           .addTo(map);
 
         // Add pulsing circle at start location
-        const startCircle = L.circle([startLat, startLng], {
+        L.circle([startLat, startLng], {
           color: '#f97316',
           fillColor: '#f97316',
           fillOpacity: 0.15,
@@ -179,7 +154,7 @@ export default function DeliveryMap({
         }).addTo(map);
 
         // Add destination circle
-        const endCircle = L.circle([endLat, endLng], {
+        L.circle([endLat, endLng], {
           color: '#3b82f6',
           fillColor: '#3b82f6',
           fillOpacity: 0.15,
@@ -188,11 +163,14 @@ export default function DeliveryMap({
         }).addTo(map);
 
         // Fetch real route from OSRM (Open Source Routing Machine)
+        setIsLoadingRoute(true);
         try {
           const routeResponse = await fetch(
             `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson`
           );
           const routeData = await routeResponse.json();
+
+          if (!isMounted) return;
 
           if (routeData.routes && routeData.routes.length > 0) {
             const route = routeData.routes[0];
@@ -230,14 +208,18 @@ export default function DeliveryMap({
 
             // Animate the dashed line
             let offset = 0;
-            setInterval(() => {
+            const animationInterval = setInterval(() => {
+              if (!isMounted) {
+                clearInterval(animationInterval);
+                return;
+              }
               offset = (offset + 1) % 25;
               (animatedLine as any).setStyle({ dashOffset: String(offset) });
             }, 50);
 
             // Fit bounds with padding
             map.fitBounds(mainRoute.getBounds(), { 
-              padding: [80, 80],
+              padding: [60, 60],
               maxZoom: 14
             });
 
@@ -251,34 +233,40 @@ export default function DeliveryMap({
           }
         } catch (error) {
           console.error("Error fetching route:", error);
-          // Fallback to straight line
-          drawFallbackLine(L, map, startLat, startLng, endLat, endLng);
+          if (isMounted) {
+            // Fallback to straight line
+            drawFallbackLine(L, map, startLat, startLng, endLat, endLng);
+          }
+        } finally {
+          if (isMounted) {
+            setIsLoadingRoute(false);
+          }
         }
 
         // Add CSS for animations
-        const style = document.createElement('style');
-        style.textContent = `
-          @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-          }
-          @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-4px); }
-          }
-          .leaflet-container {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-          }
-          .custom-marker-icon {
-            background: transparent !important;
-            border: none !important;
-          }
-        `;
-        document.head.appendChild(style);
+        if (isMounted && !document.getElementById('leaflet-custom-styles')) {
+          const style = document.createElement('style');
+          style.id = 'leaflet-custom-styles';
+          style.textContent = `
+            .leaflet-container {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+              z-index: 1;
+            }
+            .custom-marker-icon {
+              background: transparent !important;
+              border: none !important;
+            }
+            .leaflet-popup-content-wrapper {
+              border-radius: 8px;
+            }
+          `;
+          document.head.appendChild(style);
+        }
 
         setMapLoaded(true);
       } catch (error) {
         console.error("Error loading map:", error);
+        setIsLoadingRoute(false);
       }
     };
 
@@ -292,71 +280,86 @@ export default function DeliveryMap({
         lineJoin: 'round',
       }).addTo(map);
 
-      map.fitBounds(line.getBounds(), { padding: [60, 60] });
+      map.fitBounds(line.getBounds(), { padding: [50, 50] });
     };
 
     loadMap();
+
+    return () => {
+      isMounted = false;
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
   }, [startLat, startLng, endLat, endLng, mapLoaded, startLabel, endLabel]);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-0">
       {/* Map Container */}
-      <div className="relative rounded-xl overflow-hidden border-2 border-orange-200 shadow-lg">
+      <div className="relative">
         <div
           ref={containerRef}
-          className="w-full h-80 bg-gray-100"
+          className="w-full h-64 sm:h-80 bg-gray-100 relative"
           style={{ zIndex: 1 }}
         />
         
-        {/* Map Overlay Info */}
-        <div className="absolute top-4 left-4 right-4 z-10 flex justify-between items-start gap-2">
-          <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-lg px-4 py-3 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
-              <Navigation className="w-5 h-5 text-white" />
+        {isLoadingRoute && (
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10">
+            <div className="text-center">
+              <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+              <p className="text-sm font-medium text-gray-700">Loading route map...</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Route Details Card - Below Map */}
+      <div className="bg-gradient-to-r from-orange-50 via-orange-50 to-blue-50 p-4 sm:p-5">
+        <div className="flex items-center justify-between gap-4">
+          {/* Distance Info */}
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-lg">
+              <Navigation className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
             </div>
             <div>
-              <p className="text-xs font-semibold text-gray-600">Distance</p>
-              <p className="text-lg font-bold text-gray-900">{distance.toFixed(1)} km</p>
+              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Distance</p>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900">{distance.toFixed(1)} km</p>
             </div>
           </div>
           
+          {/* Duration Info */}
           {routeData && (
-            <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-lg px-4 py-3 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
-                <Package className="w-5 h-5 text-white" />
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg">
+                <Package className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-gray-600">Est. Time</p>
-                <p className="text-lg font-bold text-gray-900">{routeData.duration} min</p>
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Est. Time</p>
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900">{routeData.duration} min</p>
               </div>
             </div>
           )}
         </div>
-      </div>
 
-      {/* Route Details Card */}
-      <div className="bg-gradient-to-r from-orange-50 via-orange-50 to-blue-50 rounded-xl p-4 border border-orange-200">
-        <div className="flex items-start gap-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-3">
-              <Store className="w-4 h-4 text-orange-600" />
-              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">From</p>
+        {/* From/To Details */}
+        <div className="mt-4 pt-4 border-t border-orange-200/50">
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Store className="w-4 h-4 text-orange-600" />
+                <p className="font-semibold text-gray-600 uppercase text-xs tracking-wide">From</p>
+              </div>
+              <p className="font-bold text-gray-900 text-xs sm:text-sm">{startLabel}</p>
             </div>
-            <p className="text-sm font-bold text-gray-900">{startLabel}</p>
-          </div>
-          
-          <div className="flex items-center justify-center">
-            <div className="w-12 h-12 rounded-full bg-white border-2 border-orange-300 flex items-center justify-center shadow-sm">
-              <Navigation className="w-5 h-5 text-orange-600" />
+            
+            <div className="text-right">
+              <div className="flex items-center justify-end gap-2 mb-1">
+                <p className="font-semibold text-gray-600 uppercase text-xs tracking-wide">To</p>
+                <MapPin className="w-4 h-4 text-blue-600" />
+              </div>
+              <p className="font-bold text-gray-900 text-xs sm:text-sm">{endLabel}</p>
             </div>
-          </div>
-          
-          <div className="flex-1 text-right">
-            <div className="flex items-center justify-end gap-2 mb-3">
-              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">To</p>
-              <MapPin className="w-4 h-4 text-blue-600" />
-            </div>
-            <p className="text-sm font-bold text-gray-900">{endLabel}</p>
           </div>
         </div>
       </div>
