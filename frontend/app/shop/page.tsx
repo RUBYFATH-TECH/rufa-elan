@@ -8,6 +8,51 @@ import { fetchProducts } from "@/lib/api/products";
 import { Clock, Filter, Grid, List, ShoppingBag, Loader2, AlertCircle } from "lucide-react";
 import { useCartStore } from "@/store/cart-store";
 
+// Countdown Timer Component for Fast Deals
+function DealCountdownBadge({ endDate, endTime }: { endDate: string; endTime: string }) {
+  const [timeLeft, setTimeLeft] = useState('');
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const endDateTime = new Date(`${endDate}T${endTime}`).getTime();
+      const now = Date.now();
+      const difference = endDateTime - now;
+
+      if (difference <= 0) {
+        setTimeLeft('ENDED');
+        return;
+      }
+
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+      if (days > 0) {
+        setTimeLeft(`${days}d ${hours}h ${minutes}m`);
+      } else if (hours > 0) {
+        setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
+      } else {
+        setTimeLeft(`${minutes}m ${seconds}s`);
+      }
+    };
+
+    calculateTimeLeft();
+    const timer = setInterval(calculateTimeLeft, 1000);
+
+    return () => clearInterval(timer);
+  }, [endDate, endTime]);
+
+  if (!timeLeft || timeLeft === 'ENDED') return null;
+
+  return (
+    <div className="absolute bottom-2 right-2 bg-black/80 backdrop-blur-sm text-white px-2 py-1 rounded text-xs font-bold flex items-center gap-1 z-10">
+      <Clock className="w-3 h-3" />
+      <span>{timeLeft}</span>
+    </div>
+  );
+}
+
 interface Product {
   id: string;
   name: string;
@@ -92,11 +137,44 @@ export default function ShopPage() {
       
       setProducts(allProducts);
       
-      // Filter products with sale prices for fast deals
-      const deals = allProducts
-        .filter((p: Product) => p.sale_price && p.sale_price > 0)
-        .slice(0, 3);
-      setFastDeals(deals);
+      // Load Fast Deals from backend API
+      try {
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+        const dealsResponse = await fetch(`${backendUrl}/api/fast-deals?limit=6`, {
+          headers: { "Content-Type": "application/json" },
+          next: { revalidate: 120 }, // Cache for 2 minutes
+        });
+        
+        if (dealsResponse.ok) {
+          const dealsData = await dealsResponse.json();
+          const fastDealsWithTimer = (dealsData.data || []).map((deal: any) => ({
+            id: deal.id,
+            name: deal.products?.name || deal.name,
+            slug: deal.products?.slug || deal.slug,
+            regular_price: deal.products?.regular_price || 0,
+            sale_price: deal.deal_price,
+            product_images: deal.products?.product_images || [],
+            stock_quantity: deal.stock_quantity || 0,
+            in_stock: deal.products?.is_in_stock ?? true,
+            end_date: deal.end_date,
+            end_time: deal.end_time,
+          }));
+          setFastDeals(fastDealsWithTimer);
+        } else {
+          // Fallback: Filter products with sale prices for fast deals
+          const deals = allProducts
+            .filter((p: Product) => p.sale_price && p.sale_price > 0)
+            .slice(0, 3);
+          setFastDeals(deals);
+        }
+      } catch (dealsError) {
+        console.error("Error loading fast deals from backend:", dealsError);
+        // Fallback: Filter products with sale prices for fast deals
+        const deals = allProducts
+          .filter((p: Product) => p.sale_price && p.sale_price > 0)
+          .slice(0, 3);
+        setFastDeals(deals);
+      }
     } catch (err) {
       console.error("Error loading products:", err);
       setError("Failed to load products. Please try again.");
@@ -222,6 +300,7 @@ export default function ShopPage() {
                     <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Fast Deals</h2>
                     <span className="ml-2 sm:ml-3 text-xs sm:text-sm text-red-500 font-medium">Limited Time Only!</span>
                   </div>
+                  {/* Add countdown timer here if deals have end dates */}
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
@@ -236,9 +315,13 @@ export default function ShopPage() {
                         onClick={() => router.push(`/products/${deal.slug}`)}
                       >
                         <div className="relative mb-3 sm:mb-4">
-                          <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
+                          <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold z-10">
                             {discount}% OFF
                           </div>
+                          {/* Add countdown badge on image if deal has end date/time */}
+                          {(deal as any).end_date && (deal as any).end_time && (
+                            <DealCountdownBadge endDate={(deal as any).end_date} endTime={(deal as any).end_time} />
+                          )}
                           <img 
                             src={image} 
                             alt={deal.name}
