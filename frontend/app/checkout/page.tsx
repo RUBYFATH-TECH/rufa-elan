@@ -467,25 +467,25 @@ export default function CheckoutPage() {
   }
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-      <div className="grid gap-8 lg:grid-cols-[1.2fr,0.8fr]">
+    <section className="mx-auto max-w-6xl px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8 md:py-12">
+      <div className="grid gap-4 sm:gap-6 lg:gap-8 lg:grid-cols-[1.2fr,0.8fr]">
         {/* Main Content */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6 order-2 lg:order-1">
           {/* Header */}
           <div>
             <button
               onClick={() => router.back()}
-              className="inline-flex items-center gap-2 text-orange-600 hover:text-orange-700 font-semibold mb-4 transition"
+              className="inline-flex items-center gap-2 text-orange-600 hover:text-orange-700 font-semibold mb-3 sm:mb-4 transition text-sm sm:text-base"
             >
               ← Go Back
             </button>
-            <h1 className="text-3xl font-bold text-slate-950">Checkout</h1>
-            <p className="mt-2 text-slate-600">Select delivery address and payment method</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-950">Checkout</h1>
+            <p className="mt-1 sm:mt-2 text-sm sm:text-base text-slate-600">Select delivery address and payment method</p>
           </div>
 
           {/* Messages */}
           {message && (
-            <div className={`rounded-lg border p-4 flex items-center gap-3 ${
+            <div className={`rounded-lg border p-3 sm:p-4 flex items-start gap-2 sm:gap-3 text-sm ${
               paymentStatus === "success"
                 ? "bg-green-50 border-green-200"
                 : paymentStatus === "failed"
@@ -493,11 +493,11 @@ export default function CheckoutPage() {
                 : "bg-blue-50 border-blue-200"
             }`}>
               {paymentStatus === "success" ? (
-                <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0 mt-0.5" />
               ) : (
-                <AlertCircle className="h-5 w-5 text-slate-600 flex-shrink-0" />
+                <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-slate-600 flex-shrink-0 mt-0.5" />
               )}
-              <p className={`text-sm ${
+              <p className={`${
                 paymentStatus === "success"
                   ? "text-green-800"
                   : paymentStatus === "failed"
@@ -510,22 +510,22 @@ export default function CheckoutPage() {
           )}
 
           {/* Address Selection */}
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-md">
-            <div className="flex items-center gap-2 mb-4">
-              <MapPin className="h-5 w-5 text-orange-600" />
-              <h2 className="text-lg font-bold text-slate-950">Delivery Address</h2>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 shadow-md">
+            <div className="flex items-center gap-2 mb-3 sm:mb-4">
+              <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 flex-shrink-0" />
+              <h2 className="text-base sm:text-lg font-bold text-slate-950">Delivery Address</h2>
             </div>
 
             {userAddresses.length > 0 ? (
               <div className="space-y-4">
                 {userAddresses.length === 1 ? (
                   // Single address - just display it
-                  <div className="rounded-lg border border-orange-200 bg-orange-50 p-4">
-                    <p className="font-bold text-slate-900">{selectedAddress?.label}</p>
-                    <p className="text-sm text-slate-600 mt-1">{selectedAddress?.full_name}</p>
-                    <p className="text-sm text-slate-600">{selectedAddress?.phone}</p>
-                    <p className="text-sm text-slate-600 mt-2">{selectedAddress?.address}</p>
-                    <p className="text-sm text-slate-600">{selectedAddress?.city}{selectedAddress?.region ? `, ${selectedAddress.region}` : ''}</p>
+                  <div className="rounded-lg border border-orange-200 bg-orange-50 p-3 sm:p-4">
+                    <p className="font-bold text-slate-900 text-sm sm:text-base">{selectedAddress?.label}</p>
+                    <p className="text-xs sm:text-sm text-slate-600 mt-1">{selectedAddress?.full_name}</p>
+                    <p className="text-xs sm:text-sm text-slate-600">{selectedAddress?.phone}</p>
+                    <p className="text-xs sm:text-sm text-slate-600 mt-2">{selectedAddress?.address}</p>
+                    <p className="text-xs sm:text-sm text-slate-600">{selectedAddress?.city}{selectedAddress?.region ? `, ${selectedAddress.region}` : ''}</p>
                   </div>
                 ) : (
                   // Multiple addresses - show dropdown
@@ -538,7 +538,7 @@ export default function CheckoutPage() {
                           setSelectedAddress(address);
                         }
                       }}
-                      className="w-full appearance-none rounded-lg border border-slate-300 bg-white px-4 py-3 pr-10 text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                      className="w-full appearance-none rounded-lg border border-slate-300 bg-white px-3 sm:px-4 py-2 sm:py-3 pr-8 sm:pr-10 text-sm sm:text-base text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                     >
                       <option value="">Select a delivery address</option>
                       {userAddresses.map((address) => (
@@ -554,9 +554,9 @@ export default function CheckoutPage() {
                 {/* Add New Address Link */}
                 <Link
                   href="/account/addresses?redirect=/checkout"
-                  className="inline-flex items-center gap-2 text-sm text-orange-600 hover:text-orange-700 font-semibold"
+                  className="inline-flex items-center gap-2 text-xs sm:text-sm text-orange-600 hover:text-orange-700 font-semibold"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
                   Add New Address
                 </Link>
               </div>
@@ -573,17 +573,17 @@ export default function CheckoutPage() {
           </div>
 
           {/* Delivery Option */}
-          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-md">
-            <div className="flex items-center gap-2 mb-4">
-              <Truck className="h-5 w-5 text-orange-600" />
-              <h2 className="text-lg font-bold text-slate-950">Delivery Option</h2>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 shadow-md">
+            <div className="flex items-center gap-2 mb-3 sm:mb-4">
+              <Truck className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 flex-shrink-0" />
+              <h2 className="text-base sm:text-lg font-bold text-slate-950">Delivery Option</h2>
             </div>
 
             <div className="relative">
               <select
                 value={deliveryOption}
                 onChange={(e) => setDeliveryOption(e.target.value as "delivery" | "pickup")}
-                className="w-full appearance-none rounded-lg border border-slate-300 bg-white px-4 py-3 pr-10 text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                className="w-full appearance-none rounded-lg border border-slate-300 bg-white px-3 sm:px-4 py-2 sm:py-3 pr-8 sm:pr-10 text-sm sm:text-base text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               >
                 <option value="delivery">Standard Delivery to Address</option>
                 <option value="pickup">Pickup from Kumasi Store</option>
@@ -593,19 +593,19 @@ export default function CheckoutPage() {
 
             {/* Distance Info */}
             {deliveryOption === "delivery" && selectedAddress && (
-              <div className="mt-4 rounded-lg bg-blue-50 border border-blue-200 p-4">
+              <div className="mt-3 sm:mt-4 rounded-lg bg-blue-50 border border-blue-200 p-3 sm:p-4">
                 {geocodingAddress ? (
-                  <div className="flex items-center gap-2 text-sm text-blue-800">
-                    <Loader className="h-4 w-4 animate-spin" />
+                  <div className="flex items-center gap-2 text-xs sm:text-sm text-blue-800">
+                    <Loader className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
                     Calculating distance...
                   </div>
                 ) : calculatedDistance ? (
-                  <div className="text-sm text-blue-900">
+                  <div className="text-xs sm:text-sm text-blue-900">
                     <p className="font-bold mb-2">📍 Distance: {calculatedDistance.toFixed(1)} km</p>
-                    <p className="text-xs text-blue-700 mb-2">From: Kumasi Abrepo Junction</p>
-                    <p className="text-xs text-blue-700">To: {selectedAddress.address}, {selectedAddress.city}</p>
-                    <div className="mt-3 pt-3 border-t border-blue-200">
-                      <p className="font-semibold text-blue-900">
+                    <p className="text-xs text-blue-700 mb-1 sm:mb-2">From: Kumasi Abrepo Junction</p>
+                    <p className="text-xs text-blue-700 break-words">To: {selectedAddress.address}, {selectedAddress.city}</p>
+                    <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-blue-200">
+                      <p className="font-semibold text-blue-900 text-sm sm:text-base">
                         Delivery Fee: GHS {deliveryFee.toFixed(2)}
                       </p>
                       <p className="text-xs text-blue-700 mt-1">
@@ -618,8 +618,8 @@ export default function CheckoutPage() {
             )}
 
             {deliveryOption === "pickup" && (
-              <div className="mt-4 rounded-lg bg-green-50 border border-green-200 p-3">
-                <p className="text-sm font-semibold text-green-900">Free Pickup</p>
+              <div className="mt-3 sm:mt-4 rounded-lg bg-green-50 border border-green-200 p-3">
+                <p className="text-xs sm:text-sm font-semibold text-green-900">Free Pickup</p>
                 <p className="text-xs text-green-700 mt-1">Pickup from our Kumasi Abrepo Junction store</p>
               </div>
             )}
@@ -630,7 +630,7 @@ export default function CheckoutPage() {
             <button
               onClick={handleProceedToPayment}
               disabled={paymentStatus === "verifying"}
-              className="w-full rounded-lg bg-gradient-to-r from-orange-600 to-red-600 px-6 py-4 text-lg font-bold text-white transition hover:from-orange-700 hover:to-red-700 shadow-lg hover:shadow-xl disabled:opacity-50"
+              className="w-full rounded-lg bg-gradient-to-r from-orange-600 to-red-600 px-4 sm:px-6 py-3 sm:py-4 text-base sm:text-lg font-bold text-white transition hover:from-orange-700 hover:to-red-700 shadow-lg hover:shadow-xl disabled:opacity-50"
             >
               {paymentStatus === "verifying" ? "Processing..." : `Proceed to Payment - GHS ${grandTotal.toFixed(2)}`}
             </button>
@@ -638,8 +638,8 @@ export default function CheckoutPage() {
         </div>
 
         {/* Order Summary Sidebar */}
-        <aside className="h-fit rounded-xl border border-slate-200 bg-white p-6 shadow-md sticky top-4">
-          <h2 className="text-lg font-bold text-slate-950 mb-6">Order Summary</h2>
+        <aside className="h-fit rounded-xl border border-slate-200 bg-white p-4 sm:p-6 shadow-md sticky top-4 order-1 lg:order-2">
+          <h2 className="text-base sm:text-lg font-bold text-slate-950 mb-4 sm:mb-6">Order Summary</h2>
 
           {/* Items */}
           <div className="space-y-3 mb-6 border-b border-slate-200 pb-6">
