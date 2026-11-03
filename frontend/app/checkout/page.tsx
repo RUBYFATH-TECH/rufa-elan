@@ -15,10 +15,12 @@ const DeliveryMap = dynamic(() => import("@/components/delivery-map"), {
   loading: () => <div className="w-full h-64 bg-slate-100 flex items-center justify-center rounded-lg">Loading map...</div>
 });
 
-// Kumasi office coordinates for distance calculation
+// Kumasi office coordinates for distance calculation (RUFA ELAN Shop Location)
+// Location: https://maps.app.goo.gl/EpDhubP7UfLY21uq8
 const KUMASI_OFFICE = {
-  lat: 6.6884,
-  lng: -1.6244
+  lat: 6.675270,
+  lng: -1.624440,
+  name: "RUFA ELAN - Kumasi Abrepo Junction"
 };
 
 type CheckoutPayload = {
@@ -710,15 +712,15 @@ export default function CheckoutPage() {
                 ) : null}
               </div>
               
-          {/* Google Maps Embed */}
+          {/* Beautiful Route Map */}
           {selectedAddress && calculatedDistance && (
             <DeliveryMap
-              startLat={6.6753}
-              startLng={-1.6169}
+              startLat={KUMASI_OFFICE.lat}
+              startLng={KUMASI_OFFICE.lng}
               endLat={selectedAddress.latitude || 6.0}
               endLng={selectedAddress.longitude || -1.5}
               distance={calculatedDistance}
-              startLabel="Kumasi Abrepo Junction"
+              startLabel={KUMASI_OFFICE.name}
               endLabel={selectedAddress.city}
             />
           )}
