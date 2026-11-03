@@ -208,15 +208,15 @@ export default function AccountPage() {
   if (!userProfile) {
     return (
       <AccountLayout requireAuth={false}>
-        <div className="min-h-[80vh] flex items-center justify-center py-12 px-4">
+        <div className="min-h-[80vh] flex items-center justify-center py-8 sm:py-12 px-3 sm:px-4 overflow-x-hidden">
           <div className="max-w-6xl w-full bg-white rounded-2xl shadow-2xl overflow-hidden">
             <div className="lg:grid lg:grid-cols-2 lg:gap-0">
               {/* Left Side - Premium Branding */}
-              <div className="relative bg-gradient-to-br from-orange-600 via-orange-500 to-red-600 p-12 lg:p-16 text-white overflow-hidden">
+              <div className="relative bg-gradient-to-br from-orange-600 via-orange-500 to-red-600 p-6 sm:p-8 lg:p-16 text-white overflow-hidden">
                 {/* Background Pattern */}
-                <div className="absolute inset-0 opacity-10">
-                  <div className="absolute top-0 left-0 w-64 h-64 bg-white rounded-full -translate-x-32 -translate-y-32"></div>
-                  <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full translate-x-48 translate-y-48"></div>
+                <div className="absolute inset-0 opacity-10 overflow-hidden">
+                  <div className="absolute top-0 left-0 w-48 sm:w-64 h-48 sm:h-64 bg-white rounded-full -translate-x-24 sm:-translate-x-32 -translate-y-24 sm:-translate-y-32"></div>
+                  <div className="absolute bottom-0 right-0 w-64 sm:w-96 h-64 sm:h-96 bg-white rounded-full translate-x-32 sm:translate-x-48 translate-y-32 sm:translate-y-48"></div>
                 </div>
                 
                 <div className="relative z-10">
@@ -232,52 +232,52 @@ export default function AccountPage() {
                   </div>
 
                   {/* Heading */}
-                  <div className="mb-8">
-                    <h1 className="text-4xl lg:text-5xl font-bold mb-4 leading-tight">
+                  <div className="mb-6 sm:mb-8">
+                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 leading-tight">
                       Welcome to Your
                       <br />
                       <span className="text-orange-100">Personal Hub</span>
                     </h1>
-                    <p className="text-orange-50 text-lg leading-relaxed">
+                    <p className="text-orange-50 text-base sm:text-lg leading-relaxed">
                       Sign in to unlock a world of personalized shopping, exclusive deals, and seamless delivery tracking.
                     </p>
                   </div>
 
                   {/* Features List */}
-                  <div className="space-y-5 mb-8">
+                  <div className="space-y-4 sm:space-y-5 mb-6 sm:mb-8">
                     <div className="flex items-start group">
-                      <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                        <Package className="h-6 w-6" />
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                        <Package className="h-5 w-5 sm:h-6 sm:w-6" />
                       </div>
-                      <div className="ml-4">
-                        <h4 className="font-semibold text-lg mb-1">Real-Time Order Tracking</h4>
+                      <div className="ml-3 sm:ml-4 min-w-0">
+                        <h4 className="font-semibold text-base sm:text-lg mb-1">Real-Time Order Tracking</h4>
                         <p className="text-orange-100 text-sm">Monitor your deliveries from our store to your doorstep</p>
                       </div>
                     </div>
                     
                     <div className="flex items-start group">
-                      <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                        <Heart className="h-6 w-6" />
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                        <Heart className="h-5 w-5 sm:h-6 sm:w-6" />
                       </div>
-                      <div className="ml-4">
-                        <h4 className="font-semibold text-lg mb-1">Personalized Wishlist</h4>
+                      <div className="ml-3 sm:ml-4 min-w-0">
+                        <h4 className="font-semibold text-base sm:text-lg mb-1">Personalized Wishlist</h4>
                         <p className="text-orange-100 text-sm">Save your favorite items and get notified of price drops</p>
                       </div>
                     </div>
                     
                     <div className="flex items-start group">
-                      <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                        <Truck className="h-6 w-6" />
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                        <Truck className="h-5 w-5 sm:h-6 sm:w-6" />
                       </div>
-                      <div className="ml-4">
-                        <h4 className="font-semibold text-lg mb-1">Multiple Delivery Addresses</h4>
+                      <div className="ml-3 sm:ml-4 min-w-0">
+                        <h4 className="font-semibold text-base sm:text-lg mb-1">Multiple Delivery Addresses</h4>
                         <p className="text-orange-100 text-sm">Manage addresses and enjoy fast, reliable delivery across Ghana</p>
                       </div>
                     </div>
 
                     <div className="flex items-start group">
-                      <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                        <Star className="h-6 w-6" />
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                        <Star className="h-5 w-5 sm:h-6 sm:w-6" />
                       </div>
                       <div className="ml-4">
                         <h4 className="font-semibold text-lg mb-1">Exclusive Member Benefits</h4>
@@ -307,52 +307,52 @@ export default function AccountPage() {
               </div>
 
               {/* Right Side - Actions */}
-              <div className="p-8 lg:p-16 flex flex-col justify-center">
+              <div className="p-6 sm:p-8 lg:p-16 flex flex-col justify-center">
                 <div className="max-w-md mx-auto w-full">
                   {/* Header */}
-                  <div className="mb-10">
-                    <h2 className="text-3xl font-bold text-gray-900 mb-3">Get Started</h2>
-                    <p className="text-gray-600 leading-relaxed">
+                  <div className="mb-8 sm:mb-10">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-3">Get Started</h2>
+                    <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
                       Choose an option below to access your account or create a new one to start your premium shopping experience.
                     </p>
                   </div>
                   
                   {/* Action Buttons */}
-                  <div className="space-y-4 mb-8">
+                  <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
                     <Link 
                       href="/auth/login"
-                      className="group relative w-full bg-gradient-to-r from-orange-600 to-orange-500 text-white py-4 px-6 rounded-xl hover:from-orange-700 hover:to-orange-600 transition-all duration-300 flex items-center justify-center font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                      className="group relative w-full bg-gradient-to-r from-orange-600 to-orange-500 text-white py-3.5 sm:py-4 px-5 sm:px-6 rounded-xl hover:from-orange-700 hover:to-orange-600 transition-all duration-300 flex items-center justify-center font-semibold text-base sm:text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                     >
                       <span>Sign In to Your Account</span>
-                      <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="ml-2 sm:ml-3 h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
                     </Link>
                     
                     <Link 
                       href="/auth/register"
-                      className="group w-full bg-white text-gray-900 py-4 px-6 rounded-xl border-2 border-gray-300 hover:border-orange-500 hover:bg-orange-50 transition-all duration-300 flex items-center justify-center font-semibold text-lg shadow-sm hover:shadow-md"
+                      className="group w-full bg-white text-gray-900 py-3.5 sm:py-4 px-5 sm:px-6 rounded-xl border-2 border-gray-300 hover:border-orange-500 hover:bg-orange-50 transition-all duration-300 flex items-center justify-center font-semibold text-base sm:text-lg shadow-sm hover:shadow-md"
                     >
                       <span>Create New Account</span>
                     </Link>
                   </div>
 
                   {/* Divider */}
-                  <div className="relative my-8">
+                  <div className="relative my-6 sm:my-8">
                     <div className="absolute inset-0 flex items-center">
                       <div className="w-full border-t border-gray-300"></div>
                     </div>
-                    <div className="relative flex justify-center text-sm">
-                      <span className="px-4 bg-white text-gray-500 font-medium">Or continue as guest</span>
+                    <div className="relative flex justify-center text-xs sm:text-sm">
+                      <span className="px-3 sm:px-4 bg-white text-gray-500 font-medium">Or continue as guest</span>
                     </div>
                   </div>
 
                   {/* Guest Shopping */}
                   <div className="text-center">
-                    <p className="text-sm text-gray-600 mb-4">
+                    <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
                       Browse our collections without creating an account
                     </p>
                     <Link 
                       href="/"
-                      className="inline-flex items-center justify-center w-full bg-gray-100 text-gray-700 py-3 px-6 rounded-xl hover:bg-gray-200 transition-colors font-medium"
+                      className="inline-flex items-center justify-center w-full bg-gray-100 text-gray-700 py-3 px-5 sm:px-6 rounded-xl hover:bg-gray-200 transition-colors font-medium text-sm sm:text-base"
                     >
                       <ShoppingBag className="w-5 h-5 mr-2" />
                       Continue Shopping
@@ -377,15 +377,15 @@ export default function AccountPage() {
   return (
     <AccountLayout>
       {/* Premium Welcome Banner */}
-      <div className="relative bg-gradient-to-r from-orange-600 via-orange-500 to-red-500 rounded-2xl shadow-xl overflow-hidden mb-8">
+      <div className="relative bg-gradient-to-r from-orange-600 via-orange-500 to-red-500 rounded-2xl shadow-xl overflow-hidden mb-6 sm:mb-8">
         {/* Decorative Background */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-white rounded-full translate-x-48 -translate-y-48"></div>
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-white rounded-full -translate-x-32 translate-y-32"></div>
+        <div className="absolute inset-0 opacity-10 overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 sm:w-96 h-64 sm:h-96 bg-white rounded-full translate-x-32 sm:translate-x-48 -translate-y-32 sm:-translate-y-48"></div>
+          <div className="absolute bottom-0 left-0 w-48 sm:w-64 h-48 sm:h-64 bg-white rounded-full -translate-x-24 sm:-translate-x-32 translate-y-24 sm:translate-y-32"></div>
         </div>
         
-        <div className="relative z-10 p-8 lg:p-10">
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+        <div className="relative z-10 p-6 sm:p-8 lg:p-10">
+          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 sm:gap-6">
             <div className="flex items-center gap-6">
               {/* Avatar */}
               <div className="relative flex-shrink-0">

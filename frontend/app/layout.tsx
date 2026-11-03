@@ -35,12 +35,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className="min-h-screen bg-gray-50 text-slate-900 antialiased">
+    <html lang="en" className="overflow-x-hidden">
+      <body className="min-h-screen bg-gray-50 text-slate-900 antialiased overflow-x-hidden">
         <LanguageProvider>
           <ReviewFormProvider>
             <ConditionalHeader />
-            <main className="relative">
+            <main className="relative overflow-x-hidden">
               {children}
             </main>
             <ConditionalFooter />

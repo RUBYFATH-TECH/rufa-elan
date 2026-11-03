@@ -171,10 +171,10 @@ export default function AccountLayout({ children, requireAuth = true }: AccountL
 
   // Authenticated layout
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       {/* Fixed Header */}
       <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
           <div className="flex items-center justify-between py-2 lg:py-4">
             <div className="flex items-center">
               <Link href="/" className="flex items-center">
@@ -282,10 +282,10 @@ export default function AccountLayout({ children, requireAuth = true }: AccountL
       )}
 
       {/* Main Content */}
-      <div className="min-h-screen bg-gray-50 pt-[53px] pb-20 lg:pt-[73px] lg:pb-0 lg:pl-64">
-        <div className="p-4 lg:p-8">
+      <div className="min-h-screen bg-gray-50 pt-[53px] pb-20 lg:pt-[73px] lg:pb-0 lg:pl-64 overflow-x-hidden">
+        <div className="p-3 sm:p-4 lg:p-8">
           {/* Content */}
-          <div className="max-w-6xl mx-auto">
+          <div className="max-w-6xl mx-auto w-full">
             {children}
           </div>
         </div>
