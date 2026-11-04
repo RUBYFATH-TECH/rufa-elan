@@ -30,7 +30,7 @@ export default function MobileBottomNav() {
       aria-label="Primary navigation"
       className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white
                  pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-2px_10px_rgba(0,0,0,0.07)]
-                 md:hidden"
+                 md:hidden overflow-visible"
     >
       <div className="grid grid-cols-4">
         {tabs.map(({ href, label, icon: Icon }) => {
@@ -44,7 +44,7 @@ export default function MobileBottomNav() {
             <Link
               key={href}
               href={href as any}
-              className="flex flex-col items-center gap-0.5 py-1 text-[11px] font-medium transition-colors"
+              className="flex flex-col items-center gap-0.5 py-1 text-[11px] font-medium transition-colors relative"
             >
               <span className="relative flex items-center justify-center">
                 <Icon
@@ -55,7 +55,7 @@ export default function MobileBottomNav() {
                 />
                 {/* Cart badge */}
                 {label === "Cart" && mounted && cartCount > 0 && (
-                  <span className="absolute -right-2.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
+                  <span className="absolute -right-1.5 -top-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-2 ring-white">
                     {cartCount > 9 ? "9+" : cartCount}
                   </span>
                 )}
