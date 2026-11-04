@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/store/cart-store";
-import { ArrowLeft, CircleUserRound, ShoppingBag, Trash2, X, Minus, Plus, Truck, Shield, RotateCcw, AlertTriangle } from "lucide-react";
+import { ArrowLeft, CircleUserRound, ShoppingBag, Trash2, X, Minus, Plus, Truck, Shield, RotateCcw, AlertTriangle, CheckCircle, ChevronDown } from "lucide-react";
 import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
+import { GHANA_REGIONS, type GhanaRegionValue } from "@/lib/constants/ghana-regions";
 
 export default function CartPage() {
   const router = useRouter();
@@ -17,6 +18,47 @@ export default function CartPage() {
   const subtotal = total;
   const shippingEstimate = 25;
   const [showAccountPrompt, setShowAccountPrompt] = useState(false);
+  const [selectedRegion, setSelectedRegion] = useState<GhanaRegionValue>('');
+  const [shippingFee, setShippingFee] = useState(0);
+  
+  // Calculate shipping based on region
+  const calculateShipping = (region: GhanaRegionValue) => {
+    if (!region) return 0;
+    
+    // Base shipping rates per region (in GHS)
+    const regionRates: Record<string, number> = {
+      'greater_accra': 15,
+      'ashanti': 20,
+      'central': 25,
+      'eastern': 25,
+      'western': 30,
+      'volta': 30,
+      'northern': 40,
+      'upper_east': 45,
+      'upper_west': 45,
+      'brong_ahafo': 30,
+      'bono': 30,
+      'bono_east': 30,
+      'ahafo': 30,
+      'savannah': 40,
+      'north_east': 45,
+      'oti': 35,
+    };
+    
+    return regionRates[region] || 25;
+  };
+  
+  // Handle region selection
+  const handleRegionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const region = e.target.value as GhanaRegionValue;
+    setSelectedRegion(region);
+    const fee = calculateShipping(region);
+    setShippingFee(fee);
+  };
+  
+  // Discount calculation (5% welcome offer)
+  const discountPercent = 5;
+  const discountAmount = (subtotal * discountPercent) / 100;
 
   const goBack = () => {
     if (window.history.length > 1) {
@@ -86,144 +128,120 @@ export default function CartPage() {
     <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="mb-8">
-        <button
-          type="button"
-          onClick={goBack}
-          className="mb-4 inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
-          aria-label="Go back to the previous page"
+        <Link
+          href="/shop"
+          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition"
+          aria-label="Continue shopping"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          Back
-        </button>
-        <h1 className="text-3xl font-bold text-slate-950">Shopping Cart</h1>
-        <p className="mt-2 text-slate-600">{items.length} item{items.length !== 1 ? 's' : ''} in your cart</p>
+          Continue Shopping
+        </Link>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[1fr,380px]">
-        {/* Cart Items */}
-        <div className="space-y-4">
+      <div className="grid gap-8 lg:grid-cols-[1fr,420px]">
+        {/* Cart Items Table */}
+        <div className="space-y-6">
+          {/* Table Header */}
+          <div className="hidden md:grid grid-cols-[2fr,1fr,1fr,1fr,auto] gap-4 pb-4 border-b border-slate-200 text-sm font-semibold text-slate-600 uppercase tracking-wide">
+            <div>Product</div>
+            <div className="text-center">Price</div>
+            <div className="text-center">Quantity</div>
+            <div className="text-center">Subtotal</div>
+            <div className="w-10"></div>
+          </div>
+
+          {/* Cart Items */}
           {items.map((item) => (
-            <div key={item.id} className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm hover:shadow-md transition-all group">
-              <div className="flex flex-col sm:flex-row gap-4 sm:gap-5">
-                {/* Top row: Image and Product Info with Remove button */}
-                <div className="flex gap-4 flex-1">
-                  {/* Product Image */}
-                  <div className="relative flex-shrink-0">
-                    <img 
-                      src={item.image} 
-                      alt={item.name} 
-                      className="h-20 w-20 sm:h-24 sm:w-24 rounded-lg object-cover shadow-sm group-hover:shadow-md transition"
-                    />
-                    {item.variant && (
-                      <div className="absolute -bottom-1 -right-1 rounded-full bg-orange-100 px-2 py-0.5 text-[10px] sm:text-xs font-semibold text-orange-700">
-                        {item.variant}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Product Details */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm sm:text-base font-bold text-slate-900 truncate">{item.name}</h3>
-                        <p className="mt-0.5 text-xs sm:text-sm text-slate-600">{item.variant ?? "Standard"}</p>
-                      </div>
-                      
-                      {/* Remove Button - Mobile: Top Right */}
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeItem(item.id);
-                        }}
-                        className="flex-shrink-0 p-1.5 sm:hidden text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition touch-manipulation"
-                        title="Remove item"
-                        aria-label={`Remove ${item.name} from cart`}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                    
-                    {/* Stock Information */}
-                    {item.stock_quantity !== undefined && (
-                      <div className="mt-1">
-                        {item.stock_quantity > 0 ? (
-                          <p className={`text-[10px] sm:text-xs font-medium ${
-                            item.stock_quantity <= 5 
-                              ? 'text-orange-600' 
-                              : 'text-green-600'
-                          }`}>
-                            {item.stock_quantity <= 5 
-                              ? `Only ${item.stock_quantity} left!` 
-                              : `${item.stock_quantity} available`
-                            }
-                          </p>
-                        ) : (
-                          <p className="text-[10px] sm:text-xs font-medium text-red-600">Out of stock</p>
-                        )}
-                      </div>
-                    )}
-                    
-                    {/* Price - Mobile only */}
-                    <p className="mt-2 text-base sm:hidden font-bold text-slate-950">GHS {(item.price * item.quantity).toFixed(2)}</p>
-                  </div>
+            <div key={item.id} className="grid md:grid-cols-[2fr,1fr,1fr,1fr,auto] gap-4 items-center py-4 border-b border-slate-100">
+              {/* Product Info */}
+              <div className="flex gap-4 items-start">
+                <div className="relative flex-shrink-0">
+                  <img 
+                    src={item.image} 
+                    alt={item.name} 
+                    className="h-16 w-16 md:h-20 md:w-20 rounded-lg object-cover"
+                  />
                 </div>
-
-                {/* Bottom row: Quantity and Price - Desktop version */}
-                <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6">
-                  {/* Quantity Controls */}
-                  <div className="flex items-center gap-2 rounded-lg border border-slate-300 bg-slate-50 p-1">
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        updateQuantity(item.id, Math.max(item.quantity - 1, 1));
-                      }}
-                      className="p-1.5 sm:p-2 hover:bg-white rounded-md transition text-slate-600 hover:text-slate-900 touch-manipulation active:scale-95"
-                      aria-label="Decrease quantity"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </button>
-                    <span className="w-8 sm:w-10 text-center text-sm font-semibold text-slate-900">{item.quantity}</span>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        updateQuantity(item.id, item.quantity + 1);
-                      }}
-                      className="p-1.5 sm:p-2 hover:bg-white rounded-md transition text-slate-600 hover:text-slate-900 touch-manipulation active:scale-95"
-                      aria-label="Increase quantity"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </button>
-                  </div>
-
-                  {/* Price - Desktop */}
-                  <p className="hidden sm:block text-lg font-bold text-slate-950 min-w-[100px] text-right">
-                    GHS {(item.price * item.quantity).toFixed(2)}
-                  </p>
-
-                  {/* Remove Button - Desktop only */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm md:text-base font-semibold text-slate-900 line-clamp-2">{item.name}</h3>
+                  {item.variant && (
+                    <p className="mt-1 text-xs text-slate-600">Colour: {item.variant}</p>
+                  )}
+                  {/* Mobile: Show Remove link */}
                   <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeItem(item.id);
-                    }}
-                    className="hidden sm:flex flex-shrink-0 p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                    title="Remove item"
-                    aria-label={`Remove ${item.name} from cart`}
+                    onClick={() => removeItem(item.id)}
+                    className="md:hidden mt-2 text-xs text-red-500 hover:text-red-700 font-medium"
                   >
-                    <Trash2 className="h-5 w-5" />
+                    Remove
                   </button>
                 </div>
               </div>
+
+              {/* Price */}
+              <div className="text-sm md:text-base font-semibold text-slate-900 md:text-center">
+                <span className="md:hidden text-slate-600 mr-2">Price:</span>
+                GHS {item.price.toFixed(2)}
+              </div>
+
+              {/* Quantity Controls */}
+              <div className="flex items-center justify-start md:justify-center">
+                <div className="flex items-center gap-1 border border-slate-300 rounded-md bg-slate-50">
+                  <button 
+                    onClick={() => updateQuantity(item.id, Math.max(item.quantity - 1, 1))}
+                    className="p-2 hover:bg-slate-100 transition text-slate-600"
+                    aria-label="Decrease quantity"
+                  >
+                    <Minus className="h-3 w-3" />
+                  </button>
+                  <span className="w-10 text-center text-sm font-medium text-slate-900">{item.quantity}</span>
+                  <button 
+                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                    className="p-2 hover:bg-slate-100 transition text-slate-600"
+                    aria-label="Increase quantity"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Subtotal */}
+              <div className="text-sm md:text-base font-bold text-slate-900 md:text-center">
+                <span className="md:hidden text-slate-600 mr-2">Subtotal:</span>
+                GHS {(item.price * item.quantity).toFixed(2)}
+              </div>
+
+              {/* Remove Button - Desktop */}
+              <button 
+                onClick={() => removeItem(item.id)}
+                className="hidden md:flex items-center justify-center w-10 h-10 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                title="Remove item"
+                aria-label={`Remove ${item.name} from cart`}
+              >
+                <Trash2 className="h-5 w-5" />
+              </button>
             </div>
           ))}
 
-          {/* Continue Shopping */}
-          <Link 
-            href="/shop"
-            className="mt-6 inline-flex items-center gap-2 text-orange-600 hover:text-orange-700 font-semibold transition"
-          >
-            ← Continue Shopping
-          </Link>
+          {/* Continue Shopping & Empty Cart Links */}
+          <div className="flex items-center justify-between pt-4">
+            <Link 
+              href="/shop"
+              className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium transition"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Continue Shopping
+            </Link>
+            <button
+              onClick={() => {
+                if (window.confirm('Are you sure you want to empty your cart?')) {
+                  items.forEach(item => removeItem(item.id));
+                }
+              }}
+              className="text-sm text-red-500 hover:text-red-700 font-medium transition"
+            >
+              Empty Cart
+            </button>
+          </div>
 
           {/* Stock Warning Message */}
           {error && (
@@ -238,63 +256,99 @@ export default function CartPage() {
         </div>
 
         {/* Order Summary Sidebar */}
-        <aside className="h-fit rounded-xl border border-slate-200 bg-white p-6 shadow-md sticky top-4">
+        <aside className="h-fit rounded-lg border border-slate-200 bg-white shadow-sm">
           {/* Header */}
-          <h2 className="text-lg font-bold text-slate-950">Order Summary</h2>
+          <div className="border-b border-slate-200 px-6 py-4">
+            <h2 className="text-xl font-bold text-slate-950">Order Summary</h2>
+          </div>
           
           {/* Breakdown */}
-          <div className="mt-6 space-y-4 border-b border-slate-200 pb-6">
+          <div className="px-6 py-5 space-y-4">
             <div className="flex justify-between text-sm">
-              <span className="text-slate-600">Subtotal</span>
+              <span className="text-slate-600">Subtotal ({items.length} item{items.length !== 1 ? 's' : ''})</span>
               <span className="font-semibold text-slate-900">GHS {subtotal.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-600">Shipping</span>
-              <span className="font-semibold text-slate-900">GHS {shippingEstimate.toFixed(2)}</span>
+            
+            {/* Shipping with Region Selector */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">Shipping</span>
+                <span className="font-semibold text-slate-900">
+                  {selectedRegion ? `GHS ${shippingFee.toFixed(2)}` : 'Select region below'}
+                </span>
+              </div>
+              
+              {/* Region Dropdown */}
+              <div className="relative">
+                <label htmlFor="region-select" className="sr-only">Deliver to which region?</label>
+                <select
+                  id="region-select"
+                  value={selectedRegion}
+                  onChange={handleRegionChange}
+                  className="w-full appearance-none rounded-lg border border-slate-300 bg-white px-4 py-2.5 pr-10 text-sm text-slate-700 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition cursor-pointer"
+                >
+                  {GHANA_REGIONS.map((region) => (
+                    <option key={region.value} value={region.value}>
+                      {region.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
+            
+            {/* Discount */}
             <div className="flex justify-between text-sm">
-              <span className="text-slate-600">Tax</span>
-              <span className="font-semibold text-slate-900">Calculated at checkout</span>
+              <span className="text-slate-600">Discount</span>
+              <span className="font-semibold text-green-600">-GHS {discountAmount.toFixed(2)}</span>
             </div>
           </div>
 
           {/* Total */}
-          <div className="mt-6 space-y-2">
-            <div className="flex justify-between">
-              <span className="font-semibold text-slate-950">Total</span>
-              <span className="text-2xl font-bold text-orange-600">GHS {(subtotal + shippingEstimate).toFixed(2)}</span>
+          <div className="border-t border-slate-200 px-6 py-4">
+            <div className="flex justify-between items-center">
+              <span className="text-base font-semibold text-slate-950">Total (excl. shipping)</span>
+              <span className="text-2xl font-bold text-slate-950">GHS {(subtotal - discountAmount).toFixed(2)}</span>
             </div>
-            <p className="text-xs text-slate-500">Excluding tax and final adjustments</p>
+          </div>
+
+          {/* Welcome Offer Banner */}
+          <div className="mx-6 mb-5 rounded-lg bg-green-50 border border-green-200 p-3 flex items-start gap-3">
+            <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-green-900">Welcome Offer — 5% Off First Order</p>
+              <p className="text-xs text-green-700 mt-0.5">GHS {discountAmount.toFixed(2)} saved</p>
+            </div>
+            <button className="ml-auto text-green-700 hover:text-green-900">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Payment Methods */}
+          <div className="px-6 pb-5">
+            <p className="text-xs text-slate-600 mb-2">Accepted payments:</p>
+            <div className="flex flex-wrap gap-2">
+              <span className="px-3 py-1.5 text-xs font-medium bg-slate-100 text-slate-700 rounded-md border border-slate-200">MTN MoMo</span>
+              <span className="px-3 py-1.5 text-xs font-medium bg-slate-100 text-slate-700 rounded-md border border-slate-200">Telecel Cash</span>
+              <span className="px-3 py-1.5 text-xs font-medium bg-slate-100 text-slate-700 rounded-md border border-slate-200">AirtelTigo</span>
+              <span className="px-3 py-1.5 text-xs font-medium bg-slate-100 text-slate-700 rounded-md border border-slate-200">Paystack</span>
+              <span className="px-3 py-1.5 text-xs font-medium bg-slate-100 text-slate-700 rounded-md border border-slate-200">Visa/MC</span>
+            </div>
           </div>
 
           {/* Checkout Button */}
-          <button
-            onClick={startCheckout}
-            className="w-full mt-6 rounded-lg bg-gradient-to-r from-orange-600 to-red-600 px-6 py-3.5 text-sm font-bold text-white transition hover:from-orange-700 hover:to-red-700 shadow-md hover:shadow-lg active:scale-95"
-          >
-            Proceed to Checkout
-          </button>
-
-          {/* Trust Badges */}
-          <div className="mt-6 space-y-3 border-t border-slate-200 pt-6">
-            <div className="flex items-center gap-3 text-xs">
-              <Truck className="h-4 w-4 text-blue-600 flex-shrink-0" />
-              <span className="text-slate-700"><span className="font-semibold">Free Delivery</span> on orders over GHS 500</span>
-            </div>
-            <div className="flex items-center gap-3 text-xs">
-              <Shield className="h-4 w-4 text-green-600 flex-shrink-0" />
-              <span className="text-slate-700"><span className="font-semibold">Secure Checkout</span> with Paystack</span>
-            </div>
-            <div className="flex items-center gap-3 text-xs">
-              <RotateCcw className="h-4 w-4 text-purple-600 flex-shrink-0" />
-              <span className="text-slate-700"><span className="font-semibold">30-Day Returns</span> on all items</span>
-            </div>
-          </div>
-
-          {/* Shipping Info */}
-          <div className="mt-6 rounded-lg bg-blue-50 border border-blue-200 p-3 text-xs text-blue-900">
-            <p className="font-semibold mb-1">Shipping Information</p>
-            <p>Delivery fees calculated at checkout based on your location and selected service.</p>
+          <div className="px-6 pb-6">
+            <button
+              onClick={startCheckout}
+              className="w-full flex items-center justify-center gap-2 rounded-lg bg-orange-600 px-6 py-3.5 text-base font-bold text-white transition hover:bg-orange-700 shadow-md hover:shadow-lg active:scale-[0.98]"
+            >
+              <Shield className="h-5 w-5" />
+              Proceed to Checkout
+            </button>
+            <p className="mt-3 text-center text-xs text-slate-500 flex items-center justify-center gap-1">
+              <Shield className="h-3 w-3" />
+              Secure checkout powered by Paystack
+            </p>
           </div>
         </aside>
       </div>
