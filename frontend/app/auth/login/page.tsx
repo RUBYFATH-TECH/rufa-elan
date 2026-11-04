@@ -101,7 +101,7 @@ export default function LoginPage() {
   };
 
   return (
-    <section className="min-h-screen bg-white flex items-center justify-center px-4 py-12">
+    <section className="min-h-screen bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-3xl shadow-2xl p-8 sm:p-10">
           {/* Logo and Company Name */}
