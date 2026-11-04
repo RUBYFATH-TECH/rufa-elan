@@ -645,12 +645,6 @@ export default function CheckoutPage() {
                 <span>{regionLabel}</span>
               </div>
             )}
-            {deliveryOption === "delivery" && calculatedDistance && (
-              <div className="flex justify-between text-xs text-slate-500">
-                <span>Distance</span>
-                <span>{calculatedDistance.toFixed(1)} km</span>
-              </div>
-            )}
           </div>
 
           {/* Total */}
