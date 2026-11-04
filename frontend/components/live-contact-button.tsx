@@ -35,7 +35,7 @@ export default function LiveContactButton({
   };
 
   return (
-    <div ref={dropdownRef} className="fixed bottom-20 right-4 z-50 md:bottom-6 md:right-6">
+    <div ref={dropdownRef} className="fixed bottom-20 right-4 z-50 md:bottom-6 md:right-6 group">
       {/* Dropdown Menu */}
       {isOpen && (
         <div className="absolute bottom-full right-0 mb-2 w-56 rounded-2xl border border-slate-200 bg-white shadow-lg animate-in slide-in-from-bottom-2 fade-in-0">
@@ -75,19 +75,18 @@ export default function LiveContactButton({
         </div>
       )}
 
-      {/* Main Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
+      {/* Main Button - Direct WhatsApp Link */}
+      <a
+        href={`https://wa.me/${whatsappNumber.replace(/\D/g, '')}?text=Hi%2C%20I%20need%20help%20with%20my%20order`}
+        target="_blank"
+        rel="noreferrer"
         className="inline-flex items-center gap-2 rounded-full bg-green-600 px-3 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-green-700 hover:shadow-xl active:scale-95 md:px-4 md:py-3"
-        aria-label="Live Contact"
-        aria-expanded={isOpen}
+        aria-label="Chat on WhatsApp"
+        title="Chat with us on WhatsApp"
       >
         <MessageSquare className="h-4 w-4" />
         <span>Live Contact</span>
-        <ChevronUp 
-          className={`h-4 w-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} 
-        />
-      </button>
+      </a>
     </div>
   );
 }
