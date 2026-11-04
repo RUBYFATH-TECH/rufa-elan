@@ -19,7 +19,6 @@ export default function CartPage() {
   const [showAccountPrompt, setShowAccountPrompt] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState<GhanaRegionValue>('');
   const [shippingFee, setShippingFee] = useState(0);
-  const [deliveryOption, setDeliveryOption] = useState<"delivery" | "pickup">("delivery");
   
   // Calculate shipping based on region
   const calculateShipping = (region: GhanaRegionValue) => {
@@ -54,15 +53,6 @@ export default function CartPage() {
     setSelectedRegion(region);
     const fee = calculateShipping(region);
     setShippingFee(fee);
-  };
-  
-  // Handle delivery option change
-  const handleDeliveryOptionChange = (option: "delivery" | "pickup") => {
-    setDeliveryOption(option);
-    if (option === "pickup") {
-      setShippingFee(0);
-      setSelectedRegion('');
-    }
   };
   
   // Discount calculation (5% welcome offer)
@@ -278,12 +268,32 @@ export default function CartPage() {
               <span className="font-semibold text-slate-900">GHS {subtotal.toFixed(2)}</span>
             </div>
             
-            {/* Shipping */}
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-600">Shipping</span>
-              <span className="font-semibold text-slate-900">
-                {deliveryOption === "pickup" ? "Free" : selectedRegion ? `GHS ${shippingFee.toFixed(2)}` : 'Select below'}
-              </span>
+            {/* Shipping with Region Selector */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">Shipping</span>
+                <span className="font-semibold text-slate-900">
+                  {selectedRegion ? `GHS ${shippingFee.toFixed(2)}` : 'Select region below'}
+                </span>
+              </div>
+              
+              {/* Region Dropdown */}
+              <div className="relative">
+                <label htmlFor="region-select" className="sr-only">Deliver to which region?</label>
+                <select
+                  id="region-select"
+                  value={selectedRegion}
+                  onChange={handleRegionChange}
+                  className="w-full appearance-none rounded-lg border border-slate-300 bg-white px-4 py-2.5 pr-10 text-sm text-slate-700 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition cursor-pointer"
+                >
+                  {GHANA_REGIONS.map((region) => (
+                    <option key={region.value} value={region.value}>
+                      {region.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+              </div>
             </div>
             
             {/* Discount */}
@@ -293,90 +303,12 @@ export default function CartPage() {
             </div>
           </div>
 
-          {/* Delivery Options */}
-          <div className="px-6 py-5 space-y-3 border-b border-slate-200">
-            <p className="text-xs text-slate-600 mb-3">Choose delivery or pick it up yourself. No need to enter a delivery address for in-store pickup.</p>
-            
-            {/* Deliver to my address */}
-            <label 
-              htmlFor="delivery-option"
-              className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition ${
-                deliveryOption === "delivery" 
-                  ? 'border-blue-500 bg-blue-50' 
-                  : 'border-slate-200 bg-white hover:border-slate-300'
-              }`}
-            >
-              <input
-                type="radio"
-                id="delivery-option"
-                name="deliveryOption"
-                value="delivery"
-                checked={deliveryOption === "delivery"}
-                onChange={() => handleDeliveryOptionChange("delivery")}
-                className="mt-0.5 h-4 w-4 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              />
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-slate-900">Deliver to my address</p>
-                <p className="text-xs text-slate-600 mt-1">We'll ship it to a delivery address you provide.</p>
-                
-                {/* Region Dropdown - Only show when delivery is selected */}
-                {deliveryOption === "delivery" && (
-                  <div className="relative mt-3">
-                    <label htmlFor="region-select" className="block text-xs font-medium text-slate-700 mb-1.5">
-                      Deliver to which region?
-                    </label>
-                    <select
-                      id="region-select"
-                      value={selectedRegion}
-                      onChange={handleRegionChange}
-                      className="w-full appearance-none rounded-lg border border-slate-300 bg-white px-3 py-2 pr-10 text-sm text-slate-700 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition cursor-pointer"
-                    >
-                      {GHANA_REGIONS.map((region) => (
-                        <option key={region.value} value={region.value}>
-                          {region.label}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 bottom-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
-                  </div>
-                )}
-              </div>
-            </label>
-
-            {/* Pick up in store */}
-            <label 
-              htmlFor="pickup-option"
-              className={`flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition ${
-                deliveryOption === "pickup" 
-                  ? 'border-blue-500 bg-blue-50' 
-                  : 'border-slate-200 bg-white hover:border-slate-300'
-              }`}
-            >
-              <input
-                type="radio"
-                id="pickup-option"
-                name="deliveryOption"
-                value="pickup"
-                checked={deliveryOption === "pickup"}
-                onChange={() => handleDeliveryOptionChange("pickup")}
-                className="mt-0.5 h-4 w-4 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              />
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold text-slate-900">Pick up in store</p>
-                  <span className="text-xs font-semibold text-green-600">(Free)</span>
-                </div>
-                <p className="text-xs text-slate-600 mt-1">KNUST Library Mall, Kumasi, Ashanti Region, Ghana</p>
-              </div>
-            </label>
-          </div>
-
           {/* Total */}
           <div className="border-b border-slate-200 px-6 py-4">
             <div className="flex justify-between items-center">
               <span className="text-base font-semibold text-slate-950">Total (excl. shipping)</span>
               <span className="text-2xl font-bold text-slate-950">
-                GHS {(subtotal - discountAmount + (deliveryOption === "pickup" ? 0 : shippingFee)).toFixed(2)}
+                GHS {(subtotal - discountAmount + shippingFee).toFixed(2)}
               </span>
             </div>
           </div>
