@@ -173,24 +173,24 @@ export default function AccountLayout({ children, requireAuth = true }: AccountL
   return (
     <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       {/* Fixed Header */}
-      <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-30">
+      <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-30 overflow-visible">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-2 lg:py-4">
+          <div className="flex items-center justify-between py-3 lg:py-4">
             <div className="flex items-center">
               <Link href="/" className="flex items-center">
                 <img src="/images/logo.png" alt="RUFA ELAN" className="mr-2 h-7 w-7 rounded-full lg:mr-3 lg:h-8 lg:w-8" />
                 <span className="text-sm font-semibold text-gray-900 lg:text-lg">RUFA ELAN</span>
               </Link>
             </div>
-            <div className="flex items-center gap-3 lg:hidden">
+            <div className="flex items-center gap-2 lg:hidden pr-1">
               <Link
                 href="/account/notifications"
-                className="relative rounded-full border border-slate-200 p-2 text-slate-600 transition hover:text-slate-900"
+                className="relative rounded-full border border-slate-200 p-1.5 text-slate-600 transition hover:text-slate-900"
                 aria-label="Notifications"
               >
-                <Bell className="h-4 w-4" />
+                <Bell className="h-5 w-5" />
                 {mounted && notificationCount > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[10px] font-semibold text-white">
+                  <span className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[9px] font-bold text-white ring-2 ring-white">
                     {notificationCount > 9 ? '9+' : notificationCount}
                   </span>
                 )}
@@ -224,7 +224,7 @@ export default function AccountLayout({ children, requireAuth = true }: AccountL
               >
                 <Bell className="h-5 w-5" />
                 {mounted && notificationCount > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">
+                  <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white ring-2 ring-white">
                     {notificationCount > 9 ? '9+' : notificationCount}
                   </span>
                 )}
@@ -232,7 +232,7 @@ export default function AccountLayout({ children, requireAuth = true }: AccountL
               <Link href="/cart" className="relative rounded-full border border-slate-200 p-2 text-slate-600 transition hover:text-slate-900" aria-label="Shopping cart">
                 <ShoppingBag className="h-5 w-5" />
                 {mounted && cartCount > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-700 text-xs font-semibold text-white">
+                  <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-brand-700 text-xs font-bold text-white ring-2 ring-white">
                     {cartCount}
                   </span>
                 )}
