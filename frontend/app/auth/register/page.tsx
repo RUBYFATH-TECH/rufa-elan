@@ -6,7 +6,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Check, ShieldCheck, Sparkles } from "lucide-react";
 import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
 import { GoogleOAuthButton } from "@/components/google-oauth-button";
 
@@ -109,31 +108,159 @@ export default function RegisterPage() {
     }
   };
 
-  const inputClass = "mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-[#e65100] focus:bg-white focus:ring-2 focus:ring-[#e65100]/10";
+  const inputClass = "w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20";
   return (
-    <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
-      <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-soft lg:grid lg:grid-cols-[0.85fr_1.15fr]">
-        <aside className="hidden bg-[#e65100] p-12 text-white lg:block">
-          <img src="/images/logo.png" alt="RUFA ELAN" className="h-12 w-12 rounded-full" />
-          <p className="mt-16 text-xs font-semibold uppercase tracking-[0.28em] text-white/75">Join RUFA ELAN</p>
-          <h1 className="mt-4 text-4xl font-bold leading-tight">Make every checkout effortless.</h1>
-          <p className="mt-5 max-w-sm text-sm leading-6 text-white/85">Create your free account to save your details, track orders, and pick up where you left off.</p>
-          <div className="mt-12 space-y-4 text-sm text-white/90"><p className="flex items-center gap-3"><Check className="h-5 w-5" /> Faster checkout</p><p className="flex items-center gap-3"><Check className="h-5 w-5" /> Easy delivery tracking</p><p className="flex items-center gap-3"><ShieldCheck className="h-5 w-5" /> Your account stays secure</p></div>
-        </aside>
-        <div className="mx-auto w-full max-w-xl p-7 sm:p-10 lg:p-12">
-          <div className="flex items-center gap-3 lg:hidden"><img src="/images/logo.png" alt="RUFA ELAN" className="h-10 w-10 rounded-full" /><span className="text-sm font-bold tracking-[0.14em] text-slate-950">RUFA ELAN</span></div>
-          <p className="mt-8 text-xs font-semibold uppercase tracking-[0.22em] text-[#e65100] lg:mt-0">Create account</p>
-          <h1 className="mt-3 text-3xl font-bold text-slate-950">Start shopping smarter</h1>
-          <p className="mt-2 text-sm leading-6 text-slate-600">It only takes a minute. Your account is free and ready for your next find.</p>
-          <div className="mt-7"><GoogleOAuthButton onClick={signUpWithGoogle} disabled={isLoading} label="Continue with Google" /><div className="relative my-7 text-center text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400"><span className="absolute left-0 top-1/2 h-px w-full bg-slate-200" /><span className="relative inline-block bg-white px-3">or use email</span></div></div>
+    <section className="min-h-screen bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-lg">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 sm:p-10">
+          {/* Logo and Company Name */}
+          <div className="text-center mb-8">
+            <Link href="/" className="inline-block">
+              <div className="flex justify-center mb-4">
+                <img src="/images/logo.png" alt="RUFA ELAN" className="h-16 w-16 rounded-lg hover:opacity-90 transition-opacity" />
+              </div>
+              <h2 className="text-xl font-bold text-slate-900">RUFA ELAN</h2>
+              <p className="text-sm text-blue-600 font-medium mt-1">LIMITED</p>
+            </Link>
+          </div>
+
+          {/* Welcome Text */}
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-slate-900 mb-2">Create your account</h1>
+            <p className="text-sm text-slate-600">Start shopping smarter today</p>
+          </div>
+
+          {/* Google Sign Up */}
+          <div className="mb-6">
+            <GoogleOAuthButton onClick={signUpWithGoogle} disabled={isLoading} label="Continue with Google" />
+          </div>
+
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200"></div>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-4 text-slate-500 font-medium">OR</span>
+            </div>
+          </div>
+
+          {/* Registration Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2"><label className="block text-sm font-medium text-slate-800">Full name<input autoComplete="name" placeholder="Your full name" {...register("name")} className={inputClass} />{errors.name ? <p className="mt-2 text-xs text-red-600">{errors.name.message}</p> : null}</label><label className="block text-sm font-medium text-slate-800">Phone number<input autoComplete="tel" placeholder="e.g. 024 000 0000" {...register("phone")} className={inputClass} />{errors.phone ? <p className="mt-2 text-xs text-red-600">{errors.phone.message}</p> : null}</label></div>
-            <label className="block text-sm font-medium text-slate-800">Email<input type="email" autoComplete="email" placeholder="you@example.com" {...register("email")} className={inputClass} />{errors.email ? <p className="mt-2 text-xs text-red-600">{errors.email.message}</p> : null}</label>
-            <div className="grid gap-4 sm:grid-cols-2"><label className="block text-sm font-medium text-slate-800">Password<input type="password" autoComplete="new-password" placeholder="At least 6 characters" {...register("password")} className={inputClass} />{errors.password ? <p className="mt-2 text-xs text-red-600">{errors.password.message}</p> : null}</label><label className="block text-sm font-medium text-slate-800">Confirm password<input type="password" autoComplete="new-password" placeholder="Re-enter password" {...register("confirmPassword")} className={inputClass} />{errors.confirmPassword ? <p className="mt-2 text-xs text-red-600">{errors.confirmPassword.message}</p> : null}</label></div>
-            <button type="submit" disabled={isLoading} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-[#e65100] px-6 py-3.5 text-sm font-bold text-white transition hover:bg-[#d84315] disabled:cursor-not-allowed disabled:opacity-50"><Sparkles className="h-4 w-4" />{isLoading ? "Creating account..." : "Create account"}</button>
+            {/* Name and Phone in a row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-2">
+                  Full Name
+                </label>
+                <input
+                  id="name"
+                  autoComplete="name"
+                  placeholder="Your full name"
+                  {...register("name")}
+                  className={inputClass}
+                />
+                {errors.name && (
+                  <p className="mt-2 text-xs text-red-600">{errors.name.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="phone" className="block text-sm font-medium text-slate-700 mb-2">
+                  Phone Number
+                </label>
+                <input
+                  id="phone"
+                  autoComplete="tel"
+                  placeholder="024 000 0000"
+                  {...register("phone")}
+                  className={inputClass}
+                />
+                {errors.phone && (
+                  <p className="mt-2 text-xs text-red-600">{errors.phone.message}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Email */}
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
+                Email Address
+              </label>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                {...register("email")}
+                className={inputClass}
+              />
+              {errors.email && (
+                <p className="mt-2 text-xs text-red-600">{errors.email.message}</p>
+              )}
+            </div>
+
+            {/* Password and Confirm Password in a row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder="Min. 6 characters"
+                  {...register("password")}
+                  className={inputClass}
+                />
+                {errors.password && (
+                  <p className="mt-2 text-xs text-red-600">{errors.password.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 mb-2">
+                  Confirm Password
+                </label>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder="Re-enter password"
+                  {...register("confirmPassword")}
+                  className={inputClass}
+                />
+                {errors.confirmPassword && (
+                  <p className="mt-2 text-xs text-red-600">{errors.confirmPassword.message}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Create Account Button */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full rounded-lg bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 shadow-md hover:shadow-lg mt-6"
+            >
+              {isLoading ? "Creating account..." : "Create account"}
+            </button>
           </form>
-          {serverMessage ? <p className="mt-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{serverMessage}</p> : null}
-          <p className="mt-7 border-t border-slate-100 pt-6 text-center text-sm text-slate-600">Already have an account? <Link href="/auth/login" className="font-bold text-[#e65100] hover:text-[#d84315]">Sign in</Link></p>
+
+          {/* Success/Error Message */}
+          {serverMessage && (
+            <div className="mt-5 rounded-lg border border-green-100 bg-green-50 px-4 py-3 text-sm text-green-700">
+              {serverMessage}
+            </div>
+          )}
+
+          {/* Sign In Link */}
+          <p className="mt-8 text-center text-sm text-slate-600">
+            Already have an account?{" "}
+            <Link href="/auth/login" className="font-semibold text-blue-600 hover:text-blue-700">
+              Sign in
+            </Link>
+          </p>
         </div>
       </div>
     </section>
