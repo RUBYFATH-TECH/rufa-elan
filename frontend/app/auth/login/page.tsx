@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { LockKeyhole, PackageCheck, ShieldCheck } from "lucide-react";
 import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
 import { isKnownAdminEmail } from "@/lib/admin-common";
 import { GoogleOAuthButton } from "@/components/google-oauth-button";
@@ -102,34 +101,119 @@ export default function LoginPage() {
   };
 
   return (
-    <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
-      <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-soft lg:grid lg:grid-cols-[0.85fr_1.15fr]">
-        <aside className="hidden bg-[#e65100] p-12 text-white lg:block">
-          <img src="/images/logo.png" alt="RUFA ELAN" className="h-12 w-12 rounded-full" />
-          <p className="mt-16 text-xs font-semibold uppercase tracking-[0.28em] text-white/75">Welcome back</p>
-          <h1 className="mt-4 text-4xl font-bold leading-tight">Your favourites are waiting.</h1>
-          <p className="mt-5 max-w-sm text-sm leading-6 text-white/85">Sign in to manage your orders and enjoy a faster checkout.</p>
-          <div className="mt-12 space-y-4 text-sm text-white/90">
-            <p className="flex items-center gap-3"><PackageCheck className="h-5 w-5" /> Track every delivery</p>
-            <p className="flex items-center gap-3"><ShieldCheck className="h-5 w-5" /> Secure account access</p>
+    <section className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 sm:p-10">
+          {/* Logo and Company Name */}
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <img src="/images/logo.png" alt="Avicenna Commerce" className="h-16 w-16 rounded-lg" />
+            </div>
+            <h2 className="text-xl font-bold text-slate-900">Avicenna Commerce</h2>
+            <p className="text-sm text-blue-600 font-medium mt-1">LIMITED</p>
           </div>
-        </aside>
-        <div className="mx-auto w-full max-w-xl p-7 sm:p-10 lg:p-12">
-          <div className="flex items-center gap-3 lg:hidden"><img src="/images/logo.png" alt="RUFA ELAN" className="h-10 w-10 rounded-full" /><span className="text-sm font-bold tracking-[0.14em] text-slate-950">RUFA ELAN</span></div>
-          <p className="mt-8 text-xs font-semibold uppercase tracking-[0.22em] text-[#e65100] lg:mt-0">Sign in</p>
-          <h1 className="mt-3 text-3xl font-bold text-slate-950">Welcome back</h1>
-          <p className="mt-2 text-sm leading-6 text-slate-600">Enter your details to view your orders, saved items, and delivery updates.</p>
-          <div className="mt-7">
+
+          {/* Welcome Text */}
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-slate-900 mb-2">Welcome back</h1>
+            <p className="text-sm text-slate-600">Sign in to continue shopping</p>
+          </div>
+
+          {/* Google Sign In */}
+          <div className="mb-6">
             <GoogleOAuthButton onClick={signInWithGoogle} disabled={isLoading} />
-            <div className="relative my-7 text-center text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400"><span className="absolute left-0 top-1/2 h-px w-full bg-slate-200" /><span className="relative inline-block bg-white px-3">or continue with email</span></div>
           </div>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <label className="block text-sm font-medium text-slate-800">Email<input type="email" autoComplete="email" placeholder="you@example.com" {...register("email")} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-[#e65100] focus:bg-white focus:ring-2 focus:ring-[#e65100]/10" />{errors.email ? <p className="mt-2 text-xs text-red-600">{errors.email.message}</p> : null}</label>
-            <label className="block text-sm font-medium text-slate-800"><span className="flex items-center justify-between">Password <Link href="/auth/forgot-password" className="font-semibold text-[#e65100] hover:text-[#d84315]">Forgot password?</Link></span><input type="password" autoComplete="current-password" placeholder="Enter your password" {...register("password")} className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-[#e65100] focus:bg-white focus:ring-2 focus:ring-[#e65100]/10" />{errors.password ? <p className="mt-2 text-xs text-red-600">{errors.password.message}</p> : null}</label>
-            <button type="submit" disabled={isLoading} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-[#e65100] px-6 py-3.5 text-sm font-bold text-white transition hover:bg-[#d84315] disabled:cursor-not-allowed disabled:opacity-50"><LockKeyhole className="h-4 w-4" />{isLoading ? "Signing in..." : "Sign in"}</button>
+
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200"></div>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-4 text-slate-500 font-medium">OR</span>
+            </div>
+          </div>
+
+          {/* Email and Password Form */}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
+                Email Address
+              </label>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                {...register("email")}
+                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+              />
+              {errors.email && (
+                <p className="mt-2 text-xs text-red-600">{errors.email.message}</p>
+              )}
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+                  Password
+                </label>
+                <Link
+                  href="/auth/forgot-password"
+                  className="text-xs font-medium text-blue-600 hover:text-blue-700"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+              <input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                placeholder="••••••••"
+                {...register("password")}
+                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+              />
+              {errors.password && (
+                <p className="mt-2 text-xs text-red-600">{errors.password.message}</p>
+              )}
+            </div>
+
+            {/* Keep me signed in */}
+            <div className="flex items-center">
+              <input
+                id="remember"
+                type="checkbox"
+                className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500/20"
+              />
+              <label htmlFor="remember" className="ml-2 text-sm text-slate-700">
+                Keep me signed in
+              </label>
+            </div>
+
+            {/* Sign In Button */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full rounded-lg bg-blue-600 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 shadow-md hover:shadow-lg"
+            >
+              {isLoading ? "Signing in..." : "Sign in"}
+            </button>
           </form>
-          {serverMessage ? <p className="mt-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{serverMessage}</p> : null}
-          <p className="mt-7 border-t border-slate-100 pt-6 text-center text-sm text-slate-600">Don&apos;t have an account? <Link href="/auth/register" className="font-bold text-[#e65100] hover:text-[#d84315]">Create one</Link></p>
+
+          {/* Error Message */}
+          {serverMessage && (
+            <div className="mt-5 rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {serverMessage}
+            </div>
+          )}
+
+          {/* Sign Up Link */}
+          <p className="mt-8 text-center text-sm text-slate-600">
+            Don&apos;t have an account?{" "}
+            <Link href="/auth/register" className="font-semibold text-blue-600 hover:text-blue-700">
+              Sign up
+            </Link>
+          </p>
         </div>
       </div>
     </section>
