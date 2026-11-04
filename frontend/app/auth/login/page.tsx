@@ -106,11 +106,13 @@ export default function LoginPage() {
         <div className="bg-white rounded-3xl shadow-2xl p-8 sm:p-10">
           {/* Logo and Company Name */}
           <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
-              <img src="/images/logo.png" alt="Avicenna Commerce" className="h-16 w-16 rounded-lg" />
-            </div>
-            <h2 className="text-xl font-bold text-slate-900">Avicenna Commerce</h2>
-            <p className="text-sm text-blue-600 font-medium mt-1">LIMITED</p>
+            <Link href="/" className="inline-block">
+              <div className="flex justify-center mb-4">
+                <img src="/images/logo.png" alt="RUFA ELAN" className="h-16 w-16 rounded-lg hover:opacity-90 transition-opacity" />
+              </div>
+              <h2 className="text-xl font-bold text-slate-900">RUFA ELAN</h2>
+              <p className="text-sm text-blue-600 font-medium mt-1">LIMITED</p>
+            </Link>
           </div>
 
           {/* Welcome Text */}
