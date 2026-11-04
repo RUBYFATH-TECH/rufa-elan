@@ -46,8 +46,8 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-sm">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-2.5 sm:px-6 sm:py-4 lg:px-12">
+      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-sm overflow-visible">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-2.5 sm:px-6 sm:py-4 lg:px-12 overflow-visible">
           <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
             {/* Hamburger Menu Button - Mobile Only */}
             <button 
@@ -93,7 +93,7 @@ export default function Navbar() {
               <Link href="/wishlist" className="relative rounded-lg border border-slate-200 p-2 text-slate-600 transition-all hover:text-slate-900 hover:bg-slate-50 hover:border-slate-300">
                 <Heart className="h-5 w-5" />
                 {mounted && wishlistCount > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-700 text-xs font-semibold text-white animate-in zoom-in-50">
+                  <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-brand-700 text-xs font-bold text-white ring-2 ring-white animate-in zoom-in-50">
                     {wishlistCount}
                   </span>
                 )}
@@ -101,7 +101,7 @@ export default function Navbar() {
               <Link href="/cart" className="relative rounded-lg border border-slate-200 p-2 text-slate-600 transition-all hover:text-slate-900 hover:bg-slate-50 hover:border-slate-300">
                 <ShoppingBag className="h-5 w-5" />
                 {mounted && cartCount > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-700 text-xs font-semibold text-white animate-in zoom-in-50">
+                  <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-brand-700 text-xs font-bold text-white ring-2 ring-white animate-in zoom-in-50">
                     {cartCount}
                   </span>
                 )}
@@ -116,7 +116,7 @@ export default function Navbar() {
               <Link href="/wishlist" className="relative rounded-lg border border-slate-200 p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 active:bg-slate-100 transition-all touch-manipulation">
                 <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
                 {mounted && wishlistCount > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-brand-700 text-[10px] font-semibold text-white">
+                  <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand-700 text-[9px] font-bold text-white ring-2 ring-white">
                     {wishlistCount}
                   </span>
                 )}
@@ -124,7 +124,7 @@ export default function Navbar() {
               <Link href="/cart" className="relative rounded-lg border border-slate-200 p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 active:bg-slate-100 transition-all touch-manipulation">
                 <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5" />
                 {mounted && cartCount > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-brand-700 text-[10px] font-semibold text-white">
+                  <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand-700 text-[9px] font-bold text-white ring-2 ring-white">
                     {cartCount}
                   </span>
                 )}
