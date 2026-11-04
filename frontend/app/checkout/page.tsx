@@ -572,59 +572,6 @@ export default function CheckoutPage() {
             )}
           </div>
 
-          {/* Delivery Option */}
-          <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 shadow-md">
-            <div className="flex items-center gap-2 mb-3 sm:mb-4">
-              <Truck className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 flex-shrink-0" />
-              <h2 className="text-base sm:text-lg font-bold text-slate-950">Delivery Option</h2>
-            </div>
-
-            <div className="relative">
-              <select
-                value={deliveryOption}
-                onChange={(e) => setDeliveryOption(e.target.value as "delivery" | "pickup")}
-                className="w-full appearance-none rounded-lg border border-slate-300 bg-white px-3 sm:px-4 py-2 sm:py-3 pr-8 sm:pr-10 text-sm sm:text-base text-slate-900 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-              >
-                <option value="delivery">Standard Delivery to Address</option>
-                <option value="pickup">Pickup from Kumasi Store</option>
-              </select>
-              <ChevronDown className="absolute right-3 top-3.5 h-5 w-5 text-slate-400 pointer-events-none" />
-            </div>
-
-            {/* Distance Info */}
-            {deliveryOption === "delivery" && selectedAddress && (
-              <div className="mt-3 sm:mt-4 rounded-lg bg-blue-50 border border-blue-200 p-3 sm:p-4">
-                {geocodingAddress ? (
-                  <div className="flex items-center gap-2 text-xs sm:text-sm text-blue-800">
-                    <Loader className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
-                    Calculating distance...
-                  </div>
-                ) : calculatedDistance ? (
-                  <div className="text-xs sm:text-sm text-blue-900">
-                    <p className="font-bold mb-2">📍 Distance: {calculatedDistance.toFixed(1)} km</p>
-                    <p className="text-xs text-blue-700 mb-1 sm:mb-2">From: Kumasi Abrepo Junction</p>
-                    <p className="text-xs text-blue-700 break-words">To: {selectedAddress.address}, {selectedAddress.city}</p>
-                    <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-blue-200">
-                      <p className="font-semibold text-blue-900 text-sm sm:text-base">
-                        Delivery Fee: GHS {deliveryFee.toFixed(2)}
-                      </p>
-                      <p className="text-xs text-blue-700 mt-1">
-                        = GHS {baseDeliveryFee} (base) + ({calculatedDistance.toFixed(1)} km × GHS {costPerKm}/km)
-                      </p>
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            )}
-
-            {deliveryOption === "pickup" && (
-              <div className="mt-3 sm:mt-4 rounded-lg bg-green-50 border border-green-200 p-3">
-                <p className="text-xs sm:text-sm font-semibold text-green-900">Free Pickup</p>
-                <p className="text-xs text-green-700 mt-1">Pickup from our Kumasi Abrepo Junction store</p>
-              </div>
-            )}
-          </div>
-
           {/* Continue Button */}
           {selectedAddress && (
             <button
