@@ -268,9 +268,6 @@ export default function HomePage() {
         <div className="mt-4 sm:mt-6 space-y-6 sm:space-y-8">
           <TemuDealsSection />
           
-          {/* Promotional Banners */}
-          <PromoBanners />
-          
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
@@ -377,6 +374,9 @@ export default function HomePage() {
               </div>
             </div>
           )}
+
+          {/* Promotional Banners - Moved after Recommended section */}
+          <PromoBanners />
 
           <section className="rounded-xl sm:rounded-2xl border border-rose-100 bg-gradient-to-br from-rose-50 via-white to-violet-50 px-4 py-8 sm:px-5 sm:py-10 lg:px-8 lg:py-12 text-center shadow-sm" aria-labelledby="fashion-brands-heading">
             <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.2em] sm:tracking-[0.25em] text-orange-600">{t("fashionFavourites")}</p>
