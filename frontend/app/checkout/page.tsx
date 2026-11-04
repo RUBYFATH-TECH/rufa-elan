@@ -7,6 +7,7 @@ import { useCartStore, type CartItem } from "@/store/cart-store";
 import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
 import { MapPin, Truck, ChevronDown, Plus, AlertCircle, CheckCircle, Loader } from "lucide-react";
 import addressesService, { type Address } from "@/lib/api-services/addresses";
+import { GHANA_REGIONS } from "@/lib/constants/ghana-regions";
 
 // Kumasi office coordinates for distance calculation (RUFA ELAN Shop Location)
 // Location: https://maps.app.goo.gl/EpDhubP7UfLY21uq8
@@ -39,6 +40,9 @@ export default function CheckoutPage() {
   const clearCart = useCartStore((state: any) => state.clearCart);
   const hydrateCart = useCartStore((state: any) => state.hydrate);
   const hasHydratedCart = useCartStore((state: any) => state.hasHydrated);
+  const cartShippingFee = useCartStore((state: any) => state.shippingFee) as number;
+  const cartDeliveryOption = useCartStore((state: any) => state.deliveryOption) as "delivery" | "pickup";
+  const cartShippingRegion = useCartStore((state: any) => state.shippingRegion) as string;
   const router = useRouter();
   const supabase = createClientComponentSupabaseClient();
   
@@ -58,17 +62,30 @@ export default function CheckoutPage() {
   
   const totalAmount = useMemo(() => items.reduce((sum: number, item: CartItem) => sum + item.price * item.quantity, 0), [items]);
   
-  // Calculate delivery fee based on distance
+  // Get region label
+  const regionLabel = useMemo(() => {
+    if (!cartShippingRegion) return '';
+    const region = GHANA_REGIONS.find(r => r.value === cartShippingRegion);
+    return region?.label || cartShippingRegion.replace(/_/g, ' ');
+  }, [cartShippingRegion]);
+  
+  // Use shipping fee from cart if available, otherwise calculate based on distance
   const baseDeliveryFee = 8; // 8 cedis base
   const costPerKm = 1.2; // 1.2 cedis per km
   
   const deliveryFee = useMemo(() => {
+    // First priority: Use the shipping fee from cart page
+    if (cartShippingFee > 0 && cartDeliveryOption === deliveryOption) {
+      return cartShippingFee;
+    }
+    
+    // Fallback: Calculate based on distance or pickup option
     if (deliveryOption === "pickup") return 0;
     if (calculatedDistance === null) return baseDeliveryFee;
     
     // Base fee + (distance * cost per km)
     return Math.ceil((baseDeliveryFee + (calculatedDistance * costPerKm)) * 100) / 100;
-  }, [calculatedDistance, deliveryOption]);
+  }, [calculatedDistance, deliveryOption, cartShippingFee, cartDeliveryOption]);
   
   const grandTotal = totalAmount + deliveryFee;
   const paystackPublicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY ?? "";
@@ -186,6 +203,13 @@ export default function CheckoutPage() {
       geocodeAddress(selectedAddress);
     }
   }, [selectedAddress, deliveryOption]);
+
+  // Initialize delivery option from cart store
+  useEffect(() => {
+    if (hasHydratedCart && cartDeliveryOption) {
+      setDeliveryOption(cartDeliveryOption);
+    }
+  }, [hasHydratedCart, cartDeliveryOption]);
 
 
 
@@ -615,6 +639,12 @@ export default function CheckoutPage() {
               <span className="text-slate-600">{deliveryOption === "delivery" ? "Delivery" : "Pickup"}</span>
               <span className="font-semibold text-slate-900">GHS {deliveryFee.toFixed(2)}</span>
             </div>
+            {deliveryOption === "delivery" && cartShippingRegion && (
+              <div className="flex justify-between text-xs text-slate-500">
+                <span>Region</span>
+                <span>{regionLabel}</span>
+              </div>
+            )}
             {deliveryOption === "delivery" && calculatedDistance && (
               <div className="flex justify-between text-xs text-slate-500">
                 <span>Distance</span>

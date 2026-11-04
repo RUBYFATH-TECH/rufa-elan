@@ -14,6 +14,7 @@ export default function CartPage() {
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
   const error = useCartStore((state) => state.error);
+  const setShippingInfo = useCartStore((state) => state.setShippingInfo);
   const total = useMemo(() => items.reduce((sum, item) => sum + item.price * item.quantity, 0), [items]);
   const subtotal = total;
   const [showAccountPrompt, setShowAccountPrompt] = useState(false);
@@ -54,6 +55,9 @@ export default function CartPage() {
     setSelectedRegion(region);
     const fee = calculateShipping(region);
     setShippingFee(fee);
+    
+    // Save to cart store
+    setShippingInfo(region, fee, deliveryOption);
   };
   
   // Handle delivery option change
@@ -62,6 +66,12 @@ export default function CartPage() {
     if (option === "pickup") {
       setShippingFee(0);
       setSelectedRegion('');
+      setShippingInfo('', 0, option);
+    } else {
+      // If switching back to delivery, recalculate fee if region is selected
+      const fee = selectedRegion ? calculateShipping(selectedRegion) : 0;
+      setShippingFee(fee);
+      setShippingInfo(selectedRegion, fee, option);
     }
   };
   

@@ -16,6 +16,9 @@ export type CartItem = {
 type CartState = {
   items: CartItem[];
   hasHydrated: boolean;
+  shippingRegion: string;
+  shippingFee: number;
+  deliveryOption: "delivery" | "pickup";
   addItem: (item: CartItem) => void;
   updateQuantity: (id: string, quantity: number) => void;
   removeItem: (id: string) => void;
@@ -23,15 +26,25 @@ type CartState = {
   hydrate: () => void;
   error: string | null;
   setError: (error: string | null) => void;
+  setShippingInfo: (region: string, fee: number, option: "delivery" | "pickup") => void;
 };
 
 const STORAGE_KEY = "rufa-cart";
+const SHIPPING_STORAGE_KEY = "rufa-cart-shipping";
 
 export const useCartStore = create<CartState>((set, get) => ({
   items: [],
   hasHydrated: false,
   error: null,
+  shippingRegion: '',
+  shippingFee: 0,
+  deliveryOption: 'delivery',
   setError: (error) => set({ error }),
+  setShippingInfo: (region, fee, option) => {
+    const shippingData = { region, fee, option };
+    window.localStorage.setItem(SHIPPING_STORAGE_KEY, JSON.stringify(shippingData));
+    set({ shippingRegion: region, shippingFee: fee, deliveryOption: option });
+  },
   addItem: (item) => {
     const existing = get().items.find((cartItem) => cartItem.id === item.id);
     const newQuantity = existing ? existing.quantity + item.quantity : item.quantity;
@@ -114,11 +127,27 @@ export const useCartStore = create<CartState>((set, get) => ({
   hydrate: () => {
     try {
       const stored = window.localStorage.getItem(STORAGE_KEY);
+      const shippingStored = window.localStorage.getItem(SHIPPING_STORAGE_KEY);
+      
+      let items: CartItem[] = [];
+      let shippingData = { region: '', fee: 0, option: 'delivery' as "delivery" | "pickup" };
+      
       if (stored) {
-        const items = JSON.parse(stored) as CartItem[];
-        set({ items: Array.isArray(items) ? items : [], hasHydrated: true });
-        return;
+        items = JSON.parse(stored) as CartItem[];
       }
+      
+      if (shippingStored) {
+        shippingData = JSON.parse(shippingStored);
+      }
+      
+      set({ 
+        items: Array.isArray(items) ? items : [], 
+        hasHydrated: true,
+        shippingRegion: shippingData.region,
+        shippingFee: shippingData.fee,
+        deliveryOption: shippingData.option
+      });
+      return;
     } catch {
       // ignore parse errors
     }
