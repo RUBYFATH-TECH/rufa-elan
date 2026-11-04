@@ -63,21 +63,21 @@ export default function LiveDealsTicker() {
       </div>
 
       {/* Scrolling Content */}
-      <div className="flex items-center py-2.5 ml-20">
+      <div className="flex items-center py-3 ml-20">
         <div className="flex animate-scroll-left whitespace-nowrap">
           {duplicatedDeals.map((deal, index) => (
             <Link
               key={`${deal.id}-${index}`}
               href={deal.link}
-              className="inline-flex items-center px-6 hover:text-yellow-300 transition-colors group"
+              className="inline-flex items-center gap-3 px-8 hover:opacity-80 transition-opacity group"
             >
-              <span className="text-white text-sm font-medium mr-2">
+              <span className="text-white text-sm font-normal tracking-wide">
                 {deal.text}
               </span>
-              <span className="text-yellow-400 font-bold text-sm mr-4">
+              <span className="text-yellow-400 font-bold text-sm px-3 py-1 bg-yellow-400/10 rounded-full">
                 {deal.price}
               </span>
-              <span className="text-yellow-400 mx-2">•</span>
+              <span className="text-yellow-400/50 text-lg font-light">|</span>
             </Link>
           ))}
         </div>

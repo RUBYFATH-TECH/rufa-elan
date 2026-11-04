@@ -8,6 +8,8 @@ import TemuDealsSection from "@/components/temu-deals-section";
 import TemuProductCard from "@/components/temu-product-card";
 import MobileBottomNav from "@/components/mobile-bottom-nav";
 import LiveDealsTicker from "@/components/live-deals-ticker";
+import FeaturesBar from "@/components/features-bar";
+import ReferralBanner from "@/components/referral-banner";
 import { fetchProducts } from "@/lib/api/products";
 import { Loader2, AlertCircle } from "lucide-react";
 import { useLanguage } from "@/contexts/language-context";
@@ -254,6 +256,12 @@ export default function HomePage() {
 
       {/* Live Deals Ticker - Animated scrolling banner */}
       <LiveDealsTicker />
+
+      {/* Features Bar - Free Delivery, Secure Payment, etc. */}
+      <FeaturesBar />
+
+      {/* Referral Banner */}
+      <ReferralBanner />
 
       <div className="mx-auto max-w-7xl px-3 sm:px-4 py-4 sm:py-6">
         <div className="mt-4 sm:mt-6 space-y-6 sm:space-y-8">
