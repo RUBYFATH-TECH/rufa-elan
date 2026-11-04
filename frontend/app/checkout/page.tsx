@@ -1,19 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCartStore, type CartItem } from "@/store/cart-store";
 import { createClientComponentSupabaseClient } from "@/lib/supabase-client";
 import { MapPin, Truck, ChevronDown, Plus, AlertCircle, CheckCircle, Loader } from "lucide-react";
 import addressesService, { type Address } from "@/lib/api-services/addresses";
-
-// Leaflet map component - dynamic import
-const DeliveryMap = dynamic(() => import("@/components/delivery-map"), { 
-  ssr: false,
-  loading: () => <div className="w-full h-64 bg-slate-100 flex items-center justify-center rounded-lg">Loading map...</div>
-});
 
 // Kumasi office coordinates for distance calculation (RUFA ELAN Shop Location)
 // Location: https://maps.app.goo.gl/EpDhubP7UfLY21uq8
@@ -635,29 +628,6 @@ export default function CheckoutPage() {
             <span className="font-bold text-slate-950">Total Amount</span>
             <span className="text-3xl font-bold text-orange-600">GHS {grandTotal.toFixed(2)}</span>
           </div>
-
-          {/* Beautiful Route Map with Distance Info */}
-          {deliveryOption === "delivery" && selectedAddress && calculatedDistance && (
-            <div className="rounded-xl overflow-hidden border-2 border-slate-200 shadow-lg">
-              <DeliveryMap
-                startLat={KUMASI_OFFICE.lat}
-                startLng={KUMASI_OFFICE.lng}
-                endLat={selectedAddress.latitude || 6.0}
-                endLng={selectedAddress.longitude || -1.5}
-                distance={calculatedDistance}
-                startLabel={KUMASI_OFFICE.name}
-                endLabel={selectedAddress.city}
-              />
-            </div>
-          )}
-
-          {/* Calculating Distance Loader */}
-          {deliveryOption === "delivery" && selectedAddress && geocodingAddress && (
-            <div className="rounded-xl bg-slate-50 border-2 border-slate-200 p-6 flex items-center justify-center gap-3">
-              <Loader className="h-5 w-5 animate-spin text-orange-600" />
-              <span className="text-sm font-medium text-slate-700">Calculating route distance...</span>
-            </div>
-          )}
         </aside>
       </div>
     </section>
