@@ -47,7 +47,7 @@ export default function Navbar() {
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-sm overflow-visible">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-2.5 sm:px-6 sm:py-4 lg:px-12 overflow-visible">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-3 sm:px-6 sm:py-4 lg:px-12 overflow-visible">
           <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
             {/* Hamburger Menu Button - Mobile Only */}
             <button 
@@ -87,7 +87,7 @@ export default function Navbar() {
           </nav>
 
           {/* Right Side Actions - Compact for mobile */}
-          <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0 pr-1">
             {/* Desktop Icons */}
             <div className="hidden items-center gap-2 md:flex">
               <Link href="/wishlist" className="relative rounded-lg border border-slate-200 p-2 text-slate-600 transition-all hover:text-slate-900 hover:bg-slate-50 hover:border-slate-300">
@@ -113,18 +113,18 @@ export default function Navbar() {
 
             {/* Mobile Icons - Compact */}
             <div className="flex items-center gap-1.5 md:hidden">
-              <Link href="/wishlist" className="relative rounded-lg border border-slate-200 p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 active:bg-slate-100 transition-all touch-manipulation">
-                <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
+              <Link href="/wishlist" className="relative rounded-lg border border-slate-200 p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-50 active:bg-slate-100 transition-all touch-manipulation">
+                <Heart className="h-5 w-5" />
                 {mounted && wishlistCount > 0 && (
-                  <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand-700 text-[9px] font-bold text-white ring-2 ring-white">
+                  <span className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-brand-700 text-[9px] font-bold text-white ring-2 ring-white">
                     {wishlistCount}
                   </span>
                 )}
               </Link>
-              <Link href="/cart" className="relative rounded-lg border border-slate-200 p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 active:bg-slate-100 transition-all touch-manipulation">
-                <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5" />
+              <Link href="/cart" className="relative rounded-lg border border-slate-200 p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-50 active:bg-slate-100 transition-all touch-manipulation">
+                <ShoppingBag className="h-5 w-5" />
                 {mounted && cartCount > 0 && (
-                  <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand-700 text-[9px] font-bold text-white ring-2 ring-white">
+                  <span className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-brand-700 text-[9px] font-bold text-white ring-2 ring-white">
                     {cartCount}
                   </span>
                 )}
