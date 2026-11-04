@@ -18,6 +18,7 @@ interface ProductCardProps {
     stock_quantity?: number;
     in_stock?: boolean;
     low_stock?: boolean;
+    description?: string;
   };
   layout?: "grid" | "list";
 }
@@ -104,7 +105,11 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
               <span className="text-xs sm:text-sm text-gray-500">{product.rating.toFixed(1)} ★</span>
             </div>
             <h3 className="text-base sm:text-xl font-semibold text-gray-900 mb-2 line-clamp-2">{product.name}</h3>
-            <p className="text-gray-600 text-xs sm:text-sm hidden sm:block">Premium quality handbag with elegant design and durable materials.</p>
+            {product.description && (
+              <p className="text-gray-600 text-xs sm:text-sm line-clamp-2 mb-2">
+                {product.description}
+              </p>
+            )}
             {product.stock_quantity !== undefined && (
               <p className="text-xs sm:text-sm text-gray-600 mt-2">
                 <span className="font-medium">Available:</span> {product.stock_quantity} {product.stock_quantity === 1 ? 'unit' : 'units'}
@@ -184,7 +189,12 @@ export default function ProductCard({ product, layout = "grid" }: ProductCardPro
           <span className="truncate mr-2">{product.category}</span>
           <span className="flex-shrink-0">{product.rating.toFixed(1)} ★</span>
         </div>
-        <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 line-clamp-2 flex-grow">{product.name}</h3>
+        <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 line-clamp-2 min-h-[2.5rem] sm:min-h-[3rem]">{product.name}</h3>
+        {product.description && (
+          <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 flex-grow">
+            {product.description}
+          </p>
+        )}
         {product.stock_quantity !== undefined && (
           <p className="text-xs text-gray-600">
             <span className="font-medium">Stock:</span> {product.stock_quantity} available

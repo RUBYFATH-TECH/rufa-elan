@@ -63,6 +63,7 @@ interface Product {
   category_name?: string;
   category_slug?: string;
   product_images?: Array<{ url: string; is_primary?: boolean }>;
+  description?: string;
   stock_quantity?: number;
   in_stock?: boolean;
   low_stock?: boolean;
@@ -128,6 +129,7 @@ export default function ShopPage() {
         category_name: p.categories?.name || "Uncategorized",
         category_slug: p.categories?.slug || "",
         product_images: p.product_images || [],
+        description: p.description || '',
         stock_quantity: p.stock_quantity || 0,
         in_stock: p.in_stock ?? false,
         low_stock: p.low_stock ?? false,
@@ -206,6 +208,7 @@ export default function ShopPage() {
       stock_quantity: product.stock_quantity,
       in_stock: product.in_stock,
       low_stock: product.low_stock,
+      description: product.description,
     };
     
     console.log(`📦 Product "${product.name}" card data:`, {

@@ -33,6 +33,7 @@ type ApiProduct = {
   sale_price?: number;
   categories?: { name?: string; slug?: string };
   product_images?: Array<{ url: string; is_primary?: boolean }>;
+  description?: string;
   stock_quantity?: number;
   in_stock?: boolean;
   low_stock?: boolean;
@@ -256,6 +257,7 @@ export default function CategoryPage({ params }: { params: Promise<{ category: s
                   rating: 4.5,
                   image: product.product_images?.find((image) => image.is_primary)?.url || product.product_images?.[0]?.url || "/images/placeholder.jpg",
                   slug: product.slug,
+                  description: product.description,
                   stock_quantity: product.stock_quantity,
                   in_stock: product.in_stock,
                   low_stock: product.low_stock,
