@@ -78,7 +78,7 @@ export default function LiveContactButton({
       {/* Main Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center gap-2 rounded-full bg-brand-700 px-3 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-brand-800 hover:shadow-xl active:scale-95 md:px-4 md:py-3"
+        className="inline-flex items-center gap-2 rounded-full bg-green-600 px-3 py-2.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-green-700 hover:shadow-xl active:scale-95 md:px-4 md:py-3"
         aria-label="Live Contact"
         aria-expanded={isOpen}
       >

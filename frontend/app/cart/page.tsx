@@ -145,18 +145,6 @@ export default function CartPage() {
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-      {/* Header */}
-      <div className="mb-8">
-        <Link
-          href="/shop"
-          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition"
-          aria-label="Continue shopping"
-        >
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          Continue Shopping
-        </Link>
-      </div>
-
       <div className="grid gap-8 lg:grid-cols-[1fr,420px]">
         {/* Cart Items Table */}
         <div className="space-y-6">
