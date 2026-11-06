@@ -173,14 +173,14 @@ export default function OrderDetailPage() {
 
       // Calculate optimal settings for A4
       const opt = {
-        margin: 5, // 5mm margin on all sides
+        margin: [10, 10, 10, 10], // 10mm margin on all sides
         filename: `RUFA-ELAN-Invoice-${order.order_number}.pdf`,
         image: { 
           type: "jpeg", 
-          quality: 0.95 
+          quality: 0.92
         },
         html2canvas: { 
-          scale: 2, // High quality
+          scale: 1.5, // Reduced from 2 for better layout calculation
           useCORS: true,
           logging: false,
           letterRendering: true,
@@ -188,7 +188,8 @@ export default function OrderDetailPage() {
           backgroundColor: '#ffffff',
           scrollY: 0,
           scrollX: 0,
-          windowWidth: 800, // Fixed width for consistency
+          windowWidth: 794, // A4 width in pixels at 96 DPI
+          width: 794,
           removeContainer: true
         },
         jsPDF: { 
@@ -202,7 +203,7 @@ export default function OrderDetailPage() {
           mode: ['avoid-all', 'css', 'legacy'],
           before: '.page-break-before',
           after: '.page-break-after',
-          avoid: ['tr', 'img']
+          avoid: ['tr', 'img', 'table']
         }
       };
 

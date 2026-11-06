@@ -129,15 +129,15 @@ const InvoiceReceipt = React.forwardRef<HTMLDivElement, InvoiceProps>(
     // PDF-optimized inline styles
     const pdfStyles = isPrinting ? {
       container: {
-        width: '210mm',
-        maxWidth: '210mm',
-        minHeight: '297mm',
+        width: '190mm', // Reduced from 210mm to account for margins
+        maxWidth: '190mm',
+        minHeight: '277mm', // A4 height minus margins
         margin: '0 auto',
-        padding: '10mm',
+        padding: '8mm', // Reduced padding
         backgroundColor: '#ffffff',
         fontFamily: 'Arial, Helvetica, sans-serif',
-        fontSize: '11px',
-        lineHeight: '1.4',
+        fontSize: '10px',
+        lineHeight: '1.3',
         color: '#1f2937',
         boxSizing: 'border-box' as const
       },
@@ -145,19 +145,19 @@ const InvoiceReceipt = React.forwardRef<HTMLDivElement, InvoiceProps>(
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
-        marginBottom: '12px',
-        paddingBottom: '10px',
+        marginBottom: '10px',
+        paddingBottom: '8px',
         borderBottom: '2px solid #d1d5db'
       },
       logoContainer: {
         display: 'flex',
         alignItems: 'center',
-        gap: '10px'
+        gap: '8px'
       },
       logo: {
-        width: '45px',
-        height: '45px',
-        borderRadius: '6px',
+        width: '40px',
+        height: '40px',
+        borderRadius: '5px',
         border: '2px solid #e5e7eb',
         objectFit: 'cover' as const,
         display: 'block'
@@ -165,46 +165,48 @@ const InvoiceReceipt = React.forwardRef<HTMLDivElement, InvoiceProps>(
       invoiceBadge: {
         backgroundColor: '#14b8a6',
         color: '#ffffff',
-        padding: '8px 15px',
+        padding: '6px 12px',
         borderRadius: '4px',
-        textAlign: 'center' as const
+        textAlign: 'center' as const,
+        flexShrink: 0
       },
       sectionGrid: {
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
-        gap: '12px',
-        marginBottom: '12px'
+        gap: '10px',
+        marginBottom: '10px'
       },
       sectionTitle: {
-        fontSize: '9px',
+        fontSize: '8px',
         fontWeight: 'bold' as const,
         textTransform: 'uppercase' as const,
         color: '#14b8a6',
-        marginBottom: '5px',
-        margin: '0 0 5px 0'
+        margin: '0 0 4px 0'
       },
       table: {
         width: '100%',
         borderCollapse: 'collapse' as const,
-        marginBottom: '12px'
+        marginBottom: '10px',
+        tableLayout: 'fixed' as const
       },
       tableHeader: {
         backgroundColor: '#14b8a6',
         color: '#ffffff',
-        padding: '7px 8px',
+        padding: '6px',
         textAlign: 'left' as const,
-        fontSize: '10px',
+        fontSize: '9px',
         fontWeight: 'bold' as const
       },
       tableCell: {
-        padding: '7px 8px',
+        padding: '6px',
         borderBottom: '1px solid #e5e7eb',
-        fontSize: '10px',
-        verticalAlign: 'top' as const
+        fontSize: '9px',
+        verticalAlign: 'top' as const,
+        wordWrap: 'break-word' as const
       },
       productImage: {
-        width: '45px',
-        height: '45px',
+        width: '40px',
+        height: '40px',
         objectFit: 'cover' as const,
         borderRadius: '4px',
         border: '1px solid #e5e7eb',
@@ -231,19 +233,19 @@ const InvoiceReceipt = React.forwardRef<HTMLDivElement, InvoiceProps>(
                 </div>
               ) : null}
               <div>
-                <h1 style={isPrinting ? { fontSize: '16px', fontWeight: 'bold', margin: 0 } : undefined} className={isPrinting ? '' : 'text-lg sm:text-2xl font-bold text-gray-800'}>
+                <h1 style={isPrinting ? { fontSize: '14px', fontWeight: 'bold', margin: 0, whiteSpace: 'nowrap' } : undefined} className={isPrinting ? '' : 'text-lg sm:text-2xl font-bold text-gray-800'}>
                   RUFA ELAN
                 </h1>
-                <p style={isPrinting ? { fontSize: '9px', margin: 0, color: '#6b7280' } : undefined} className={isPrinting ? '' : 'text-xs sm:text-sm text-gray-600'}>
+                <p style={isPrinting ? { fontSize: '8px', margin: 0, color: '#6b7280' } : undefined} className={isPrinting ? '' : 'text-xs sm:text-sm text-gray-600'}>
                   Premium Fashion &amp; Lifestyle
                 </p>
               </div>
             </div>
             <div style={isPrinting ? pdfStyles.invoiceBadge : undefined} className={isPrinting ? '' : 'bg-teal-500 text-white px-4 py-2 rounded'}>
-              <p style={isPrinting ? { fontSize: '8px', fontWeight: 'bold', margin: 0, marginBottom: '2px', textTransform: 'uppercase' } : undefined} className={isPrinting ? '' : 'text-xs font-bold uppercase'}>
+              <p style={isPrinting ? { fontSize: '7px', fontWeight: 'bold', margin: 0, marginBottom: '2px', textTransform: 'uppercase', whiteSpace: 'nowrap' } : undefined} className={isPrinting ? '' : 'text-xs font-bold uppercase'}>
                 Invoice
               </p>
-              <p style={isPrinting ? { fontSize: '13px', fontWeight: 'bold', margin: 0 } : undefined} className={isPrinting ? '' : 'text-xl font-bold'}>
+              <p style={isPrinting ? { fontSize: '11px', fontWeight: 'bold', margin: 0, whiteSpace: 'nowrap' } : undefined} className={isPrinting ? '' : 'text-xl font-bold'}>
                 #{orderNumber}
               </p>
             </div>
@@ -255,53 +257,53 @@ const InvoiceReceipt = React.forwardRef<HTMLDivElement, InvoiceProps>(
               <p style={isPrinting ? pdfStyles.sectionTitle : undefined} className={isPrinting ? '' : 'text-xs font-bold text-teal-600 uppercase mb-2'}>
                 Supplier:
               </p>
-              <p style={isPrinting ? { fontSize: '12px', fontWeight: 'bold', color: '#14b8a6', margin: '0 0 2px 0' } : undefined} className={isPrinting ? '' : 'text-lg font-bold text-teal-600'}>
+              <p style={isPrinting ? { fontSize: '11px', fontWeight: 'bold', color: '#14b8a6', margin: '0 0 2px 0' } : undefined} className={isPrinting ? '' : 'text-lg font-bold text-teal-600'}>
                 RUFA ELAN STORE
               </p>
-              <p style={isPrinting ? { fontSize: '9px', margin: 0 } : undefined} className={isPrinting ? '' : 'text-sm text-gray-700'}>Premium Fashion Hub</p>
-              <p style={isPrinting ? { fontSize: '9px', margin: 0 } : undefined} className={isPrinting ? '' : 'text-sm text-gray-700'}>Accra, Ghana</p>
-              <p style={isPrinting ? { fontSize: '9px', margin: 0 } : undefined} className={isPrinting ? '' : 'text-sm text-gray-700'}>+233 501 234 567</p>
-              <p style={isPrinting ? { fontSize: '8px', margin: 0, color: '#6b7280' } : undefined} className={isPrinting ? '' : 'text-xs text-gray-600'}>hello@rufaelan.com</p>
-              <p style={isPrinting ? { fontSize: '8px', margin: 0, color: '#6b7280' } : undefined} className={isPrinting ? '' : 'text-xs text-gray-600'}>VAT No: GH-0000000000</p>
+              <p style={isPrinting ? { fontSize: '8px', margin: 0 } : undefined} className={isPrinting ? '' : 'text-sm text-gray-700'}>Premium Fashion Hub</p>
+              <p style={isPrinting ? { fontSize: '8px', margin: 0 } : undefined} className={isPrinting ? '' : 'text-sm text-gray-700'}>Accra, Ghana</p>
+              <p style={isPrinting ? { fontSize: '8px', margin: 0 } : undefined} className={isPrinting ? '' : 'text-sm text-gray-700'}>+233 501 234 567</p>
+              <p style={isPrinting ? { fontSize: '7px', margin: 0, color: '#6b7280' } : undefined} className={isPrinting ? '' : 'text-xs text-gray-600'}>hello@rufaelan.com</p>
+              <p style={isPrinting ? { fontSize: '7px', margin: 0, color: '#6b7280' } : undefined} className={isPrinting ? '' : 'text-xs text-gray-600'}>VAT No: GH-0000000000</p>
             </div>
             <div>
               <p style={isPrinting ? { ...pdfStyles.sectionTitle, color: '#374151' } : undefined} className={isPrinting ? '' : 'text-xs font-bold text-gray-700 uppercase mb-2'}>
                 Client:
               </p>
-              <p style={isPrinting ? { fontSize: '12px', fontWeight: 'bold', margin: '0 0 2px 0' } : undefined} className={isPrinting ? '' : 'text-lg font-bold text-gray-800'}>
+              <p style={isPrinting ? { fontSize: '11px', fontWeight: 'bold', margin: '0 0 2px 0' } : undefined} className={isPrinting ? '' : 'text-lg font-bold text-gray-800'}>
                 {customer.firstName} {customer.lastName}
               </p>
-              <p style={isPrinting ? { fontSize: '9px', margin: 0 } : undefined} className={isPrinting ? '' : 'text-sm text-gray-700'}>{customer.phone}</p>
-              <p style={isPrinting ? { fontSize: '9px', margin: 0 } : undefined} className={isPrinting ? '' : 'text-sm text-gray-700'}>{customer.address}</p>
-              <p style={isPrinting ? { fontSize: '9px', margin: 0 } : undefined} className={isPrinting ? '' : 'text-sm text-gray-700'}>{customer.city}</p>
-              <p style={isPrinting ? { fontSize: '8px', margin: 0, color: '#6b7280' } : undefined} className={isPrinting ? '' : 'text-xs text-gray-600'}>{customer.email}</p>
-              <p style={isPrinting ? { fontSize: '8px', margin: 0, color: '#6b7280' } : undefined} className={isPrinting ? '' : 'text-xs text-gray-600'}>Ref: {customer.id.slice(0, 8)}</p>
+              <p style={isPrinting ? { fontSize: '8px', margin: 0 } : undefined} className={isPrinting ? '' : 'text-sm text-gray-700'}>{customer.phone}</p>
+              <p style={isPrinting ? { fontSize: '8px', margin: 0 } : undefined} className={isPrinting ? '' : 'text-sm text-gray-700'}>{customer.address}</p>
+              <p style={isPrinting ? { fontSize: '8px', margin: 0 } : undefined} className={isPrinting ? '' : 'text-sm text-gray-700'}>{customer.city}</p>
+              <p style={isPrinting ? { fontSize: '7px', margin: 0, color: '#6b7280' } : undefined} className={isPrinting ? '' : 'text-xs text-gray-600'}>{customer.email}</p>
+              <p style={isPrinting ? { fontSize: '7px', margin: 0, color: '#6b7280' } : undefined} className={isPrinting ? '' : 'text-xs text-gray-600'}>Ref: {customer.id.slice(0, 8)}</p>
             </div>
           </div>
 
           {/* PAYMENT INFO */}
-          <div style={isPrinting ? { display: 'flex', gap: '15px', marginBottom: '12px', paddingBottom: '10px', borderBottom: '1px solid #d1d5db', flexWrap: 'wrap' } : undefined} className={isPrinting ? '' : 'flex flex-wrap gap-6 mb-6 pb-5 border-b'}>
+          <div style={isPrinting ? { display: 'flex', gap: '12px', marginBottom: '10px', paddingBottom: '8px', borderBottom: '1px solid #d1d5db', flexWrap: 'wrap' } : undefined} className={isPrinting ? '' : 'flex flex-wrap gap-6 mb-6 pb-5 border-b'}>
             <div>
-              <p style={isPrinting ? { fontSize: '8px', fontWeight: 'bold', textTransform: 'uppercase', color: '#6b7280', margin: 0, marginBottom: '3px' } : undefined} className={isPrinting ? '' : 'text-xs font-bold text-gray-600 uppercase'}>
+              <p style={isPrinting ? { fontSize: '7px', fontWeight: 'bold', textTransform: 'uppercase', color: '#6b7280', margin: 0, marginBottom: '2px' } : undefined} className={isPrinting ? '' : 'text-xs font-bold text-gray-600 uppercase'}>
                 Payment Method:
               </p>
-              <p style={isPrinting ? { fontSize: '9px', fontWeight: '600', margin: 0 } : undefined} className={isPrinting ? '' : 'text-sm font-semibold'}>
+              <p style={isPrinting ? { fontSize: '8px', fontWeight: '600', margin: 0 } : undefined} className={isPrinting ? '' : 'text-sm font-semibold'}>
                 {paymentMethod || 'Paystack'}
               </p>
             </div>
             <div>
-              <p style={isPrinting ? { fontSize: '8px', fontWeight: 'bold', textTransform: 'uppercase', color: '#6b7280', margin: 0, marginBottom: '3px' } : undefined} className={isPrinting ? '' : 'text-xs font-bold text-gray-600 uppercase'}>
+              <p style={isPrinting ? { fontSize: '7px', fontWeight: 'bold', textTransform: 'uppercase', color: '#6b7280', margin: 0, marginBottom: '2px' } : undefined} className={isPrinting ? '' : 'text-xs font-bold text-gray-600 uppercase'}>
                 Order Number:
               </p>
-              <p style={isPrinting ? { fontSize: '9px', fontWeight: '600', margin: 0 } : undefined} className={isPrinting ? '' : 'text-sm font-semibold'}>
+              <p style={isPrinting ? { fontSize: '8px', fontWeight: '600', margin: 0 } : undefined} className={isPrinting ? '' : 'text-sm font-semibold'}>
                 {orderNumber}
               </p>
             </div>
             <div>
-              <p style={isPrinting ? { fontSize: '8px', fontWeight: 'bold', textTransform: 'uppercase', color: '#6b7280', margin: 0, marginBottom: '3px' } : undefined} className={isPrinting ? '' : 'text-xs font-bold text-gray-600 uppercase'}>
+              <p style={isPrinting ? { fontSize: '7px', fontWeight: 'bold', textTransform: 'uppercase', color: '#6b7280', margin: 0, marginBottom: '2px' } : undefined} className={isPrinting ? '' : 'text-xs font-bold text-gray-600 uppercase'}>
                 Issue Date:
               </p>
-              <p style={isPrinting ? { fontSize: '9px', fontWeight: '600', margin: 0 } : undefined} className={isPrinting ? '' : 'text-sm font-semibold'}>
+              <p style={isPrinting ? { fontSize: '8px', fontWeight: '600', margin: 0 } : undefined} className={isPrinting ? '' : 'text-sm font-semibold'}>
                 {formattedDate}
               </p>
             </div>
@@ -314,13 +316,13 @@ const InvoiceReceipt = React.forwardRef<HTMLDivElement, InvoiceProps>(
                 <th style={isPrinting ? pdfStyles.tableHeader : undefined} className={isPrinting ? '' : 'bg-teal-500 text-white px-3 py-2 text-left text-sm font-bold'}>
                   ITEM DESCRIPTION
                 </th>
-                <th style={isPrinting ? { ...pdfStyles.tableHeader, textAlign: 'center', width: '70px' } : undefined} className={isPrinting ? '' : 'bg-teal-500 text-white px-2 py-2 text-center text-sm font-bold w-20'}>
+                <th style={isPrinting ? { ...pdfStyles.tableHeader, textAlign: 'center', width: '60px' } : undefined} className={isPrinting ? '' : 'bg-teal-500 text-white px-2 py-2 text-center text-sm font-bold w-20'}>
                   PRICE
                 </th>
-                <th style={isPrinting ? { ...pdfStyles.tableHeader, textAlign: 'center', width: '50px' } : undefined} className={isPrinting ? '' : 'bg-teal-500 text-white px-2 py-2 text-center text-sm font-bold w-16'}>
+                <th style={isPrinting ? { ...pdfStyles.tableHeader, textAlign: 'center', width: '40px' } : undefined} className={isPrinting ? '' : 'bg-teal-500 text-white px-2 py-2 text-center text-sm font-bold w-16'}>
                   QTY
                 </th>
-                <th style={isPrinting ? { ...pdfStyles.tableHeader, textAlign: 'right', width: '70px' } : undefined} className={isPrinting ? '' : 'bg-teal-500 text-white px-3 py-2 text-right text-sm font-bold w-20'}>
+                <th style={isPrinting ? { ...pdfStyles.tableHeader, textAlign: 'right', width: '60px' } : undefined} className={isPrinting ? '' : 'bg-teal-500 text-white px-3 py-2 text-right text-sm font-bold w-20'}>
                   TOTAL
                 </th>
               </tr>
@@ -329,7 +331,7 @@ const InvoiceReceipt = React.forwardRef<HTMLDivElement, InvoiceProps>(
               {items.map((item, index) => (
                 <tr key={item.id} style={isPrinting ? { backgroundColor: index % 2 === 0 ? '#ffffff' : '#f9fafb' } : undefined} className={isPrinting ? '' : `${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
                   <td style={isPrinting ? pdfStyles.tableCell : undefined} className={isPrinting ? '' : 'px-3 py-3 border-b'}>
-                    <div style={isPrinting ? { display: 'flex', gap: '10px', alignItems: 'flex-start' } : undefined} className={isPrinting ? '' : 'flex gap-3 items-start'}>
+                    <div style={isPrinting ? { display: 'flex', gap: '8px', alignItems: 'flex-start' } : undefined} className={isPrinting ? '' : 'flex gap-3 items-start'}>
                       {item.image && (
                         <>
                           {isPrinting && base64Images[item.id] ? (
@@ -341,12 +343,12 @@ const InvoiceReceipt = React.forwardRef<HTMLDivElement, InvoiceProps>(
                           ) : null}
                         </>
                       )}
-                      <div>
-                        <p style={isPrinting ? { fontWeight: '600', margin: 0, fontSize: '10px' } : undefined} className={isPrinting ? '' : 'font-semibold text-sm'}>
+                      <div style={isPrinting ? { flex: 1, minWidth: 0 } : undefined}>
+                        <p style={isPrinting ? { fontWeight: '600', margin: 0, fontSize: '9px', wordWrap: 'break-word' } : undefined} className={isPrinting ? '' : 'font-semibold text-sm'}>
                           {item.name}
                         </p>
                         {item.color && (
-                          <p style={isPrinting ? { fontSize: '9px', color: '#6b7280', margin: 0 } : undefined} className={isPrinting ? '' : 'text-xs text-gray-500'}>
+                          <p style={isPrinting ? { fontSize: '8px', color: '#6b7280', margin: 0 } : undefined} className={isPrinting ? '' : 'text-xs text-gray-500'}>
                             Color: {item.color}
                           </p>
                         )}
@@ -376,35 +378,35 @@ const InvoiceReceipt = React.forwardRef<HTMLDivElement, InvoiceProps>(
           {/* NOTES / TOTALS */}
           <div style={isPrinting ? pdfStyles.sectionGrid : undefined} className={isPrinting ? '' : 'grid grid-cols-1 sm:grid-cols-2 gap-6'}>
             <div>
-              <h4 style={isPrinting ? { fontWeight: 'bold', fontSize: '10px', margin: 0, marginBottom: '5px' } : undefined} className={isPrinting ? '' : 'font-bold text-sm mb-2'}>
+              <h4 style={isPrinting ? { fontWeight: 'bold', fontSize: '9px', margin: 0, marginBottom: '4px' } : undefined} className={isPrinting ? '' : 'font-bold text-sm mb-2'}>
                 Notes:
               </h4>
-              <p style={isPrinting ? { fontSize: '8px', lineHeight: '1.4', color: '#6b7280', margin: 0 } : undefined} className={isPrinting ? '' : 'text-xs text-gray-600 leading-relaxed'}>
+              <p style={isPrinting ? { fontSize: '7px', lineHeight: '1.3', color: '#6b7280', margin: 0 } : undefined} className={isPrinting ? '' : 'text-xs text-gray-600 leading-relaxed'}>
                 Thank you for your business! Your order will be carefully packaged and shipped soon. Returns accepted within 30 days of delivery in original condition. For inquiries, contact hello@rufaelan.com
               </p>
             </div>
             <div>
-              <div style={isPrinting ? { display: 'flex', justifyContent: 'space-between', marginBottom: '5px' } : undefined} className={isPrinting ? '' : 'flex justify-between mb-2'}>
-                <span style={isPrinting ? { fontSize: '9px' } : undefined} className={isPrinting ? '' : 'text-sm'}>Subtotal:</span>
-                <span style={isPrinting ? { fontSize: '9px', fontWeight: '600' } : undefined} className={isPrinting ? '' : 'text-sm font-semibold'}>
+              <div style={isPrinting ? { display: 'flex', justifyContent: 'space-between', marginBottom: '4px' } : undefined} className={isPrinting ? '' : 'flex justify-between mb-2'}>
+                <span style={isPrinting ? { fontSize: '8px' } : undefined} className={isPrinting ? '' : 'text-sm'}>Subtotal:</span>
+                <span style={isPrinting ? { fontSize: '8px', fontWeight: '600' } : undefined} className={isPrinting ? '' : 'text-sm font-semibold'}>
                   GHS {subtotal.toFixed(2)}
                 </span>
               </div>
-              <div style={isPrinting ? { display: 'flex', justifyContent: 'space-between', marginBottom: '5px' } : undefined} className={isPrinting ? '' : 'flex justify-between mb-2'}>
-                <span style={isPrinting ? { fontSize: '9px' } : undefined} className={isPrinting ? '' : 'text-sm'}>Shipping fee:</span>
-                <span style={isPrinting ? { fontSize: '9px', fontWeight: '600' } : undefined} className={isPrinting ? '' : 'text-sm font-semibold'}>
+              <div style={isPrinting ? { display: 'flex', justifyContent: 'space-between', marginBottom: '4px' } : undefined} className={isPrinting ? '' : 'flex justify-between mb-2'}>
+                <span style={isPrinting ? { fontSize: '8px' } : undefined} className={isPrinting ? '' : 'text-sm'}>Shipping fee:</span>
+                <span style={isPrinting ? { fontSize: '8px', fontWeight: '600' } : undefined} className={isPrinting ? '' : 'text-sm font-semibold'}>
                   GHS {shipping.toFixed(2)}
                 </span>
               </div>
-              <div style={isPrinting ? { display: 'flex', justifyContent: 'space-between', marginBottom: '5px' } : undefined} className={isPrinting ? '' : 'flex justify-between mb-2'}>
-                <span style={isPrinting ? { fontSize: '9px' } : undefined} className={isPrinting ? '' : 'text-sm'}>Discount:</span>
-                <span style={isPrinting ? { fontSize: '9px', fontWeight: '600' } : undefined} className={isPrinting ? '' : 'text-sm font-semibold'}>
+              <div style={isPrinting ? { display: 'flex', justifyContent: 'space-between', marginBottom: '4px' } : undefined} className={isPrinting ? '' : 'flex justify-between mb-2'}>
+                <span style={isPrinting ? { fontSize: '8px' } : undefined} className={isPrinting ? '' : 'text-sm'}>Discount:</span>
+                <span style={isPrinting ? { fontSize: '8px', fontWeight: '600' } : undefined} className={isPrinting ? '' : 'text-sm font-semibold'}>
                   GHS 0.00
                 </span>
               </div>
-              <div style={isPrinting ? { display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #d1d5db', borderBottom: '1px solid #d1d5db', paddingTop: '6px', paddingBottom: '6px', marginTop: '5px' } : undefined} className={isPrinting ? '' : 'flex justify-between border-t border-b py-2 mt-2'}>
-                <span style={isPrinting ? { fontSize: '11px', fontWeight: 'bold' } : undefined} className={isPrinting ? '' : 'text-base font-bold'}>Total:</span>
-                <span style={isPrinting ? { fontSize: '13px', fontWeight: 'bold' } : undefined} className={isPrinting ? '' : 'text-lg font-bold'}>
+              <div style={isPrinting ? { display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #d1d5db', borderBottom: '1px solid #d1d5db', paddingTop: '5px', paddingBottom: '5px', marginTop: '4px' } : undefined} className={isPrinting ? '' : 'flex justify-between border-t border-b py-2 mt-2'}>
+                <span style={isPrinting ? { fontSize: '10px', fontWeight: 'bold' } : undefined} className={isPrinting ? '' : 'text-base font-bold'}>Total:</span>
+                <span style={isPrinting ? { fontSize: '12px', fontWeight: 'bold' } : undefined} className={isPrinting ? '' : 'text-lg font-bold'}>
                   GHS {total.toFixed(2)}
                 </span>
               </div>
@@ -412,8 +414,8 @@ const InvoiceReceipt = React.forwardRef<HTMLDivElement, InvoiceProps>(
           </div>
 
           {/* FOOTER */}
-          <div style={isPrinting ? { marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #d1d5db', textAlign: 'center', fontSize: '8px', color: '#6b7280' } : undefined} className={isPrinting ? '' : 'mt-6 pt-5 border-t text-center text-xs text-gray-600'}>
-            <p style={isPrinting ? { margin: 0, marginBottom: '3px' } : undefined}>View this invoice online at https://www.rufaelan.com/</p>
+          <div style={isPrinting ? { marginTop: '10px', paddingTop: '8px', borderTop: '1px solid #d1d5db', textAlign: 'center', fontSize: '7px', color: '#6b7280' } : undefined} className={isPrinting ? '' : 'mt-6 pt-5 border-t text-center text-xs text-gray-600'}>
+            <p style={isPrinting ? { margin: 0, marginBottom: '2px' } : undefined}>View this invoice online at https://www.rufaelan.com/</p>
             <p style={isPrinting ? { margin: 0 } : undefined}>📱 +233 501 234 567 • 📧 hello@rufaelan.com • 🌐 www.rufaelan.com</p>
           </div>
         </div>
