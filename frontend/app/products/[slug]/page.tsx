@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, Minus, Plus, ShoppingBag, Check, Truck, AlertCircle, Zap, ArrowLeft, Star, ThumbsUp, Flag, MessageSquare } from "lucide-react";
+import { Heart, Minus, Plus, ShoppingBag, Check, Truck, AlertCircle, Zap, ArrowLeft, Star, ThumbsUp, Flag, MessageSquare, ShoppingCart } from "lucide-react";
 import { featuredProducts } from "@/lib/sample-data";
 import { useCartStore } from "@/store/cart-store";
 import { useWaitlistStore } from "@/store/waitlist-store";
@@ -53,8 +53,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   
   const addItem = useCartStore((state) => state.addItem);
   const cartError = useCartStore((state) => state.error);
+  const cartItems = useCartStore((state) => state.items);
   const addWaitlistItem = useWaitlistStore((state) => state.addItem);
   const hasInWaitlist = useWaitlistStore((state) => state.hasItem(product?.id));
+  
+  // Calculate total cart count
+  const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   // Check user session
   useEffect(() => {
@@ -500,6 +504,24 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               <Heart className={`h-5 w-5 ${hasInWaitlist ? "fill-current" : ""}`} /> 
               {hasInWaitlist ? "In Your Waitlist" : "Save for Later"}
             </button>
+            
+            {/* View Cart Button - Shows cart count */}
+            {cartCount > 0 && (
+              <button 
+                onClick={() => router.push('/cart')} 
+                className="w-full flex items-center justify-center gap-2 rounded-xl py-3 font-semibold transition-all bg-orange-500 text-white hover:bg-orange-600 shadow-md hover:shadow-lg"
+              >
+                <div className="relative">
+                  <ShoppingCart className="h-5 w-5" />
+                  {cartCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-white text-orange-600 text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center border-2 border-orange-500">
+                      {cartCount}
+                    </span>
+                  )}
+                </div>
+                View Cart ({cartCount})
+              </button>
+            )}
           </div>
 
           {/* Stock Status Info */}
