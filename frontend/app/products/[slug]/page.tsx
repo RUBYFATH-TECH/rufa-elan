@@ -40,7 +40,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const [addedToCart, setAddedToCart] = useState(false);
   const [stockError, setStockError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'details' | 'reviews'>('details');
-  const [selectedImageForCart, setSelectedImageForCart] = useState<any>(null);
+  const [selectedImagesForCart, setSelectedImagesForCart] = useState<any[]>([]);
   
   // Reviews state
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -210,21 +210,28 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const cartItem = useMemo(
     () => {
       if (!product) return null;
+      
+      // If multiple images are selected, return null (we'll handle multiple additions differently)
+      if (selectedImagesForCart.length > 1) return null;
+      
+      // Single image or first image selection
+      const selectedImage = selectedImagesForCart[0] || { url: product.image };
+      
       return {
         id: product.id,
         name: product.name,
         price,
         quantity,
-        image: selectedImageForCart?.url || product.image,
+        image: selectedImage.url,
         sku: `RUFA-${product.id.toUpperCase()}`,
-        selected_image_url: selectedImageForCart?.url || product.image
+        selected_image_url: selectedImage.url
       };
     },
-    [product, price, quantity, selectedImageForCart]
+    [product, price, quantity, selectedImagesForCart]
   );
 
   const handleAddToCart = () => {
-    if (!cartItem || !product) return;
+    if (!product) return;
     
     if (!product.in_stock) {
       setStockError('This product is currently out of stock');
@@ -238,10 +245,27 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
       return;
     }
     
-    addItem({
-      ...cartItem,
-      stock_quantity: product.stock_quantity
-    });
+    // If multiple images are selected, add each as a separate cart item
+    if (selectedImagesForCart.length > 1) {
+      selectedImagesForCart.forEach((selectedImage) => {
+        addItem({
+          id: `${product.id}-${selectedImage.url}`, // Unique ID per image variant
+          name: `${product.name} (Variant)`,
+          price,
+          quantity,
+          image: selectedImage.url,
+          sku: `RUFA-${product.id.toUpperCase()}`,
+          selected_image_url: selectedImage.url,
+          stock_quantity: product.stock_quantity
+        });
+      });
+    } else if (cartItem) {
+      // Single image selection
+      addItem({
+        ...cartItem,
+        stock_quantity: product.stock_quantity
+      });
+    }
     
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
@@ -320,8 +344,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               images={product.images?.length ? product.images : [{ url: product.image }]}
               productName={product.name}
               showCartSelection={true}
-              selectedImageForCart={selectedImageForCart}
-              onImageSelectForCart={setSelectedImageForCart}
+              selectedImagesForCart={selectedImagesForCart}
+              onImagesSelectForCart={setSelectedImagesForCart}
             />
             {discount > 0 && (
               <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold">

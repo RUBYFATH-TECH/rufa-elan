@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Image as ImageIcon, ZoomIn } from "lucide-react";
+import { ChevronLeft, ChevronRight, Image as ImageIcon, ZoomIn, Check } from "lucide-react";
 
 export interface ProductImage {
   id?: string;
@@ -14,8 +14,8 @@ interface ProductImageGalleryProps {
   images: ProductImage[];
   productName: string;
   onImageClick?: (image: ProductImage) => void;
-  selectedImageForCart?: ProductImage;
-  onImageSelectForCart?: (image: ProductImage) => void;
+  selectedImagesForCart?: ProductImage[];
+  onImagesSelectForCart?: (images: ProductImage[]) => void;
   showCartSelection?: boolean;
 }
 
@@ -23,19 +23,19 @@ export default function ProductImageGallery({
   images,
   productName,
   onImageClick,
-  selectedImageForCart,
-  onImageSelectForCart,
+  selectedImagesForCart = [],
+  onImagesSelectForCart,
   showCartSelection = false,
 }: ProductImageGalleryProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
 
-  // Initialize selected image for cart if not set - moved to useEffect to avoid setState during render
+  // Initialize with first image selected if not set
   useEffect(() => {
-    if (showCartSelection && !selectedImageForCart && images.length > 0 && onImageSelectForCart) {
-      onImageSelectForCart(images[0]);
+    if (showCartSelection && selectedImagesForCart.length === 0 && images.length > 0 && onImagesSelectForCart) {
+      onImagesSelectForCart([images[0]]);
     }
-  }, [showCartSelection, selectedImageForCart, images, onImageSelectForCart]);
+  }, [showCartSelection, selectedImagesForCart.length, images, onImagesSelectForCart]);
 
   if (!images || images.length === 0) {
     return (
@@ -68,17 +68,31 @@ export default function ProductImageGallery({
 
   const handleThumbnailClick = (image: ProductImage, index: number) => {
     setSelectedImageIndex(index);
+  };
+
+  // Toggle image selection for cart
+  const handleImageSelectForCart = (image: ProductImage) => {
+    if (!showCartSelection || !onImagesSelectForCart) return;
     
-    // If cart selection mode is enabled, update the selected image for cart
-    if (showCartSelection && onImageSelectForCart) {
-      onImageSelectForCart(image);
+    const isCurrentlySelected = isSelectedForCart(image);
+    
+    if (isCurrentlySelected) {
+      // Remove from selection
+      const newSelection = selectedImagesForCart.filter(img => img.url !== image.url);
+      // Keep at least one selected
+      if (newSelection.length > 0) {
+        onImagesSelectForCart(newSelection);
+      }
+    } else {
+      // Add to selection
+      onImagesSelectForCart([...selectedImagesForCart, image]);
     }
   };
 
   // Check if an image is selected for cart
   const isSelectedForCart = (image: ProductImage) => {
-    if (!showCartSelection || !selectedImageForCart) return false;
-    return selectedImageForCart.url === image.url;
+    if (!showCartSelection || !selectedImagesForCart) return false;
+    return selectedImagesForCart.some(img => img.url === image.url);
   };
 
   return (
@@ -135,47 +149,70 @@ export default function ProductImageGallery({
       {hasMultipleImages && (
         <div className="space-y-2">
           {showCartSelection && (
-            <p className="text-sm text-gray-600 font-medium">
-              Select image for cart:
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-700 font-medium">
+                Select designs to order ({selectedImagesForCart.length} selected):
+              </p>
+              {selectedImagesForCart.length > 1 && (
+                <span className="text-xs text-orange-600 font-semibold bg-orange-50 px-2 py-1 rounded">
+                  Multiple variants will be added
+                </span>
+              )}
+            </div>
           )}
-          <div className="flex gap-3 overflow-x-auto pb-2">
+          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3">
             {images.map((image, index) => {
               const isCurrentlyViewing = index === selectedImageIndex;
               const isForCart = isSelectedForCart(image);
               
               return (
-                <button
-                  key={image.id || index}
-                  onClick={() => handleThumbnailClick(image, index)}
-                  className={`relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden transition-all ${
-                    isCurrentlyViewing && isForCart
-                      ? "ring-2 ring-orange-500 shadow-lg"
-                      : isForCart
-                      ? "ring-2 ring-orange-400"
-                      : isCurrentlyViewing
-                      ? "ring-2 ring-blue-500"
-                      : "ring-1 ring-gray-200 hover:ring-gray-300"
-                  }`}
-                  title={image.alt_text || `Image ${index + 1}`}
-                >
-                  <img
-                    src={image.url}
-                    alt={image.alt_text || `${productName} thumbnail ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                  {/* Selected for cart indicator */}
-                  {showCartSelection && isForCart && (
-                    <div className="absolute inset-0 bg-orange-500/20 flex items-center justify-center">
-                      <div className="bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded">
-                        FOR CART
-                      </div>
-                    </div>
+                <div key={image.id || index} className="relative">
+                  <button
+                    onClick={() => handleThumbnailClick(image, index)}
+                    className={`relative flex-shrink-0 w-full aspect-square rounded-lg overflow-hidden transition-all ${
+                      isCurrentlyViewing
+                        ? "ring-2 ring-blue-500 shadow-md"
+                        : "ring-1 ring-gray-200 hover:ring-gray-300"
+                    }`}
+                    title={image.alt_text || `Image ${index + 1}`}
+                  >
+                    <img
+                      src={image.url}
+                      alt={image.alt_text || `${productName} thumbnail ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                  
+                  {/* Cart selection checkbox */}
+                  {showCartSelection && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleImageSelectForCart(image);
+                      }}
+                      className={`absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center transition-all shadow-lg z-10 ${
+                        isForCart
+                          ? "bg-orange-500 text-white ring-2 ring-orange-300"
+                          : "bg-white text-gray-400 hover:bg-gray-100 ring-1 ring-gray-300"
+                      }`}
+                      title={isForCart ? "Remove from selection" : "Add to selection"}
+                    >
+                      {isForCart ? (
+                        <Check className="w-4 h-4" />
+                      ) : (
+                        <div className="w-3 h-3 border-2 border-current rounded-sm" />
+                      )}
+                    </button>
                   )}
-                </button>
+                </div>
               );
             })}
           </div>
+          {showCartSelection && (
+            <p className="text-xs text-gray-600 mt-2">
+              Click the checkboxes to select multiple designs. Each selected design will be added to your cart.
+            </p>
+          )}
         </div>
       )}
 
