@@ -156,7 +156,6 @@ export default function OrderDetailPage() {
     try {
       console.log('[Download] Starting PDF generation for order:', order.order_number);
       console.log('[Download] Number of items:', invoiceItems.length);
-      console.log('[Download] Items with images:', invoiceItems.filter((i: any) => i.image).length);
       
       // Set printing mode to convert images to base64
       setIsPrinting(true);
@@ -165,50 +164,66 @@ export default function OrderDetailPage() {
       // Wait for base64 conversion to complete
       await new Promise(resolve => setTimeout(resolve, 3000));
       
-      console.log('[Download] Images should be ready, generating PDF...');
+      console.log('[Download] Images ready, generating PDF...');
       
-      // Keep html2pdf in this page's client bundle. A lazily emitted chunk can
-      // disappear after a Next.js development rebuild while the page is open.
+      // Keep html2pdf in this page's client bundle
       const html2pdf = (
         await import(/* webpackMode: "eager" */ "html2pdf.js")
       ).default;
 
+      // Calculate optimal settings for A4
+      const opt = {
+        margin: 5, // 5mm margin on all sides
+        filename: `RUFA-ELAN-Invoice-${order.order_number}.pdf`,
+        image: { 
+          type: "jpeg", 
+          quality: 0.95 
+        },
+        html2canvas: { 
+          scale: 2, // High quality
+          useCORS: true,
+          logging: false,
+          letterRendering: true,
+          allowTaint: false,
+          backgroundColor: '#ffffff',
+          scrollY: 0,
+          scrollX: 0,
+          windowWidth: 800, // Fixed width for consistency
+          removeContainer: true
+        },
+        jsPDF: { 
+          unit: "mm",
+          format: "a4",
+          orientation: "portrait",
+          compress: true,
+          precision: 2
+        },
+        pagebreak: { 
+          mode: ['avoid-all', 'css', 'legacy'],
+          before: '.page-break-before',
+          after: '.page-break-after',
+          avoid: ['tr', 'img']
+        }
+      };
+
       await html2pdf()
-        .set({
-          margin: [10, 10, 10, 10],
-          filename: `${order.order_number}-invoice.pdf`,
-          image: { type: "jpeg", quality: 0.98 },
-          html2canvas: { 
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            backgroundColor: '#ffffff',
-            imageTimeout: 0,
-            allowTaint: false,
-            width: element.offsetWidth,
-            height: element.offsetHeight,
-            windowWidth: element.scrollWidth,
-            windowHeight: element.scrollHeight
-          } as any,
-          jsPDF: { 
-            orientation: "portrait", 
-            unit: "mm", 
-            format: "a4",
-            compress: true
-          } as any,
-          pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-        })
+        .set(opt)
         .from(element)
-        .save();
-        
-      console.log('[Download] ✓ PDF generated successfully!');
+        .save()
+        .then(() => {
+          console.log('[Download] ✓ PDF generated successfully!');
+        })
+        .catch((err: Error) => {
+          console.error('[Download] PDF generation error:', err);
+          throw err;
+        });
       
-      // Reset printing mode after download
+      // Reset printing mode after a short delay
       setTimeout(() => setIsPrinting(false), 500);
     } catch (error) {
       console.error("[Download] ✗ Invoice download failed:", error);
       setIsPrinting(false);
-      window.print();
+      alert('Failed to generate PDF. Please try printing instead (Ctrl+P).');
     }
   };
 
