@@ -15,10 +15,7 @@ export default function PromoBanners() {
               First Order Offer
             </span>
           </div>
-          <h3 className="text-white text-2xl font-bold mb-2">Get 5% Off</h3>
-          <p className="text-blue-200 text-sm mb-4">
-            Use code <span className="text-yellow-400 font-bold">WELCOME5</span>
-          </p>
+          <h3 className="text-white text-2xl font-bold mb-4">Get 10% Off</h3>
           <Link
             href="/shop"
             className="inline-block bg-orange-600 hover:bg-orange-700 text-white px-6 py-2.5 rounded-full text-sm font-semibold transition-colors duration-200"
