@@ -161,9 +161,9 @@ export default function OrderDetailPage() {
       // Set printing mode to convert images to base64
       setIsPrinting(true);
       
-      console.log('[Download] Converting images to base64... (waiting 2.5 seconds)');
-      // Wait for base64 conversion to complete (give it more time)
-      await new Promise(resolve => setTimeout(resolve, 2500));
+      console.log('[Download] Converting images to base64... (waiting 3 seconds)');
+      // Wait for base64 conversion to complete
+      await new Promise(resolve => setTimeout(resolve, 3000));
       
       console.log('[Download] Images should be ready, generating PDF...');
       
@@ -175,15 +175,20 @@ export default function OrderDetailPage() {
 
       await html2pdf()
         .set({
-          margin: 10,
+          margin: [10, 10, 10, 10],
           filename: `${order.order_number}-invoice.pdf`,
           image: { type: "jpeg", quality: 0.98 },
           html2canvas: { 
             scale: 2,
+            useCORS: true,
             logging: false,
             backgroundColor: '#ffffff',
             imageTimeout: 0,
-            allowTaint: true
+            allowTaint: false,
+            width: element.offsetWidth,
+            height: element.offsetHeight,
+            windowWidth: element.scrollWidth,
+            windowHeight: element.scrollHeight
           } as any,
           jsPDF: { 
             orientation: "portrait", 
@@ -191,6 +196,7 @@ export default function OrderDetailPage() {
             format: "a4",
             compress: true
           } as any,
+          pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
         })
         .from(element)
         .save();
@@ -198,7 +204,7 @@ export default function OrderDetailPage() {
       console.log('[Download] ✓ PDF generated successfully!');
       
       // Reset printing mode after download
-      setIsPrinting(false);
+      setTimeout(() => setIsPrinting(false), 500);
     } catch (error) {
       console.error("[Download] ✗ Invoice download failed:", error);
       setIsPrinting(false);
