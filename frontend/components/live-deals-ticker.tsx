@@ -2,6 +2,16 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { fetchProducts } from "@/lib/api/products";
+
+interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  regular_price: number;
+  sale_price?: number;
+  product_images?: Array<{ url: string; is_primary?: boolean }>;
+}
 
 interface LiveDeal {
   id: string;
@@ -11,68 +21,74 @@ interface LiveDeal {
 }
 
 export default function LiveDealsTicker() {
-  const [deals] = useState<LiveDeal[]>([
-    {
-      id: "1",
-      text: "Designer Handbag",
-      price: "GHS 180",
-      link: "/shop",
-    },
-    {
-      id: "2",
-      text: "Laptop Backpack",
-      price: "GHS 250",
-      link: "/shop",
-    },
-    {
-      id: "3",
-      text: "Wireless Headset",
-      price: "GHS 120",
-      link: "/shop",
-    },
-    {
-      id: "4",
-      text: "Smart Watch",
-      price: "GHS 320",
-      link: "/shop",
-    },
-    {
-      id: "5",
-      text: "Shoulder Bag",
-      price: "GHS 150",
-      link: "/shop",
-    },
-    {
-      id: "6",
-      text: "Mobile Phone",
-      price: "GHS 850",
-      link: "/shop",
-    },
-    {
-      id: "7",
-      text: "Makeup Brush Set",
-      price: "GHS 49",
-      link: "/shop",
-    },
-    {
-      id: "8",
-      text: "Leather Wallet",
-      price: "GHS 95",
-      link: "/shop",
-    },
-    {
-      id: "9",
-      text: "Sunglasses",
-      price: "GHS 65",
-      link: "/shop",
-    },
-    {
-      id: "10",
-      text: "Travel Pouch",
-      price: "GHS 75",
-      link: "/shop",
-    },
-  ]);
+  const [deals, setDeals] = useState<LiveDeal[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadLiveDeals();
+  }, []);
+
+  async function loadLiveDeals() {
+    try {
+      setLoading(true);
+      
+      // Fetch latest 10 products from the database
+      const response = await fetchProducts({ limit: 10 });
+      
+      if (response?.data && Array.isArray(response.data)) {
+        const liveDeals: LiveDeal[] = response.data.map((product: Product) => {
+          // Use sale price if available and greater than 0, otherwise regular price
+          const displayPrice = product.sale_price && product.sale_price > 0 
+            ? product.sale_price 
+            : product.regular_price;
+          
+          return {
+            id: product.id,
+            text: product.name,
+            price: `GHS ${displayPrice.toFixed(0)}`,
+            link: `/products/${product.slug}`,
+          };
+        });
+        
+        setDeals(liveDeals);
+      }
+    } catch (error) {
+      console.error("[LiveDealsTicker] Error loading products:", error);
+      
+      // Fallback to a few default deals if API fails
+      setDeals([
+        { id: "1", text: "Designer Handbag", price: "GHS 180", link: "/shop" },
+        { id: "2", text: "Laptop Backpack", price: "GHS 250", link: "/shop" },
+        { id: "3", text: "Wireless Headset", price: "GHS 120", link: "/shop" },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Show loading state or fallback deals
+  if (loading || deals.length === 0) {
+    return (
+      <div className="bg-slate-950 border-y border-yellow-400/30 overflow-hidden relative">
+        <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center bg-red-600 px-4 sm:px-5">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+            </span>
+            <span className="text-white font-bold text-sm sm:text-base uppercase tracking-wider">
+              LIVE
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center py-3.5 sm:py-4 ml-20 sm:ml-24">
+          <div className="text-white text-base sm:text-lg font-medium">
+            Loading latest deals...
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Duplicate deals for seamless loop
   const duplicatedDeals = [...deals, ...deals];
