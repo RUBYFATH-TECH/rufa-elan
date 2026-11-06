@@ -222,9 +222,9 @@ export default function ShopPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Simple Header with Back Button */}
-      <div className="bg-white border-b sticky top-0 z-10">
+      <div className="bg-white border-b sticky top-0 z-10 overflow-visible">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
-          <div className="flex items-center justify-between py-3 sm:py-4">
+          <div className="flex items-center justify-between py-3 sm:py-4 overflow-visible">
             <div className="flex items-center gap-2 sm:gap-4 overflow-hidden">
               <Link 
                 href="/account" 
@@ -241,11 +241,11 @@ export default function ShopPage() {
                 <span className="text-sm sm:text-lg font-semibold text-gray-900 truncate">RUFA ELAN</span>
               </div>
             </div>
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              <Link href="/cart" className="relative p-1.5 sm:p-2 text-gray-700 hover:text-gray-900">
+            <div className="flex items-center space-x-2 sm:space-x-4 overflow-visible">
+              <Link href="/cart" className="relative p-1.5 sm:p-2 text-gray-700 hover:text-gray-900 overflow-visible">
                 <ShoppingBag className="h-4 w-4 sm:h-5 sm:w-5" />
                 {mounted && cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-orange-600 text-white text-xs rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center font-semibold">{cartCount}</span>
+                  <span className="absolute top-0 right-0 bg-orange-600 text-white text-[10px] sm:text-xs rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center font-semibold ring-2 ring-white shadow-sm transform translate-x-1/4 -translate-y-1/4">{cartCount}</span>
                 )}
               </Link>
             </div>
