@@ -46,7 +46,7 @@ export default function MobileBottomNav() {
               href={href as any}
               className="flex flex-col items-center gap-0.5 py-1 text-[11px] font-medium transition-colors relative overflow-visible"
             >
-              <span className="relative flex items-center justify-center overflow-visible pt-1">
+              <span className="relative flex items-center justify-center overflow-visible pt-2">
                 <Icon
                   className={`h-6 w-6 transition-colors ${
                     isActive ? "text-orange-500" : "text-gray-500"
@@ -55,7 +55,7 @@ export default function MobileBottomNav() {
                 />
                 {/* Cart badge */}
                 {label === "Cart" && mounted && cartCount > 0 && (
-                  <span className="absolute -right-1 -top-0.5 flex h-[18px] min-w-[18px] px-1 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-2 ring-white shadow-sm">
+                  <span className="absolute -right-2 -top-1 flex h-[18px] min-w-[18px] px-1 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-2 ring-white shadow-sm">
                     {cartCount > 9 ? "9+" : cartCount}
                   </span>
                 )}

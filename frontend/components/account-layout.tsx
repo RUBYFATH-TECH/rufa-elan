@@ -173,16 +173,16 @@ export default function AccountLayout({ children, requireAuth = true }: AccountL
   return (
     <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       {/* Fixed Header */}
-      <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-30 overflow-visible">
+      <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-30">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-3 lg:py-4">
+          <div className="flex items-center justify-between py-3 lg:py-4 overflow-visible">
             <div className="flex items-center">
               <Link href="/" className="flex items-center">
                 <img src="/images/logo.png" alt="RUFA ELAN" className="mr-2 h-7 w-7 rounded-full lg:mr-3 lg:h-8 lg:w-8" />
                 <span className="text-sm font-semibold text-gray-900 lg:text-lg">RUFA ELAN</span>
               </Link>
             </div>
-            <div className="flex items-center gap-2 lg:hidden pr-1">
+            <div className="flex items-center gap-2 lg:hidden pr-1 overflow-visible">
               <Link
                 href="/account/notifications"
                 className="relative rounded-full border border-slate-200 p-1.5 text-slate-600 transition hover:text-slate-900"
@@ -190,7 +190,7 @@ export default function AccountLayout({ children, requireAuth = true }: AccountL
               >
                 <Bell className="h-5 w-5" />
                 {mounted && notificationCount > 0 && (
-                  <span className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[9px] font-bold text-white ring-2 ring-white">
+                  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[9px] font-bold text-white ring-2 ring-white">
                     {notificationCount > 9 ? '9+' : notificationCount}
                   </span>
                 )}
@@ -216,7 +216,7 @@ export default function AccountLayout({ children, requireAuth = true }: AccountL
                 )}
               </button>
             </div>
-            <div className="hidden items-center space-x-4 lg:flex">
+            <div className="hidden items-center space-x-4 lg:flex overflow-visible">
               <Link 
                 href="/account/notifications" 
                 className="relative rounded-full border border-slate-200 p-2 text-slate-600 transition hover:text-slate-900" 
@@ -224,7 +224,7 @@ export default function AccountLayout({ children, requireAuth = true }: AccountL
               >
                 <Bell className="h-5 w-5" />
                 {mounted && notificationCount > 0 && (
-                  <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white ring-2 ring-white">
+                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white ring-2 ring-white">
                     {notificationCount > 9 ? '9+' : notificationCount}
                   </span>
                 )}
@@ -232,7 +232,7 @@ export default function AccountLayout({ children, requireAuth = true }: AccountL
               <Link href="/cart" className="relative rounded-full border border-slate-200 p-2 text-slate-600 transition hover:text-slate-900" aria-label="Shopping cart">
                 <ShoppingBag className="h-5 w-5" />
                 {mounted && cartCount > 0 && (
-                  <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-brand-700 text-xs font-bold text-white ring-2 ring-white">
+                  <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-700 text-xs font-bold text-white ring-2 ring-white">
                     {cartCount}
                   </span>
                 )}
@@ -292,16 +292,16 @@ export default function AccountLayout({ children, requireAuth = true }: AccountL
       </div>
 
       {/* Mobile primary navigation */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-gray-200 bg-white px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-2px_8px_rgba(0,0,0,0.06)] lg:hidden" aria-label="Primary account navigation">
+      <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-gray-200 bg-white px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-2px_8px_rgba(0,0,0,0.06)] lg:hidden overflow-visible" aria-label="Primary account navigation">
         <Link href="/account" className="flex flex-col items-center gap-0.5 rounded-md py-1 text-[10px] font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900">
           <LayoutDashboard className="h-5 w-5" />
           Overview
         </Link>
-        <Link href="/cart" className="relative flex flex-col items-center gap-0.5 rounded-md py-1 text-[10px] font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900">
-          <div className="relative">
+        <Link href="/cart" className="relative flex flex-col items-center gap-0.5 rounded-md py-1 text-[10px] font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 overflow-visible">
+          <div className="relative overflow-visible">
             <ShoppingCart className="h-5 w-5" />
             {mounted && cartCount > 0 && (
-              <span className="absolute -right-2 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
+              <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-1 ring-white">
                 {cartCount}
               </span>
             )}

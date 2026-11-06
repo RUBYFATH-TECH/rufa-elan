@@ -38,10 +38,10 @@ export default function TemuHeader() {
   }, [mobileSearchOpen]);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-gray-200 bg-white">
+    <header className="sticky top-0 z-50 border-b border-gray-200 bg-white overflow-visible">
       {/* Main header row */}
-      <div className="w-full px-4 py-3 sm:px-6">
-        <div className="flex items-center gap-2 sm:gap-4 md:grid md:grid-cols-[minmax(0,1fr)_minmax(18rem,2fr)_minmax(0,1fr)]">
+      <div className="w-full px-4 py-3 sm:px-6 overflow-visible">
+        <div className="flex items-center gap-2 sm:gap-4 md:grid md:grid-cols-[minmax(0,1fr)_minmax(18rem,2fr)_minmax(0,1fr)] overflow-visible">
 
           {/* Brand */}
           <Link
@@ -84,7 +84,7 @@ export default function TemuHeader() {
           </div>
 
           {/* Right side actions */}
-          <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3 md:ml-0 md:justify-self-end md:gap-5">
+          <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3 md:ml-0 md:justify-self-end md:gap-5 overflow-visible">
 
             {/* Desktop: Orders & Account */}
             <Link href="/auth/login" className="hidden items-center gap-2 text-sm text-gray-700 hover:text-gray-900 md:flex">
@@ -129,11 +129,11 @@ export default function TemuHeader() {
             <Link
               href="/cart"
               aria-label="Shopping cart"
-              className="relative hidden md:flex h-9 w-9 items-center justify-center rounded-full text-gray-700 hover:text-gray-900"
+              className="relative hidden md:flex h-9 w-9 items-center justify-center rounded-full text-gray-700 hover:text-gray-900 overflow-visible"
             >
               <ShoppingCart className="h-5 w-5 sm:h-6 sm:w-6" />
               {mounted && cartCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white ring-1 ring-white">
                   {cartCount}
                 </span>
               )}
