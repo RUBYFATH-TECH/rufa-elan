@@ -209,14 +209,9 @@ export default function OrderDetailPage() {
       await html2pdf()
         .set(opt)
         .from(element)
-        .save()
-        .then(() => {
-          console.log('[Download] ✓ PDF generated successfully!');
-        })
-        .catch((err: Error) => {
-          console.error('[Download] PDF generation error:', err);
-          throw err;
-        });
+        .save();
+        
+      console.log('[Download] ✓ PDF generated successfully!');
       
       // Reset printing mode after a short delay
       setTimeout(() => setIsPrinting(false), 500);
